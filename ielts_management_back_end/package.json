@@ -33,7 +33,9 @@
     "mongoose": "^9.4.1",
     "multer": "^2.1.1",
     "rate-limit-redis": "^4.2.0",
-    "redis": "^4.6.12"
+    "redis": "^4.6.12",
+    "slugify": "^1.6.9",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

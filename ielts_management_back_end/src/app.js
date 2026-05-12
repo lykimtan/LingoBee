@@ -9,6 +9,7 @@ const { apiLimiter } = require('./middleware/rateLimiter');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
 
@@ -82,6 +83,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // TODO: Import and use additional routes
 app.use('/api/courses', require('./routes/courseRoutes'));

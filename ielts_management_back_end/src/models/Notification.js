@@ -5,7 +5,12 @@ const notificationSchema = new mongoose.Schema(
     studentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Student',
-      required: true,
+      default: null,
+    },
+    recipientUser: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
     courseId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -21,13 +26,14 @@ const notificationSchema = new mongoose.Schema(
         'message_received',
         'payment_required',
         'course_started',
+        'course_invitation',
       ],
       required: true,
     },
     relatedEntity: {
       type: {
         type: String,
-        enum: ['lesson', 'exercise', 'mocktest', 'message', 'course'],
+        enum: ['lesson', 'exercise', 'mocktest', 'message', 'course', 'course_invitation'],
         default: null,
       },
       id: {
@@ -61,6 +67,13 @@ const notificationSchema = new mongoose.Schema(
 
 // Indexes
 notificationSchema.index({ studentId: 1, isRead: 1 });
+notificationSchema.index({ recipientUser: 1, isRead: 1 });
 notificationSchema.index({ studentId: 1, courseId: 1, createdAt: -1 });
+
+notificationSchema.pre('validate', function () {
+  if (!this.studentId && !this.recipientUser) {
+    this.invalidate('recipientUser', 'Recipient is required');
+  }
+});
 
 module.exports = mongoose.model('Notification', notificationSchema);
