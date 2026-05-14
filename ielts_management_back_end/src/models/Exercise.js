@@ -57,4 +57,21 @@ const exerciseSchema = new mongoose.Schema(
 exerciseSchema.index({ videoId: 1 });
 exerciseSchema.index({ courseId: 1 });
 
+exerciseSchema.pre('save', async function (next) {
+  try {
+    if (!this.videoId) return next();
+
+    const Video = mongoose.model('Video');
+    const video = await Video.findById(this.videoId);
+
+    if (!video || video.courseId.toString() !== this.courseId.toString()) {
+      return next(new Error('Video does not belong to this course'));
+    }
+
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+});
+
 module.exports = mongoose.model('Exercise', exerciseSchema);

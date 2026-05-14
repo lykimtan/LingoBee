@@ -1,0 +1,207 @@
+const { Course, Video } = require('../models');
+const logger = require('../utils/logger');
+const { deleteCloudinaryAsset } = require('./uploadController');
+
+const canAccessCourse = async (courseId, user) => {
+  const course = await Course.findById(courseId).select('teacher');
+  if (!course) {
+    return null;
+  }
+
+  if (user.role === 'admin') {
+    return course;
+  }
+
+  if (course.teacher?.toString() !== user.id) {
+    return null;
+  }
+
+  return course;
+};
+
+const getCourseVideos = async (req, res, next) => {
+  try {
+    const { courseId } = req.params;
+    const course = await canAccessCourse(courseId, req.user);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found',
+      });
+    }
+
+    const videos = await Video.find({ courseId }).sort({ order: 1 });
+
+    return res.status(200).json({
+      success: true,
+      data: videos,
+    });
+  } catch (error) {
+    logger.error(`Error in getCourseVideos: ${error.message}`);
+    return next(error);
+  }
+};
+
+const createCourseVideo = async (req, res, next) => {
+  try {
+    const { courseId } = req.params;
+    const course = await canAccessCourse(courseId, req.user);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found',
+      });
+    }
+
+    const {
+      title,
+      description = '',
+      duration,
+      videoUrl,
+      order,
+      skills,
+      isPublished = false,
+      isMandatory = true,
+    } = req.body || {};
+
+    if (!title || !videoUrl || typeof duration !== 'number') {
+      return res.status(400).json({
+        success: false,
+        message: 'Title, videoUrl, and duration are required',
+      });
+    }
+
+    let nextOrder = order;
+    if (!nextOrder) {
+      const lastVideo = await Video.findOne({ courseId }).sort({ order: -1 }).select('order');
+      nextOrder = lastVideo?.order ? lastVideo.order + 1 : 1;
+    }
+
+    const video = new Video({
+      courseId,
+      title,
+      description,
+      duration,
+      videoUrl,
+      order: nextOrder,
+      skills,
+      isPublished,
+      isMandatory,
+    });
+
+    await video.save();
+    await Course.findByIdAndUpdate(courseId, { $inc: { totalVideos: 1 } });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Video created successfully',
+      data: video,
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'Video order already exists for this course',
+      });
+    }
+
+    logger.error(`Error in createCourseVideo: ${error.message}`);
+    return next(error);
+  }
+};
+
+const updateVideo = async (req, res, next) => {
+  try {
+    const { videoId } = req.params;
+    const video = await Video.findById(videoId);
+
+    if (!video) {
+      return res.status(404).json({
+        success: false,
+        message: 'Video not found',
+      });
+    }
+
+    const course = await canAccessCourse(video.courseId, req.user);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found',
+      });
+    }
+
+    const { title, description, duration, videoUrl, order, skills, isPublished, isMandatory } =
+      req.body || {};
+
+    if (typeof title === 'string') video.title = title;
+    if (typeof description === 'string') video.description = description;
+    if (typeof duration === 'number') video.duration = duration;
+    if (typeof videoUrl === 'string') video.videoUrl = videoUrl;
+    if (typeof order === 'number') video.order = order;
+    if (Array.isArray(skills)) video.skills = skills;
+    if (typeof isPublished === 'boolean') video.isPublished = isPublished;
+    if (typeof isMandatory === 'boolean') video.isMandatory = isMandatory;
+
+    await video.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Video updated successfully',
+      data: video,
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'Video order already exists for this course',
+      });
+    }
+
+    logger.error(`Error in updateVideo: ${error.message}`);
+    return next(error);
+  }
+};
+
+const deleteVideo = async (req, res, next) => {
+  try {
+    const { videoId } = req.params;
+    const video = await Video.findById(videoId);
+
+    if (!video) {
+      return res.status(404).json({
+        success: false,
+        message: 'Video not found',
+      });
+    }
+
+    const course = await canAccessCourse(video.courseId, req.user);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found',
+      });
+    }
+
+    const videoUrl = video.videoUrl;
+    await video.deleteOne();
+    await Course.findByIdAndUpdate(video.courseId, { $inc: { totalVideos: -1 } });
+    await deleteCloudinaryAsset(videoUrl, 'video');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Video deleted successfully',
+    });
+  } catch (error) {
+    logger.error(`Error in deleteVideo: ${error.message}`);
+    return next(error);
+  }
+};
+
+module.exports = {
+  getCourseVideos,
+  createCourseVideo,
+  updateVideo,
+  deleteVideo,
+};

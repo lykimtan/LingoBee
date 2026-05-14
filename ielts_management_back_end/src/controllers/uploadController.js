@@ -23,7 +23,7 @@ const extractPublicIdFromUrl = (url) => {
   return null;
 };
 
-const deleteCloudinaryAsset = async (url) => {
+const deleteCloudinaryAsset = async (url, resourceType = 'image') => {
   if (!url) {
     return;
   }
@@ -34,7 +34,7 @@ const deleteCloudinaryAsset = async (url) => {
   }
 
   try {
-    await cloudinary.api.delete_resources([publicId]);
+    await cloudinary.api.delete_resources([publicId], { resource_type: resourceType });
     logger.info(`Deleted Cloudinary asset: ${publicId}`);
   } catch (error) {
     logger.warn(`Failed to delete Cloudinary asset ${publicId}: ${error.message}`);
@@ -85,6 +85,7 @@ const getUploadSignature = async (req, res) => {
         timestamp,
         cloudName: process.env.CLOUDINARY_CLOUD_NAME,
         apiKey: process.env.CLOUDINARY_API_KEY,
+        uploadPreset: process.env.CLOUDINARY_UPLOAD_PRESET || null,
         folder: targetFolder,
         resourceType,
       },

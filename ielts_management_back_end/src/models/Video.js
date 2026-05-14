@@ -55,7 +55,6 @@ const videoSchema = new mongoose.Schema(
 );
 
 // Indexes
-videoSchema.index({ courseId: 1, order: 1 });
-videoSchema.index({ order: 1 });
+videoSchema.index({ courseId: 1, order: 1 }, { unique: true });
 
 module.exports = mongoose.model('Video', videoSchema);
