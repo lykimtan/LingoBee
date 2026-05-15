@@ -31,7 +31,7 @@ const getCourseVideos = async (req, res, next) => {
       });
     }
 
-    const videos = await Video.find({ courseId }).sort({ order: 1 });
+    const videos = await Video.find({ courseId }).sort({ order: 1 }).populate('exercises');
 
     return res.status(200).json({
       success: true,
@@ -61,6 +61,7 @@ const createCourseVideo = async (req, res, next) => {
       duration,
       videoUrl,
       order,
+      thumbnailUrl = '',
       skills,
       isPublished = false,
       isMandatory = true,
@@ -86,6 +87,7 @@ const createCourseVideo = async (req, res, next) => {
       duration,
       videoUrl,
       order: nextOrder,
+      thumbnailUrl,
       skills,
       isPublished,
       isMandatory,
@@ -132,13 +134,23 @@ const updateVideo = async (req, res, next) => {
       });
     }
 
-    const { title, description, duration, videoUrl, order, skills, isPublished, isMandatory } =
-      req.body || {};
+    const {
+      title,
+      description,
+      duration,
+      videoUrl,
+      thumbnailUrl,
+      order,
+      skills,
+      isPublished,
+      isMandatory,
+    } = req.body || {};
 
     if (typeof title === 'string') video.title = title;
     if (typeof description === 'string') video.description = description;
     if (typeof duration === 'number') video.duration = duration;
     if (typeof videoUrl === 'string') video.videoUrl = videoUrl;
+    if (typeof thumbnailUrl === 'string') video.thumbnailUrl = thumbnailUrl;
     if (typeof order === 'number') video.order = order;
     if (Array.isArray(skills)) video.skills = skills;
     if (typeof isPublished === 'boolean') video.isPublished = isPublished;
@@ -185,9 +197,13 @@ const deleteVideo = async (req, res, next) => {
     }
 
     const videoUrl = video.videoUrl;
+    const thumbnailUrl = video.thumbnailUrl;
     await video.deleteOne();
     await Course.findByIdAndUpdate(video.courseId, { $inc: { totalVideos: -1 } });
     await deleteCloudinaryAsset(videoUrl, 'video');
+    if (thumbnailUrl) {
+      await deleteCloudinaryAsset(thumbnailUrl, 'image');
+    }
 
     return res.status(200).json({
       success: true,

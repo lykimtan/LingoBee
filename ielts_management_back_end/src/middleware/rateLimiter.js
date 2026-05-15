@@ -31,15 +31,15 @@ const loginLimiter = rateLimit({
     process.env.NODE_ENV !== 'production' || (process.env.REDIS_ENABLED === 'false' && !getRedis()),
 });
 
-// General API rate limiter - 100 requests per 15 minutes
+// General API rate limiter - 1000 requests per 15 minutes
 const apiLimiter = rateLimit({
   store: createStore(),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: 1000,
   message: 'Too many requests from this IP, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => process.env.REDIS_ENABLED === 'false' && !getRedis(),
+  skip: (req) => process.env.REDIS_ENABLED === 'false' && !getRedis() || process.env.NODE_ENV !== 'production',
 });
 
 // Strict rate limiter for payment - 10 requests per 10 minutes

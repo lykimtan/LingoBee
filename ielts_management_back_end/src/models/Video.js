@@ -25,6 +25,10 @@ const videoSchema = new mongoose.Schema(
       type: String,
       required: true, // Cloud URL
     },
+    thumbnailUrl: {
+      type: String,
+      default: '',
+    },
     order: {
       type: Number,
       required: true, // Must follow strict order
@@ -36,12 +40,6 @@ const videoSchema = new mongoose.Schema(
         enum: ['reading', 'writing', 'listening', 'speaking'],
       },
     ],
-    relatedExercises: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Exercise',
-      },
-    ],
     isPublished: {
       type: Boolean,
       default: false,
@@ -51,10 +49,21 @@ const videoSchema = new mongoose.Schema(
       default: true,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
 
 // Indexes
 videoSchema.index({ courseId: 1, order: 1 }, { unique: true });
+
+videoSchema.virtual('exercises', {
+  ref: 'Exercise',
+  localField: '_id',
+  foreignField: 'videoId',
+  justOne: false,
+});
 
 module.exports = mongoose.model('Video', videoSchema);

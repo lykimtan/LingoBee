@@ -1,6 +1,7 @@
 const { Course, CourseInvitation, Notification, User } = require('../models');
 const { emitNotification } = require('../socket');
 const logger = require('../utils/logger');
+const { deleteCloudinaryAsset } = require('./uploadController');
 
 /**
  * @desc    Create a new course
@@ -165,7 +166,7 @@ const getMyTeachingCourses = async (req, res, next) => {
     }
 
     const courses = await Course.find(query)
-      .select('title slug category level status totalStudents updatedAt')
+      .select('title slug category level status totalStudents updatedAt publicInfo')
       .sort({ updatedAt: -1 });
 
     res.status(200).json({
@@ -286,10 +287,20 @@ const updateCourse = async (req, res, next) => {
       updatePayload.isPublished = updatePayload.status === 'published';
     }
 
+    const existingThumbnail = course.publicInfo?.thumbnail || null;
+    const publicInfoPayload = req.body?.publicInfo;
+    const hasThumbnailUpdate =
+      publicInfoPayload && Object.prototype.hasOwnProperty.call(publicInfoPayload, 'thumbnail');
+    const incomingThumbnail = hasThumbnailUpdate ? publicInfoPayload.thumbnail : undefined;
+
     course = await Course.findByIdAndUpdate(req.params.id, updatePayload, {
       new: true,
       runValidators: true,
     }).populate('teacher', 'firstName lastName email');
+
+    if (hasThumbnailUpdate && existingThumbnail && existingThumbnail !== incomingThumbnail) {
+      await deleteCloudinaryAsset(existingThumbnail, 'image');
+    }
 
     logger.info(`Course updated by ${req.user.id}: ${course._id}`);
 
