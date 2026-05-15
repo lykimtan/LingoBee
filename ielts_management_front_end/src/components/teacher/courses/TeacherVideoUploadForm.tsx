@@ -1,11 +1,19 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { apiClient } from "@/utils/api";
 import { uploadService } from "@/services/uploadService";
 import Loader from "@/components/teacher/Loader";
-import { CloudUpload, Clapperboard, ArrowUpFromLine, ImageIcon } from "lucide-react";
+import { CloudUpload, ArrowUpFromLine } from "lucide-react";
+import { toast } from "react-toastify";
 import { CourseVideo } from "./TeacherVideoList";
+
+import Uppy from '@uppy/core';
+import Dashboard from '@uppy/react/dashboard';
+import vi_VN from '@uppy/locales/lib/vi_VN';
+
+import '@uppy/core/css/style.css';
+import '@uppy/dashboard/css/style.css';
 
 interface TeacherVideoUploadFormProps {
   courseId: string;
@@ -17,19 +25,229 @@ export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: Te
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [isPublished, setIsPublished] = useState(false);
   const [isMandatory, setIsMandatory] = useState(true);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+
+  const [uppy] = useState(() => {
+    const u = new Uppy({
+      locale: vi_VN,
+      restrictions: {
+        maxNumberOfFiles: 1,
+        allowedFileTypes: ['video/*'],
+        maxFileSize: 1000 * 1024 * 1024, // 500MB
+      },
+      autoProceed: false,
+    });
+
+    u.addUploader(async (fileIDs) => {
+      for (const fileID of fileIDs) {
+        const file = u.getFile(fileID);
+
+        try {
+          // 1. Get Signature
+          const signatureResponse = await uploadService.requestSignature({
+            resourceType: "video",
+            folder: "videos",
+          });
+
+          if (signatureResponse.status === "error" || !signatureResponse.data) {
+            throw new Error(signatureResponse.message || "Không thể lấy chữ ký upload video.");
+          }
+
+          const sigData = signatureResponse.data;
+
+          // 2. Prepare FormData
+          const formData = new FormData();
+          formData.append('file', file.data as Blob);
+          formData.append('api_key', sigData.apiKey);
+          formData.append('timestamp', String(sigData.timestamp));
+          formData.append('signature', sigData.signature);
+          formData.append('folder', sigData.folder);
+          if (sigData.uploadPreset) {
+            formData.append('upload_preset', sigData.uploadPreset);
+          }
+
+
+          // 3. Upload with XMLHttpRequest for progress tracking
+          await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `https://api.cloudinary.com/v1_1/${sigData.cloudName}/video/upload`);
+
+            xhr.upload.onprogress = (event) => {
+              if (event.lengthComputable) {
+                const currentFile = u.getFile(fileID);
+                u.setFileState(fileID, {
+                  progress: {
+                    ...currentFile.progress,
+                    uploadStarted: currentFile.progress?.uploadStarted ?? Date.now(),
+                    bytesUploaded: event.loaded,
+                    bytesTotal: event.total,
+                    percentage: Math.round((event.loaded / event.total) * 100)
+                  }
+                });
+
+                u.emit('upload-progress', currentFile, {
+                  uploadStarted: currentFile.progress?.uploadStarted ?? Date.now(),
+                  bytesUploaded: event.loaded,
+                  bytesTotal: event.total,
+                });
+              }
+            };
+
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                const response = JSON.parse(xhr.responseText);
+                u.setFileState(fileID, {
+                  response: { status: xhr.status, body: response, uploadURL: response.secure_url }
+                });
+                u.emit('upload-success', file, { status: xhr.status, body: response, uploadURL: response.secure_url });
+                resolve(response);
+              } else {
+                let errorMsg = `Lỗi Cloudinary (${xhr.status})`;
+                try {
+                  const payload = JSON.parse(xhr.responseText);
+                  if (payload?.error?.message) errorMsg = payload.error.message;
+                } catch (e) { }
+                const err = new Error(errorMsg);
+                u.emit('upload-error', file, err);
+                reject(err);
+              }
+            };
+
+            xhr.onerror = () => {
+              const err = new Error('Network error trong quá trình upload video.');
+              u.emit('upload-error', file, err);
+              reject(err);
+            };
+
+            xhr.send(formData);
+          });
+
+        } catch (err) {
+          u.emit('upload-error', file, err instanceof Error ? err : new Error('Upload failed'));
+          throw err;
+        }
+      }
+    });
+
+    return u;
+  });
+
+  const [uppyThumbnail] = useState(() => {
+    const u = new Uppy({
+      id: 'uppyThumbnail',
+      locale: vi_VN,
+      restrictions: {
+        maxNumberOfFiles: 1,
+        allowedFileTypes: ['image/*'],
+        maxFileSize: 5 * 1024 * 1024, // 5MB
+      },
+      autoProceed: false,
+    });
+
+    // Custom Cloudinary Uploader for Thumbnail
+    u.addUploader(async (fileIDs) => {
+      for (const fileID of fileIDs) {
+        const file = u.getFile(fileID);
+
+        try {
+          // 1. Get Signature
+          const signatureResponse = await uploadService.requestSignature({
+            resourceType: "image",
+            folder: "thumbnails",
+          });
+
+          if (signatureResponse.status === "error" || !signatureResponse.data) {
+            throw new Error(signatureResponse.message || "Không thể lấy chữ ký upload thumbnail.");
+          }
+
+          const sigData = signatureResponse.data;
+
+          // 2. Prepare FormData
+          const formData = new FormData();
+          formData.append('file', file.data as Blob);
+          formData.append('api_key', sigData.apiKey);
+          formData.append('timestamp', String(sigData.timestamp));
+          formData.append('signature', sigData.signature);
+          formData.append('folder', sigData.folder);
+          if (sigData.uploadPreset) {
+            formData.append('upload_preset', sigData.uploadPreset);
+          }
+
+          // 3. Upload with XMLHttpRequest for progress tracking
+          await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `https://api.cloudinary.com/v1_1/${sigData.cloudName}/image/upload`);
+
+            xhr.upload.onprogress = (event) => {
+              if (event.lengthComputable) {
+                const currentFile = u.getFile(fileID);
+                u.setFileState(fileID, {
+                  progress: {
+                    ...currentFile.progress,
+                    uploadStarted: currentFile.progress?.uploadStarted ?? Date.now(),
+                    bytesUploaded: event.loaded,
+                    bytesTotal: event.total,
+                    percentage: Math.round((event.loaded / event.total) * 100)
+                  }
+                });
+
+                u.emit('upload-progress', currentFile, {
+                  uploadStarted: currentFile.progress?.uploadStarted ?? Date.now(),
+                  bytesUploaded: event.loaded,
+                  bytesTotal: event.total,
+                });
+              }
+            };
+
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                const response = JSON.parse(xhr.responseText);
+                u.setFileState(fileID, {
+                  response: { status: xhr.status, body: response, uploadURL: response.secure_url }
+                });
+                u.emit('upload-success', file, { status: xhr.status, body: response, uploadURL: response.secure_url });
+                resolve(response);
+              } else {
+                let errorMsg = `Lỗi Cloudinary (${xhr.status})`;
+                try {
+                  const payload = JSON.parse(xhr.responseText);
+                  if (payload?.error?.message) errorMsg = payload.error.message;
+                } catch { }
+                const err = new Error(errorMsg);
+                u.emit('upload-error', file, err);
+                reject(err);
+              }
+            };
+
+            xhr.onerror = () => {
+              const err = new Error('Network error trong quá trình upload thumbnail.');
+              u.emit('upload-error', file, err);
+              reject(err);
+            };
+
+            xhr.send(formData);
+          });
+
+        } catch (err) {
+          u.emit('upload-error', file, err instanceof Error ? err : new Error('Upload thumbnail failed'));
+          throw err;
+        }
+      }
+    });
+
+    return u;
+  });
+
 
   const handleUpload = async () => {
     if (!title.trim()) {
       setError("Vui lòng nhập tiêu đề video.");
       return;
     }
-    if (!file) {
+
+    const files = uppy.getFiles();
+    if (files.length === 0) {
       setError("Vui lòng chọn video để upload.");
       return;
     }
@@ -38,40 +256,60 @@ export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: Te
     setError(null);
 
     try {
-      const signatureResponse = await uploadService.requestSignature({
-        resourceType: "video",
-        folder: "videos",
-      });
+      // 1. Start Uppy Upload
+      const result = await uppy.upload();
 
-      if (signatureResponse.status === "error" || !signatureResponse.data) {
-        throw new Error(signatureResponse.message || "Không thể lấy chữ ký upload.");
+      if (!result) {
+        throw new Error("Quá trình upload đã bị hủy hoặc không thể bắt đầu.");
       }
 
-      const uploaded = await uploadService.uploadToCloudinary(file, signatureResponse.data);
+      if (result.failed && result.failed.length > 0) {
+        const errorMsg = result.failed[0].error || "Upload video thất bại.";
+        throw new Error(String(errorMsg));
+      }
 
+      if (!result.successful || result.successful.length === 0) {
+        throw new Error("Không có video nào được upload thành công.");
+      }
+
+      const uploadedVideo = result.successful[0];
+      const responseBody = uploadedVideo.response?.body as any;
+      const secure_url = responseBody?.secure_url;
+      const duration = responseBody?.duration || 0;
+
+      if (!secure_url) {
+        throw new Error("Không lấy được đường dẫn video từ Cloudinary.");
+      }
+
+      // 4. Upload Thumbnail via Uppy
       let thumbnailUrl = "";
-      if (thumbnailFile) {
-        const thumbnailSignature = await uploadService.requestSignature({
-          resourceType: "image",
-          folder: "thumbnails",
-        });
+      const thumbFiles = uppyThumbnail.getFiles();
+      if (thumbFiles.length > 0) {
+        const thumbResult = await uppyThumbnail.upload();
 
-        if (thumbnailSignature.status === "error" || !thumbnailSignature.data) {
-          throw new Error(thumbnailSignature.message || "Khong the lay chu ky upload thumbnail.");
+        if (!thumbResult) {
+          throw new Error("Quá trình upload thumbnail đã bị hủy.");
         }
 
-        const thumbnailUpload = await uploadService.uploadToCloudinary(
-          thumbnailFile,
-          thumbnailSignature.data
-        );
-        thumbnailUrl = thumbnailUpload.secure_url || "";
+        if (thumbResult.failed && thumbResult.failed.length > 0) {
+          const errorMsg = thumbResult.failed[0].error || "Upload thumbnail thất bại.";
+          throw new Error(String(errorMsg));
+        }
+
+        if (thumbResult.successful && thumbResult.successful.length > 0) {
+          const uploadedThumb = thumbResult.successful[0];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const responseBody = uploadedThumb.response?.body as any;
+          thumbnailUrl = responseBody?.secure_url || "";
+        }
       }
 
+      // 5. Save to Database
       const payload = {
         title: title.trim(),
         description: description.trim(),
-        duration: Math.round(uploaded.duration ?? 0),
-        videoUrl: uploaded.secure_url,
+        duration: Math.round(duration),
+        videoUrl: secure_url,
         thumbnailUrl,
         isPublished,
         isMandatory,
@@ -84,22 +322,19 @@ export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: Te
       }
 
       onUploadSuccess(createResponse.data);
+      toast.success("Tải lên video thành công!");
 
+      // Reset form
       setTitle("");
       setDescription("");
-      setFile(null);
-      setThumbnailFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-      if (thumbnailInputRef.current) {
-        thumbnailInputRef.current.value = "";
-      }
+      uppy.cancelAll();
+      uppyThumbnail.cancelAll();
       setIsPublished(false);
       setIsMandatory(true);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Upload thất bại.";
       setError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -107,10 +342,9 @@ export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: Te
 
   return (
     <section className="relative rounded-3xl border border-gray-100 bg-white p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+      {/* Khóa UI khi đang submit nhưng không che khuất Uppy Dashboard */}
       {isSubmitting && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-3xl bg-white/50 backdrop-blur-md">
-          <Loader />
-        </div>
+        <div className="absolute inset-0 z-10 rounded-3xl bg-white/20 backdrop-blur-[1px] pointer-events-none"></div>
       )}
 
       <div className="flex items-center gap-3">
@@ -147,65 +381,32 @@ export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: Te
         </div>
 
         <div>
-          <label className="text-xs font-bold uppercase tracking-widest text-gray-500">Video File</label>
-          <div
-            className={`relative mt-2 flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed px-6 py-12 transition-colors hover:bg-gray-50 ${file ? "border-[#1f6f5e]/30 bg-[#1f6f5e]/5" : "border-gray-300 bg-gray-50/50"
-              }`}
-          >
-            <Clapperboard className="mb-4 h-8 w-8 text-gray-700" />
-            <p className="text-center text-sm font-medium text-gray-900">
-              <span className="font-bold">Kéo thả</span> hoặc click để chọn file
-            </p>
-            <p className="mt-1 text-center text-xs font-medium text-gray-500">
-              MP4, MOV hoặc MKV (Tối đa 500MB)
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="video/*"
-              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-              className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+          <label className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 block">Video File</label>
+          <div className="mt-2 overflow-hidden rounded-3xl border border-gray-200 bg-gray-50">
+            {/* Uppy Dashboard UI */}
+            <Dashboard
+              uppy={uppy}
+              hideUploadButton={true}
+              proudlyDisplayPoweredByUppy={false}
+              height={300}
+              width="100%"
+              theme="light"
             />
-            {file && (
-              <div className="absolute inset-x-0 bottom-4 text-center">
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#1f6f5e] shadow-sm">
-                  {file.name}
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
         <div>
-          <label className="text-xs font-bold uppercase tracking-widest text-gray-500">Thumbnail (Khong bat buoc)</label>
-          <div
-            className={`relative mt-2 flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed px-6 py-8 transition-colors hover:bg-gray-50 ${
-              thumbnailFile
-                ? "border-[#1f6f5e]/30 bg-[#1f6f5e]/5"
-                : "border-gray-300 bg-gray-50/50"
-            }`}
-          >
-            <ImageIcon className="mb-3 h-7 w-7 text-gray-700" />
-            <p className="text-center text-sm font-medium text-gray-900">
-              <span className="font-bold">Chon anh</span> de lam thumbnail
-            </p>
-            <p className="mt-1 text-center text-xs font-medium text-gray-500">
-              JPG, PNG, WEBP (Toi da 5MB)
-            </p>
-            <input
-              ref={thumbnailInputRef}
-              type="file"
-              accept="image/*"
-              onChange={(event) => setThumbnailFile(event.target.files?.[0] ?? null)}
-              className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+          <label className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 block">Thumbnail (Không bắt buộc)</label>
+          <div className="mt-2 overflow-hidden rounded-3xl border border-gray-200 bg-gray-50">
+            {/* Uppy Dashboard UI cho Thumbnail */}
+            <Dashboard
+              uppy={uppyThumbnail}
+              hideUploadButton={true}
+              proudlyDisplayPoweredByUppy={false}
+              height={200}
+              width="100%"
+              theme="light"
             />
-            {thumbnailFile && (
-              <div className="absolute inset-x-0 bottom-4 text-center">
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#1f6f5e] shadow-sm">
-                  {thumbnailFile.name}
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -236,8 +437,8 @@ export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: Te
           disabled={isSubmitting}
           className="mt-4 flex w-full items-center justify-center gap-3 rounded-2xl bg-black px-6 py-4 text-base font-bold text-white transition-colors hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <ArrowUpFromLine className="h-5 w-5" />
-          {isSubmitting ? "Đang upload..." : "Upload video"}
+          {isSubmitting ? <Loader /> : <ArrowUpFromLine className="h-5 w-5" />}
+          {isSubmitting ? "Đang xử lý..." : "Upload video"}
         </button>
       </div>
     </section>
