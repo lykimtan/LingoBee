@@ -2,7 +2,7 @@ const cloudinary = require('../config/cloudinary');
 const logger = require('../utils/logger');
 
 const allowedResourceTypes = new Set(['image', 'video']);
-const allowedFolders = new Set(['avatars', 'videos', 'thumbnails']);
+const allowedFolders = new Set(['avatars', 'videos', 'thumbnails', 'audios']);
 
 const extractPublicIdFromUrl = (url) => {
   if (!url || typeof url !== 'string') {
@@ -10,6 +10,7 @@ const extractPublicIdFromUrl = (url) => {
   }
 
   try {
+    //eslint-disable-next-line
     const urlObj = new URL(url);
     const pathname = urlObj.pathname;
     const match = pathname.match(/\/upload\/(?:v\d+\/)?(.+)$/);
@@ -100,7 +101,26 @@ const getUploadSignature = async (req, res) => {
   }
 };
 
+const deleteUpload = async (req, res) => {
+  try {
+    const url = (req.query?.url || req.body?.url || '').toString();
+    const resourceType = (req.query?.resourceType || req.body?.resourceType || 'video').toString();
+
+    if (!url) {
+      return res.status(400).json({ success: false, message: 'Missing url to delete' });
+    }
+
+    await deleteCloudinaryAsset(url, resourceType);
+
+    return res.status(200).json({ success: true, message: 'Asset deletion triggered' });
+  } catch (error) {
+    logger.error(`Error deleting upload: ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Failed to delete asset' });
+  }
+};
+
 module.exports = {
   getUploadSignature,
   deleteCloudinaryAsset,
+  deleteUpload,
 };

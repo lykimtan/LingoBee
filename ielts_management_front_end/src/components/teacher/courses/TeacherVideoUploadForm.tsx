@@ -6,7 +6,7 @@ import { uploadService } from "@/services/uploadService";
 import Loader from "@/components/teacher/Loader";
 import { CloudUpload, ArrowUpFromLine } from "lucide-react";
 import { toast } from "react-toastify";
-import { CourseVideo } from "./TeacherVideoList";
+import { CourseVideo } from "@/types";
 
 import Uppy from '@uppy/core';
 import Dashboard from '@uppy/react/dashboard';
@@ -107,6 +107,7 @@ export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: Te
                 try {
                   const payload = JSON.parse(xhr.responseText);
                   if (payload?.error?.message) errorMsg = payload.error.message;
+                  //eslint-disable-next-line
                 } catch (e) { }
                 const err = new Error(errorMsg);
                 u.emit('upload-error', file, err);
@@ -273,6 +274,7 @@ export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: Te
       }
 
       const uploadedVideo = result.successful[0];
+      // eslint-disable-next-line 
       const responseBody = uploadedVideo.response?.body as any;
       const secure_url = responseBody?.secure_url;
       const duration = responseBody?.duration || 0;

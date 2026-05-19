@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import "plyr-react/plyr.css";
-import { CourseVideo } from "@/components/teacher/courses/TeacherVideoList";
+import { CourseVideo } from "@/types";
 
 const Plyr = dynamic(async () => (await import("plyr-react")).Plyr, {
   ssr: false,

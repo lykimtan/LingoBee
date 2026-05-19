@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AlertTriangle, X } from "lucide-react";
 
 interface ConfirmModalProps {
@@ -29,6 +30,7 @@ export default function ConfirmModal({
 
   useEffect(() => {
     if (isOpen) {
+      //eslint-disable-next-line
       setIsRendered(true);
       // Small delay to allow CSS transition to take effect
       const timer = setTimeout(() => setIsVisible(true), 10);
@@ -40,9 +42,22 @@ export default function ConfirmModal({
     }
   }, [isOpen]);
 
-  if (!isRendered) return null;
+  useEffect(() => {
+    if (!isRendered) {
+      return;
+    }
 
-  return (
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isRendered]);
+
+  if (!isRendered || typeof document === "undefined") return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
       {/* Backdrop */}
       <div
@@ -112,6 +127,7 @@ export default function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -17,11 +17,11 @@ export default function VideoExerciseHeader({
         href={`/teacher/courses/${slug}/videos`}
         className="inline-flex w-fit items-center text-[11px] font-bold uppercase tracking-[0.15em] text-gray-500 transition-colors hover:text-gray-900"
       >
-        Quay lai danh sach video
+        Quay lại danh sách video
       </Link>
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl">
-          Tao bai tap cho video
+          Tạo bài tập cho video
         </h1>
         <p className="mt-2 text-sm font-medium text-gray-500">
           {courseTitle ? `Khoa hoc: ${courseTitle}. ` : ""}

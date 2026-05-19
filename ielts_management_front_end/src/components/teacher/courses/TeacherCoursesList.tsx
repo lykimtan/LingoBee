@@ -1,18 +1,5 @@
 import CardCourse from "./CardCourse";
-
-export type TeacherCourseItem = {
-  _id: string;
-  slug: string;
-  title: string;
-  category: string;
-  level: string;
-  status: string;
-  totalStudents?: number;
-  updatedAt?: string;
-  publicInfo?: {
-    thumbnail?: string | null;
-  };
-};
+import { TeacherCourseItem } from "@/types";
 
 interface TeacherCoursesListProps {
   courses: TeacherCourseItem[];

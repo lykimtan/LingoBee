@@ -88,7 +88,7 @@ app.use('/api/notifications', notificationRoutes);
 // TODO: Import and use additional routes
 app.use('/api/courses', require('./routes/courseRoutes'));
 app.use('/api/videos', require('./routes/videoRoutes'));
-// app.use('/api/exercises', require('./routes/exerciseRoutes'));
+app.use('/api/exercises', require('./routes/exerciseRoutes'));
 // app.use('/api/mockTests', require('./routes/mockTestRoutes'));
 // app.use('/api/payments', require('./routes/paymentRoutes'));
 // app.use('/api/messages', require('./routes/messageRoutes'));

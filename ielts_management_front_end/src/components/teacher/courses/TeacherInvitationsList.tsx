@@ -1,25 +1,9 @@
 "use client";
 
 import clsx from "clsx";
+import { TeacherInvitation } from "@/types";
 
-export type TeacherInvitation = {
-  _id: string;
-  status: string;
-  message?: string;
-  course?: {
-    _id: string;
-    title: string;
-    category?: string;
-    level?: string;
-    status?: string;
-  };
-  invitedBy?: {
-    _id: string;
-    name?: string;
-    email?: string;
-  };
-  createdAt?: string;
-};
+
 
 interface TeacherInvitationsListProps {
   invitations: TeacherInvitation[];

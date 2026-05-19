@@ -3,7 +3,7 @@ import { ApiResponse, CloudinarySignatureResponse, CloudinaryUploadResult, Uploa
 
 export interface SignatureRequestPayload {
   resourceType: UploadResourceType;
-  folder?: 'avatars' | 'videos' | 'thumbnails';
+  folder?: 'avatars' | 'videos' | 'thumbnails' | 'audios';
 }
 
 class UploadService {
@@ -49,6 +49,12 @@ class UploadService {
     }
 
     return (await response.json()) as CloudinaryUploadResult;
+  }
+
+  async deleteUpload(url: string, resourceType: 'image' | 'video' = 'video') {
+    if (!url) throw new Error('Missing url');
+    const encoded = encodeURIComponent(url);
+    return apiClient.delete(`/api/uploads?url=${encoded}&resourceType=${resourceType}`);
   }
 }
 

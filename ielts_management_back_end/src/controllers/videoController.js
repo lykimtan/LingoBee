@@ -1,4 +1,4 @@
-const { Course, Video } = require('../models');
+const { Course, Exercise, Video } = require('../models');
 const logger = require('../utils/logger');
 const { deleteCloudinaryAsset } = require('./uploadController');
 
@@ -193,6 +193,14 @@ const deleteVideo = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: 'Course not found',
+      });
+    }
+
+    const exerciseCount = await Exercise.countDocuments({ videoId: video._id });
+    if (exerciseCount > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Video này đã có bài tập nên không thể xóa. Hãy xóa bài tập trước rồi thử lại.',
       });
     }
 

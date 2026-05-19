@@ -6,12 +6,14 @@ import { useEffect, useState } from "react";
 import { apiClient } from "@/utils/api";
 import ConfirmModal from "@/components/teacher/ConfirmModal";
 import dynamic from "next/dynamic";
+import {videoService} from "@/services/videoService";
 const VideoPlayerModal = dynamic(() => import("@/components/teacher/VideoPlayerModal"), {
   ssr: false,
 });
 import { ArrowLeft } from "lucide-react";
 import TeacherVideoUploadForm from "@/components/teacher/courses/TeacherVideoUploadForm";
-import TeacherVideoList, { CourseVideo } from "@/components/teacher/courses/TeacherVideoList";
+import TeacherVideoList from "@/components/teacher/courses/TeacherVideoList";
+import { CourseVideo} from "@/types"
 
 type CourseSummary = {
   _id: string;
@@ -54,27 +56,28 @@ export default function TeacherCourseVideosPage() {
     void loadCourse();
   }, [slug]);
 
-  useEffect(() => {
-    const loadVideos = async () => {
+   useEffect(() => {
+      const loadVideos = async () => {
       if (!course?._id) return;
-      const response = await apiClient.get<CourseVideo[]>(
-        `/api/videos/course/${course._id}`
-      );
+    
+      // UI không cần biết endpoint là gì, chỉ cần gọi hàm
+      const response = await videoService.getVideosByCourse(course._id);
+    
       if (response.status === "success" && response.data) {
         setVideos(response.data);
-      } else {
+    } else {
         setError(response.message || "Không thể tải danh sách video.");
       }
-    };
+  };
 
-    void loadVideos();
-  }, [course?._id]);
+  void loadVideos();
+}, [course?._id]);
 
   const confirmDelete = async () => {
     if (!course?._id || !videoToDelete) return;
 
     setIsDeleting(true);
-    const response = await apiClient.delete(`/api/videos/${videoToDelete}`);
+    const response = await videoService.deleteVideo(videoToDelete);
     setIsDeleting(false);
 
     if (response.status === "success") {

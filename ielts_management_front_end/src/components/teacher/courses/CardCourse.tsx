@@ -1,6 +1,6 @@
 import Link from "next/link";
 import clsx from "clsx";
-import type { TeacherCourseItem } from "./TeacherCoursesList";
+import type { TeacherCourseItem } from "@/types";
 
 interface CardCourseProps {
   course: TeacherCourseItem;

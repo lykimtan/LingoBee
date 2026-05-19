@@ -2,6 +2,7 @@
  * Global Types and Interfaces
  */
 
+
 // User related types
 export interface User {
   id: string;
@@ -68,3 +69,65 @@ export interface CloudinaryUploadResult {
   width?: number;
   height?: number;
 }
+
+export type CourseVideo = {
+  _id: string;
+  title: string;
+  description?: string;
+  duration: number;
+  videoUrl: string;
+  thumbnailUrl?: string;
+  order: number;
+  skills?: string[];
+  isPublished?: boolean;
+  isMandatory?: boolean;
+  exercises?: Exercise[];
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type Exercise = {
+  _id: string;
+  videoId?: string;
+  courseId: string;
+  title: string;
+  description?: string;
+  //eslint-disable-next-line
+  questions?: any[];
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type TeacherCourseItem = {
+  _id: string;
+  slug: string;
+  title: string;
+  category: string;
+  level: string;
+  status: string;
+  totalStudents?: number;
+  updatedAt?: string;
+  publicInfo?: {
+    thumbnail?: string | null;
+  };
+};
+
+
+export type TeacherInvitation = {
+  _id: string;
+  status: string;
+  message?: string;
+  course?: {
+    _id: string;
+    title: string;
+    category?: string;
+    level?: string;
+    status?: string;
+  };
+  invitedBy?: {
+    _id: string;
+    name?: string;
+    email?: string;
+  };
+  createdAt?: string;
+};

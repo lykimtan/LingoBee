@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
-import { apiClient } from "@/utils/api";
+import { courseService } from "@/services/courseService";
 import { toast } from "react-toastify";
 import { uploadService } from "@/services/uploadService";
 import {
@@ -122,7 +122,9 @@ export default function TeacherCourseDetailPage() {
     const loadCourse = async () => {
       setIsLoading(true);
       setError(null);
-      const response = await apiClient.get<CourseDetail>(`/api/courses/my/${slug}`);
+      const response = await courseService.getMyCourseBySlug<CourseDetail>(
+        slug as string
+      );
       if (response.status === "success" && response.data) {
         setCourse(response.data);
       } else {
@@ -135,13 +137,11 @@ export default function TeacherCourseDetailPage() {
   }, [slug]);
 
   useEffect(() => {
-    //eslint-disable-next-line
     setDescriptionDraft(course?.description || "");
     setCourseDetailDraft(course?.courseDetail || "");
   }, [course?.description, course?.courseDetail]);
 
   useEffect(() => {
-    //eslint-disable-next-line
     setThumbnailDraft(course?.publicInfo?.thumbnail || "");
     setShortDescriptionDraft(course?.publicInfo?.shortDescription || "");
     setTargetLevelDraft(course?.publicInfo?.targetLevel || "");
@@ -161,12 +161,10 @@ export default function TeacherCourseDetailPage() {
 
     setIsSavingOverview(true);
     setOverviewError(null);
-    const response = await apiClient.put<CourseDetail>(`/api/courses/${course._id}`,
-      {
-        description: nextDescription,
-        courseDetail: courseDetailDraft.trim() ? courseDetailDraft.trim() : null,
-      }
-    );
+    const response = await courseService.updateCourse<CourseDetail>(course._id, {
+      description: nextDescription,
+      courseDetail: courseDetailDraft.trim() ? courseDetailDraft.trim() : null,
+    });
 
     if (response.status === "success" && response.data) {
       setCourse(response.data);
@@ -184,16 +182,14 @@ export default function TeacherCourseDetailPage() {
 
     setIsSavingPublicInfo(true);
     setPublicInfoError(null);
-    const response = await apiClient.put<CourseDetail>(`/api/courses/${course._id}`,
-      {
-        publicInfo: {
-          ...course.publicInfo,
-          thumbnail: thumbnailDraft.trim() ? thumbnailDraft.trim() : null,
-          shortDescription: shortDescriptionDraft.trim(),
-          targetLevel: targetLevelDraft.trim(),
-        }
-      }
-    );
+    const response = await courseService.updateCourse<CourseDetail>(course._id, {
+      publicInfo: {
+        ...course.publicInfo,
+        thumbnail: thumbnailDraft.trim() ? thumbnailDraft.trim() : null,
+        shortDescription: shortDescriptionDraft.trim(),
+        targetLevel: targetLevelDraft.trim(),
+      },
+    });
 
     if (response.status === "success" && response.data) {
       setCourse(response.data);

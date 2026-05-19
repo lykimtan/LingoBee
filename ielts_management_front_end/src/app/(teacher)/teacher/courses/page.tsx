@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { apiClient } from "@/utils/api";
 import { TeacherCoursesHeader } from "@/components/teacher/courses/TeacherCoursesHeader";
 import {
 	TeacherCoursesSidebar,
@@ -9,12 +8,15 @@ import {
 } from "@/components/teacher/courses/TeacherCoursesSidebar";
 import {
 	TeacherCoursesList,
-	TeacherCourseItem,
 } from "@/components/teacher/courses/TeacherCoursesList";
 import {
 	TeacherInvitationsList,
-	TeacherInvitation,
 } from "@/components/teacher/courses/TeacherInvitationsList";
+
+import { invitationService } from "@/services/invatationService";
+import { courseService } from "@/services/courseService";
+
+import { TeacherInvitation, TeacherCourseItem } from "@/types";
 
 export default function TeacherCoursesPage() {
 	const [activeTab, setActiveTab] = useState<TeacherCoursesTab>("my-courses");
@@ -30,9 +32,7 @@ export default function TeacherCoursesPage() {
 	const loadCourses = useCallback(async () => {
 		setCoursesLoading(true);
 		setCoursesError(null);
-		const response = await apiClient.get<TeacherCourseItem[]>(
-			"/api/courses/my?status=accepted"
-		);
+		const response = await courseService.getMyCourses();
 		if (response.status === "success" && Array.isArray(response.data)) {
 			setCourses(response.data);
 		} else {
@@ -44,7 +44,7 @@ export default function TeacherCoursesPage() {
 	const loadInvitations = useCallback(async () => {
 		setInvitationsLoading(true);
 		setInvitationsError(null);
-		const response = await apiClient.get<TeacherInvitation[]>("/api/courses/invitations");
+		const response = await invitationService.getInvitations();
 		if (response.status === "success" && Array.isArray(response.data)) {
 			setInvitations(response.data);
 		} else {
@@ -62,7 +62,7 @@ export default function TeacherCoursesPage() {
 	const handleInvitationAction = useCallback(
 		async (id: string, action: "accept" | "reject") => {
 			setPendingIds((prev) => new Set(prev).add(id));
-			const response = await apiClient.post(`/api/courses/invitations/${id}/${action}`);
+			const response = await invitationService.respondToInvitation(id, action);
 			setPendingIds((prev) => {
 				const next = new Set(prev);
 				next.delete(id);

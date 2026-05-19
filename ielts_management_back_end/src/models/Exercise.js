@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const SKILLS = ['reading', 'writing', 'listening', 'speaking'];
+// Đã loại bỏ 'listening' ra khỏi dạng câu hỏi
 const QUESTION_TYPES = ['multipleChoice', 'fillBlank', 'essay', 'speaking'];
 
 // 1. Base Schema cho Câu hỏi
@@ -22,6 +23,24 @@ const questionBaseSchema = new mongoose.Schema(
       type: String,
       enum: QUESTION_TYPES,
       required: true,
+    },
+    // --- CÁC TRƯỜNG MỚI ĐƯỢC CHUYỂN LÊN BASE SCHEMA ---
+    audioUrl: {
+      type: String,
+      validate: [
+        function (value) {
+          // Bắt buộc phải có audio nếu kỹ năng là listening
+          if (this.skill === 'listening' && (!value || value.trim() === '')) {
+            return false;
+          }
+          return true;
+        },
+        'Câu hỏi kỹ năng Listening bắt buộc phải có link file audio',
+      ],
+    },
+    transcript: {
+      type: String,
+      default: '', // Lời thoại của audio, dùng để hiển thị khi học viên xem giải thích
     },
   },
   { discriminatorKey: 'questionType', _id: true } // Mongoose sẽ dùng trường questionType để phân biệt
@@ -76,19 +95,24 @@ questionArray.discriminator(
   'multipleChoice',
   new mongoose.Schema({
     options: {
-      type: [String],
+      type: [
+        {
+          id: { type: String, required: true },
+          text: { type: String, required: true },
+        },
+      ],
       required: true,
       validate: [(v) => v.length >= 2, 'Cần ít nhất 2 lựa chọn'],
     },
-    correctAnswer: {
+    correctOptionId: {
       type: String,
       required: true,
       validate: [
         function (value) {
           if (!Array.isArray(this.options)) return false;
-          return this.options.includes(value);
+          return this.options.some((opt) => opt.id === value);
         },
-        'Đáp án đúng phải nằm trong danh sách lựa chọn',
+        'ID đáp án đúng phải nằm trong danh sách các lựa chọn',
       ],
     },
   })
@@ -108,6 +132,11 @@ questionArray.discriminator(
           value.every((item) => typeof item === 'string' && item.trim().length > 0),
         'Cần ít nhất 1 đáp án và không được để trống',
       ],
+    },
+    // Chuyển isExactMatch vào đây vì dạng điền từ luôn cần xét xem có phân biệt hoa/thường hay không
+    isExactMatch: {
+      type: Boolean,
+      default: false,
     },
   })
 );
@@ -137,21 +166,17 @@ questionArray.discriminator(
   })
 );
 
-// Middleware kiểm tra
-exerciseSchema.pre('save', async function (next) {
-  try {
-    if (!this.videoId) return next();
+// Middleware kiểm tra (Đã tối ưu cho Mongoose hiện đại)
+exerciseSchema.pre('save', async function () {
+  // Bỏ try-catch vì Mongoose sẽ tự động bắt lỗi từ Promise rejection
+  if (!this.videoId) return;
 
-    const Video = mongoose.model('Video');
-    const video = await Video.findById(this.videoId);
+  const Video = mongoose.model('Video');
+  const video = await Video.findById(this.videoId);
 
-    if (!video || video.courseId.toString() !== this.courseId.toString()) {
-      return next(new Error('Video does not belong to this course'));
-    }
-
-    return next();
-  } catch (error) {
-    return next(error);
+  if (!video || video.courseId.toString() !== this.courseId.toString()) {
+    // Thay vì return next(new Error(...)), ta throw trực tiếp
+    throw new Error('Video does not belong to this course');
   }
 });
 

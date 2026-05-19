@@ -1,23 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { PlaySquare, Trash2, FilePlus } from "lucide-react";
+import { CourseVideo } from "@/types";
 
-export type CourseVideo = {
-  _id: string;
-  title: string;
-  description?: string;
-  duration: number;
-  videoUrl: string;
-  thumbnailUrl?: string;
-  order: number;
-  skills?: string[];
-  isPublished?: boolean;
-  isMandatory?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-};
+
 
 const formatDuration = (seconds: number) => {
   const m = Math.floor(seconds / 60);
@@ -49,7 +38,7 @@ export default function TeacherVideoList({ videos, onPlay, onDeleteRequest }: Te
   const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
 
   return (
-    <section className="flex flex-col rounded-3xl border border-gray-100 bg-white p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+    <section className="flex flex-col w-[500px] shrink-0 rounded-3xl border border-gray-100 bg-white p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <PlaySquare className="h-7 w-7 text-gray-900" />
@@ -77,10 +66,12 @@ export default function TeacherVideoList({ videos, onPlay, onDeleteRequest }: Te
                 onClick={() => onPlay(video)}
               >
                 {video.thumbnailUrl ? (
-                  <img
+                  <Image
                     src={video.thumbnailUrl}
                     alt={video.title}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover/thumb:scale-105"
+                    width={128}
+                    height={80}
                   />
                 ) : (
                   <video
