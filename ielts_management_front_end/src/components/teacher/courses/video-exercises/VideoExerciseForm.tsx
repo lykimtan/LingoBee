@@ -14,7 +14,9 @@ interface VideoExerciseFormProps {
   videoId?: string;
   isDisabled?: boolean;
   onSaved?: (exercise: ExerciseRecord) => void;
+  onCancel?: () => void;
   initialExercise?: ExerciseRecord | null;
+  questionMode?: "autoGraded" | "essayBased" | null;
 }
 
 type SkillValue = "reading" | "writing" | "listening" | "speaking";
@@ -710,7 +712,9 @@ export default function VideoExerciseForm({
   videoId,
   isDisabled = false,
   onSaved,
+  onCancel,
   initialExercise,
+  questionMode = null,
 }: VideoExerciseFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -721,6 +725,15 @@ export default function VideoExerciseForm({
   const [currentExerciseId, setCurrentExerciseId] = useState<string | null>(null);
   const [questionToDelete, setQuestionToDelete] = useState<QuestionItem | null>(null);
   const [isDeletingQuestion, setIsDeletingQuestion] = useState(false);
+
+  const visibleQuestionTypes = questionMode
+    ? QUESTION_TYPES.filter((type) => {
+        if (questionMode === "essayBased") {
+          return type.value === "essay" || type.value === "speaking";
+        }
+        return type.value === "multipleChoice" || type.value === "fillBlank";
+      })
+    : QUESTION_TYPES;
 
   useEffect(() => {
     if (!initialExercise) {
@@ -1206,7 +1219,7 @@ export default function VideoExerciseForm({
             Thêm câu hỏi mới
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-            {QUESTION_TYPES.map((type, index) => (
+            {visibleQuestionTypes.map((type, index) => (
               <button
                 key={`${type.label}-${index}`}
                 type="button"
@@ -1227,6 +1240,7 @@ export default function VideoExerciseForm({
         <div className="mt-6 flex items-center justify-end gap-3">
           <button
             type="button"
+            onClick={onCancel}
             className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600"
           >
             Hủy
