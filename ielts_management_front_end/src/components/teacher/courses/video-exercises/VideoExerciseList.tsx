@@ -33,11 +33,11 @@ export default function VideoExerciseList({
   
   // Hàm render tag đáp án
   const renderAnswers = (answers: string[]) => (
-    <div className="flex flex-wrap gap-2 mt-2">
+    <div className="mt-2 flex flex-wrap gap-2">
       {answers.map((answer, index) => (
         <span
           key={`${answer}-${index}`}
-          className="inline-flex items-center gap-1 rounded-md bg-[#1f6f5e]/10 px-2.5 py-1 text-xs font-semibold text-[#1f6f5e] border border-[#1f6f5e]/20"
+          className="inline-flex items-center gap-1 rounded-md border border-[#1f6f5e]/20 bg-[#1f6f5e]/10 px-2.5 py-1 text-xs font-semibold text-[#1f6f5e]"
         >
           <CheckCircle2 className="h-3 w-3" />
           {answer}
@@ -82,7 +82,7 @@ export default function VideoExerciseList({
         {/* Error State */}
         {!isLoading && error && (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-red-100 bg-red-50 py-8">
-            <AlertCircle className="h-8 w-8 text-red-500 mb-2" />
+            <AlertCircle className="mb-2 h-8 w-8 text-red-500" />
             <p className="text-sm font-medium text-red-600">{error}</p>
           </div>
         )}
@@ -90,7 +90,7 @@ export default function VideoExerciseList({
         {/* Empty State */}
         {!isLoading && !error && exercises.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 py-12">
-            <div className="rounded-full bg-white p-3 shadow-sm mb-3">
+            <div className="mb-3 rounded-full bg-white p-3 shadow-sm">
               <FolderOpen className="h-6 w-6 text-gray-400" />
             </div>
             <p className="text-sm font-medium text-gray-500">Video này chưa có bài tập nào.</p>
@@ -106,7 +106,7 @@ export default function VideoExerciseList({
                 className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md"
               >
                 {/* Exercise Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 bg-gray-50/50 px-5 py-4">
+                <div className="flex flex-col justify-between gap-4 border-b border-gray-100 bg-gray-50/50 px-5 py-4 sm:flex-row sm:items-center">
                   <div className="min-w-0">
                     <h4 className="truncate text-base font-bold text-gray-900">
                       {exercise.title}
@@ -117,7 +117,7 @@ export default function VideoExerciseList({
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 shadow-sm">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 shadow-sm">
                       <FileText className="h-3.5 w-3.5 text-gray-400" />
                       {(exercise.questions || []).length} câu hỏi
                     </span>
@@ -126,7 +126,7 @@ export default function VideoExerciseList({
                       <button
                         type="button"
                         onClick={() => onEdit(exercise)}
-                        className="inline-flex items-center justify-center rounded-full bg-white border border-gray-200 p-2 text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-900 hover:bg-gray-50"
+                        className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-white p-2 text-gray-500 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
                         title="Chỉnh sửa bài tập"
                       >
                         <Edit2 className="h-4 w-4" />
@@ -136,7 +136,7 @@ export default function VideoExerciseList({
                       <button
                         type="button"
                         onClick={() => onDelete(exercise)}
-                        className="inline-flex items-center justify-center rounded-full bg-white border border-red-100 p-2 text-red-500 transition-colors hover:border-red-200 hover:bg-red-50"
+                        className="inline-flex items-center justify-center rounded-full border border-red-100 bg-white p-2 text-red-500 transition-colors hover:border-red-200 hover:bg-red-50"
                         title="Xóa bài tập"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -161,7 +161,7 @@ export default function VideoExerciseList({
                             className="relative rounded-xl border border-gray-100 bg-white p-4 shadow-sm ring-1 ring-gray-900/5"
                           >
                             {/* Question Header */}
-                            <div className="flex items-center justify-between mb-3">
+                            <div className="mb-3 flex items-center justify-between">
                               <div className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-bold ${meta.color}`}>
                                 <Icon className="h-3.5 w-3.5" />
                                 {meta.label}
@@ -172,7 +172,7 @@ export default function VideoExerciseList({
                             </div>
 
                             {/* Prompt/Text */}
-                            <p className="text-sm font-semibold text-gray-800 leading-relaxed whitespace-pre-wrap">
+                            <p className="whitespace-pre-wrap text-sm font-semibold leading-relaxed text-gray-800">
                               {question.questionText}
                             </p>
 
@@ -186,7 +186,7 @@ export default function VideoExerciseList({
                                       key={option.id}
                                       className={`flex items-center justify-between rounded-lg border p-3 text-sm transition-colors ${
                                         isCorrect
-                                          ? "border-green-200 bg-green-50 text-green-800 font-semibold"
+                                          ? "border-green-200 bg-green-50 font-semibold text-green-800"
                                           : "border-gray-100 bg-gray-50 text-gray-600"
                                       }`}
                                     >
@@ -209,40 +209,59 @@ export default function VideoExerciseList({
                               </div>
                             )}
 
-                            {/* Speaking Limits & Audio */}
+                            {/* Speaking Limits & Audio (ĐÃ CẬP NHẬT TRÌNH PHÁT NHẠC) */}
                             {question.questionType === "speaking" && (
-                              <div className="mt-3 flex flex-wrap gap-4 text-xs font-medium text-gray-500">
+                              <div className="mt-4 flex flex-col gap-3">
                                 {question.audioPromptUrl && (
-                                  <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-                                    <Headphones className="h-4 w-4 text-gray-400" />
-                                    <span className="truncate max-w-[200px]">{question.audioPromptUrl}</span>
+                                  <div className="flex flex-col gap-1.5">
+                                    <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600">
+                                      <Headphones className="h-4 w-4" /> Audio mẫu:
+                                    </span>
+                                    <audio 
+                                      controls 
+                                      src={question.audioPromptUrl} 
+                                      className="h-9 w-full max-w-sm outline-none"
+                                    />
                                   </div>
                                 )}
                                 {question.timeLimitSeconds && (
-                                  <div className="flex items-center gap-1.5">
+                                  <div className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500">
                                     <Clock className="h-4 w-4 text-gray-400" />
-                                    Giới hạn: {question.timeLimitSeconds}s
+                                    Giới hạn thu âm: {question.timeLimitSeconds}s
                                   </div>
                                 )}
                               </div>
                             )}
 
-                            {/* Listening specific UI */}
+                            {/* Listening specific UI (ĐÃ CẬP NHẬT TRÌNH PHÁT NHẠC) */}
                             {question.skill === "listening" && (
-                              <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 p-3 text-xs text-gray-600 space-y-2">
-                                <div className="flex items-center gap-2 font-medium">
-                                  <Headphones className="h-4 w-4" />
-                                  <span className="truncate">Audio: {question.audioUrl || "--"}</span>
+                              <div className="mt-4 space-y-3 rounded-lg border border-gray-100 bg-gray-50 p-4 text-xs text-gray-600">
+                                <div className="flex flex-col gap-1.5">
+                                  <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-700">
+                                    <Headphones className="h-4 w-4" /> File nghe (Audio):
+                                  </span>
+                                  {question.audioUrl ? (
+                                    <audio 
+                                      controls 
+                                      src={question.audioUrl} 
+                                      className="mt-1 h-9 w-full max-w-md outline-none" 
+                                    />
+                                  ) : (
+                                    <span className="italic text-gray-400">Chưa tải lên file audio</span>
+                                  )}
                                 </div>
+                                
                                 {question.transcript && (
-                                  <div className="mt-2 border-t border-gray-200 pt-2 text-gray-500 italic">
-                                    <span className="font-semibold text-gray-700 not-italic">Transcript:</span> {question.transcript}
+                                  <div className="mt-3 border-t border-gray-200 pt-3 text-gray-500 italic">
+                                    <span className="font-semibold not-italic text-gray-700">Transcript:</span> {question.transcript}
                                   </div>
                                 )}
+                                
                                 <div className="mt-2">
                                   <span className="font-semibold text-gray-700">Đáp án chấp nhận:</span>
                                   {renderAnswers(question.correctAnswers || [])}
                                 </div>
+                                
                                 <div className="mt-1 text-gray-500">
                                   Khớp chính xác (hoa/thường): <span className="font-semibold">{question.isExactMatch ? "Có" : "Không"}</span>
                                 </div>
@@ -254,7 +273,7 @@ export default function VideoExerciseList({
                               <div className="mt-4 flex gap-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3 text-sm text-blue-800">
                                 <Info className="h-5 w-5 flex-shrink-0 text-blue-500" />
                                 <div>
-                                  <span className="font-bold text-blue-900 block mb-0.5">Giải thích / Hướng dẫn</span>
+                                  <span className="mb-0.5 block font-bold text-blue-900">Giải thích / Hướng dẫn</span>
                                   <p className="leading-relaxed">{question.explanation}</p>
                                 </div>
                               </div>

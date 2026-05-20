@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { apiClient } from "@/utils/api";
 import { uploadService } from "@/services/uploadService";
+import { videoService } from "@/services/videoService";
 import Loader from "@/components/teacher/Loader";
 import { CloudUpload, ArrowUpFromLine } from "lucide-react";
 import { toast } from "react-toastify";
@@ -18,15 +19,25 @@ import '@uppy/dashboard/css/style.css';
 interface TeacherVideoUploadFormProps {
   courseId: string;
   onUploadSuccess: (video: CourseVideo) => void;
+  initialVideo?: CourseVideo | null;
+  onUpdateSuccess?: (video: CourseVideo) => void;
+  onCancelEdit?: () => void;
 }
 
-export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: TeacherVideoUploadFormProps) {
+export default function TeacherVideoUploadForm({
+  courseId,
+  onUploadSuccess,
+  initialVideo,
+  onUpdateSuccess,
+  onCancelEdit,
+}: TeacherVideoUploadFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isPublished, setIsPublished] = useState(false);
   const [isMandatory, setIsMandatory] = useState(true);
+  const isEditing = Boolean(initialVideo?._id);
 
   const [uppy] = useState(() => {
     const u = new Uppy({
@@ -240,6 +251,26 @@ export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: Te
     return u;
   });
 
+  useEffect(() => {
+    if (initialVideo) {
+      setTitle(initialVideo.title || "");
+      setDescription(initialVideo.description || "");
+      setIsPublished(Boolean(initialVideo.isPublished));
+      setIsMandatory(initialVideo.isMandatory !== false);
+      setError(null);
+      uppy.cancelAll();
+      uppyThumbnail.cancelAll();
+      return;
+    }
+
+    setTitle("");
+    setDescription("");
+    setIsPublished(false);
+    setIsMandatory(true);
+    setError(null);
+    uppy.cancelAll();
+    uppyThumbnail.cancelAll();
+  }, [initialVideo, uppy, uppyThumbnail]);
 
   const handleUpload = async () => {
     if (!title.trim()) {
@@ -248,7 +279,7 @@ export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: Te
     }
 
     const files = uppy.getFiles();
-    if (files.length === 0) {
+    if (!isEditing && files.length === 0) {
       setError("Vui lòng chọn video để upload.");
       return;
     }
@@ -257,34 +288,39 @@ export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: Te
     setError(null);
 
     try {
-      // 1. Start Uppy Upload
-      const result = await uppy.upload();
+      let secureUrl: string | undefined;
+      let duration: number | undefined;
 
-      if (!result) {
-        throw new Error("Quá trình upload đã bị hủy hoặc không thể bắt đầu.");
-      }
+      if (files.length > 0) {
+        // 1. Start Uppy Upload
+        const result = await uppy.upload();
 
-      if (result.failed && result.failed.length > 0) {
-        const errorMsg = result.failed[0].error || "Upload video thất bại.";
-        throw new Error(String(errorMsg));
-      }
+        if (!result) {
+          throw new Error("Quá trình upload đã bị hủy hoặc không thể bắt đầu.");
+        }
 
-      if (!result.successful || result.successful.length === 0) {
-        throw new Error("Không có video nào được upload thành công.");
-      }
+        if (result.failed && result.failed.length > 0) {
+          const errorMsg = result.failed[0].error || "Upload video thất bại.";
+          throw new Error(String(errorMsg));
+        }
 
-      const uploadedVideo = result.successful[0];
-      // eslint-disable-next-line 
-      const responseBody = uploadedVideo.response?.body as any;
-      const secure_url = responseBody?.secure_url;
-      const duration = responseBody?.duration || 0;
+        if (!result.successful || result.successful.length === 0) {
+          throw new Error("Không có video nào được upload thành công.");
+        }
 
-      if (!secure_url) {
-        throw new Error("Không lấy được đường dẫn video từ Cloudinary.");
+        const uploadedVideo = result.successful[0];
+        // eslint-disable-next-line 
+        const responseBody = uploadedVideo.response?.body as any;
+        secureUrl = responseBody?.secure_url;
+        duration = responseBody?.duration || 0;
+
+        if (!secureUrl) {
+          throw new Error("Không lấy được đường dẫn video từ Cloudinary.");
+        }
       }
 
       // 4. Upload Thumbnail via Uppy
-      let thumbnailUrl = "";
+      let thumbnailUrl: string | undefined;
       const thumbFiles = uppyThumbnail.getFiles();
       if (thumbFiles.length > 0) {
         const thumbResult = await uppyThumbnail.upload();
@@ -307,24 +343,45 @@ export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: Te
       }
 
       // 5. Save to Database
-      const payload = {
+      const payload: Partial<CourseVideo> = {
         title: title.trim(),
         description: description.trim(),
-        duration: Math.round(duration),
-        videoUrl: secure_url,
-        thumbnailUrl,
         isPublished,
         isMandatory,
       };
 
-      const createResponse = await apiClient.post<CourseVideo>(`/api/videos/course/${courseId}`, payload);
-
-      if (createResponse.status === "error" || !createResponse.data) {
-        throw new Error(createResponse.message || "Không thể tạo video.");
+      if (typeof duration === "number") {
+        payload.duration = Math.round(duration);
       }
 
-      onUploadSuccess(createResponse.data);
-      toast.success("Tải lên video thành công!");
+      if (secureUrl) {
+        payload.videoUrl = secureUrl;
+      }
+
+      if (thumbnailUrl) {
+        payload.thumbnailUrl = thumbnailUrl;
+      }
+
+      if (isEditing && initialVideo?._id) {
+        const updateResponse = await videoService.updateVideo(initialVideo._id, payload);
+
+        if (updateResponse.status === "error" || !updateResponse.data) {
+          throw new Error(updateResponse.message || "Không thể cập nhật video.");
+        }
+
+        onUpdateSuccess?.(updateResponse.data);
+        toast.success("Cập nhật video thành công!");
+        onCancelEdit?.();
+      } else {
+        const createResponse = await apiClient.post<CourseVideo>(`/api/videos/course/${courseId}`, payload);
+
+        if (createResponse.status === "error" || !createResponse.data) {
+          throw new Error(createResponse.message || "Không thể tạo video.");
+        }
+
+        onUploadSuccess(createResponse.data);
+        toast.success("Tải lên video thành công!");
+      }
 
       // Reset form
       setTitle("");
@@ -351,7 +408,9 @@ export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: Te
 
       <div className="flex items-center gap-3">
         <CloudUpload className="h-7 w-7 text-gray-900" />
-        <h2 className="text-2xl font-bold text-gray-900">Upload video mới</h2>
+        <h2 className="text-2xl font-bold text-gray-900">
+          {isEditing ? "Cập nhật video" : "Upload video mới"}
+        </h2>
       </div>
 
       {error && (
@@ -361,6 +420,36 @@ export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: Te
       )}
 
       <div className="mt-8 space-y-6">
+        {isEditing && (initialVideo?.videoUrl || initialVideo?.thumbnailUrl) && (
+          <div className="rounded-2xl border border-gray-100 bg-gray-50/60 p-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
+              Du lieu hien tai
+            </p>
+            <div className="mt-3 grid gap-4 sm:grid-cols-[1.2fr_1fr]">
+              {initialVideo?.videoUrl && (
+                <div className="rounded-2xl border border-gray-200 bg-white p-3">
+                  <p className="text-xs font-semibold text-gray-500">Video hien tai</p>
+                  <video
+                    src={initialVideo.videoUrl}
+                    controls
+                    preload="metadata"
+                    className="mt-2 w-full rounded-xl"
+                  />
+                </div>
+              )}
+              {initialVideo?.thumbnailUrl && (
+                <div className="rounded-2xl border border-gray-200 bg-white p-3">
+                  <p className="text-xs font-semibold text-gray-500">Thumbnail hien tai</p>
+                  <img
+                    src={initialVideo.thumbnailUrl}
+                    alt={initialVideo.title}
+                    className="mt-2 h-40 w-full rounded-xl object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         <div>
           <label className="text-xs font-bold uppercase tracking-widest text-gray-500">Tiêu đề</label>
           <input
@@ -433,15 +522,31 @@ export default function TeacherVideoUploadForm({ courseId, onUploadSuccess }: Te
           </label>
         </div>
 
-        <button
-          type="button"
-          onClick={handleUpload}
-          disabled={isSubmitting}
-          className="mt-4 flex w-full items-center justify-center gap-3 rounded-2xl bg-black px-6 py-4 text-base font-bold text-white transition-colors hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isSubmitting ? <Loader /> : <ArrowUpFromLine className="h-5 w-5" />}
-          {isSubmitting ? "Đang xử lý..." : "Upload video"}
-        </button>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <button
+            type="button"
+            onClick={handleUpload}
+            disabled={isSubmitting}
+            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-black px-6 py-4 text-base font-bold text-white transition-colors hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:flex-1"
+          >
+            {isSubmitting ? <Loader /> : <ArrowUpFromLine className="h-5 w-5" />}
+            {isSubmitting
+              ? "Dang xu ly..."
+              : isEditing
+                ? "Cap nhat video"
+                : "Upload video"}
+          </button>
+          {isEditing && (
+            <button
+              type="button"
+              onClick={onCancelEdit}
+              disabled={isSubmitting}
+              className="flex w-full items-center justify-center rounded-2xl border border-gray-200 px-6 py-4 text-base font-bold text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            >
+              Huy cap nhat
+            </button>
+          )}
+        </div>
       </div>
     </section>
   );

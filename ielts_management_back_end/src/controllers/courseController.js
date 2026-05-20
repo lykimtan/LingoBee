@@ -1,4 +1,4 @@
-const { Course, CourseInvitation, Notification, User } = require('../models');
+const { Course, CourseInvitation, Notification, User, Exercise } = require('../models');
 const { emitNotification } = require('../socket');
 const logger = require('../utils/logger');
 const { deleteCloudinaryAsset } = require('./uploadController');
@@ -201,9 +201,14 @@ const getMyTeachingCourseBySlug = async (req, res, next) => {
       });
     }
 
+    const totalExercises = await Exercise.countDocuments({ courseId: course._id });
+
     res.status(200).json({
       success: true,
-      data: course,
+      data: {
+        ...course.toObject(),
+        totalExercises,
+      },
     });
   } catch (error) {
     logger.error(`Error in getMyTeachingCourseBySlug: ${error.message}`);

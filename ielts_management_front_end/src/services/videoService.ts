@@ -5,6 +5,10 @@ export const videoService = {
   getVideosByCourse: async (courseId: string) => {
     return await apiClient.get<CourseVideo[]>(`/api/videos/course/${courseId}`);
   },
+
+  updateVideo: async (videoId: string, payload: Partial<CourseVideo>) => {
+    return await apiClient.put<CourseVideo>(`/api/videos/${videoId}`, payload);
+  },
   
   deleteVideo: async (videoId: string) => {
     return await apiClient.delete(`/api/videos/${videoId}`);

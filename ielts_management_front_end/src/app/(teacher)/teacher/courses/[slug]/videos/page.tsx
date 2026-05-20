@@ -32,6 +32,7 @@ export default function TeacherCourseVideosPage() {
   const [videoToDelete, setVideoToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [videoToPlay, setVideoToPlay] = useState<CourseVideo | null>(null);
+  const [videoToEdit, setVideoToEdit] = useState<CourseVideo | null>(null);
 
   useEffect(() => {
     if (!slug) return;
@@ -94,6 +95,13 @@ export default function TeacherCourseVideosPage() {
     setVideos((prev) => [...prev, newVideo].sort((a, b) => a.order - b.order));
   };
 
+  const handleUpdateSuccess = (updatedVideo: CourseVideo) => {
+    setVideos((prev) =>
+      prev.map((video) => (video._id === updatedVideo._id ? updatedVideo : video))
+    );
+    setVideoToEdit(null);
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 pb-12">
       {/* Header */}
@@ -131,12 +139,16 @@ export default function TeacherCourseVideosPage() {
         <div className="grid items-start gap-8 lg:grid-cols-[1.2fr_1fr]">
           <TeacherVideoUploadForm 
             courseId={course._id} 
-            onUploadSuccess={handleUploadSuccess} 
+            onUploadSuccess={handleUploadSuccess}
+            initialVideo={videoToEdit}
+            onUpdateSuccess={handleUpdateSuccess}
+            onCancelEdit={() => setVideoToEdit(null)}
           />
           <TeacherVideoList 
             videos={videos} 
             onPlay={setVideoToPlay} 
-            onDeleteRequest={setVideoToDelete} 
+            onDeleteRequest={setVideoToDelete}
+            onEdit={setVideoToEdit}
           />
         </div>
       )}

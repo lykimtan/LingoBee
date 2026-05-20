@@ -146,6 +146,9 @@ const updateVideo = async (req, res, next) => {
       isMandatory,
     } = req.body || {};
 
+    const previousVideoUrl = video.videoUrl;
+    const previousThumbnailUrl = video.thumbnailUrl;
+
     if (typeof title === 'string') video.title = title;
     if (typeof description === 'string') video.description = description;
     if (typeof duration === 'number') video.duration = duration;
@@ -157,6 +160,18 @@ const updateVideo = async (req, res, next) => {
     if (typeof isMandatory === 'boolean') video.isMandatory = isMandatory;
 
     await video.save();
+
+    if (typeof videoUrl === 'string' && previousVideoUrl && previousVideoUrl !== videoUrl) {
+      await deleteCloudinaryAsset(previousVideoUrl, 'video');
+    }
+
+    if (
+      typeof thumbnailUrl === 'string' &&
+      previousThumbnailUrl &&
+      previousThumbnailUrl !== thumbnailUrl
+    ) {
+      await deleteCloudinaryAsset(previousThumbnailUrl, 'image');
+    }
 
     return res.status(200).json({
       success: true,

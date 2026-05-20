@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import { PlaySquare, Trash2, FilePlus } from "lucide-react";
+import { PlaySquare, Trash2, FilePlus, Pencil } from "lucide-react";
 import { CourseVideo } from "@/types";
 
 
@@ -31,14 +31,15 @@ interface TeacherVideoListProps {
   videos: CourseVideo[];
   onPlay: (video: CourseVideo) => void;
   onDeleteRequest: (videoId: string) => void;
+  onEdit?: (video: CourseVideo) => void;
 }
 
-export default function TeacherVideoList({ videos, onPlay, onDeleteRequest }: TeacherVideoListProps) {
+export default function TeacherVideoList({ videos, onPlay, onDeleteRequest, onEdit }: TeacherVideoListProps) {
   const params = useParams<{ slug?: string | string[] }>();
   const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
 
   return (
-    <section className="flex flex-col w-[500px] shrink-0 rounded-3xl border border-gray-100 bg-white p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+    <section className="flex flex-col w-[600px] shrink-0 rounded-3xl border border-gray-100 bg-white p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <PlaySquare className="h-7 w-7 text-gray-900" />
@@ -108,6 +109,16 @@ export default function TeacherVideoList({ videos, onPlay, onDeleteRequest }: Te
 
               {/* Actions */}
               <div className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2 opacity-0 transition-all group-hover:opacity-100">
+                {onEdit && (
+                  <button
+                    type="button"
+                    onClick={() => onEdit(video)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100"
+                    title="Cap nhat video"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                )}
                 <Link
                   href={`/teacher/courses/${slug}/videos/${video._id}/exercises`}
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100"
