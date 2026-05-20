@@ -22,12 +22,13 @@ import {
   Star,
   Clock,
   Image as ImageIcon,
-  Mail,
   PlaySquare,
   ClipboardList,
   Book,
   ChevronRight,
 } from "lucide-react";
+import TeacherCourseInstructorCard from "@/components/teacher/courses/TeacherCourseInstructorCard";
+import RichTextEditor from "@/components/teacher/RichTextEditor";
 
 type CoursePriceTier = {
   name: string;
@@ -86,6 +87,8 @@ const formatDate = (value?: string | null) => {
   if (Number.isNaN(date.getTime())) return "Chưa cập nhật";
   return date.toLocaleDateString("vi-VN");
 };
+
+const stripHtml = (value: string) => value.replace(/<[^>]*>/g, "").trim();
 
 // const formatDateTime = (value?: string | null) => {
 //   if (!value) return "Chưa cập nhật";
@@ -149,12 +152,12 @@ export default function TeacherCourseDetailPage() {
 
   const handleSaveOverview = async () => {
     if (!course?._id) return;
-    const nextDescription = descriptionDraft.trim();
-    if (!nextDescription) {
+    const nextDescriptionText = stripHtml(descriptionDraft);
+    if (!nextDescriptionText) {
       setOverviewError("Mô tả tổng quan không được để trống.");
       return;
     }
-    if (nextDescription.length < 20) {
+    if (nextDescriptionText.length < 20) {
       setOverviewError("Mô tả tổng quan phải có ít nhất 20 ký tự.");
       return;
     }
@@ -162,7 +165,7 @@ export default function TeacherCourseDetailPage() {
     setIsSavingOverview(true);
     setOverviewError(null);
     const response = await courseService.updateCourse<CourseDetail>(course._id, {
-      description: nextDescription,
+      description: descriptionDraft,
       courseDetail: courseDetailDraft.trim() ? courseDetailDraft.trim() : null,
     });
 
@@ -349,24 +352,20 @@ export default function TeacherCourseDetailPage() {
                       <p className="text-xs font-semibold text-gray-500">
                         Mô tả tổng quan
                       </p>
-                      <textarea
+                      <RichTextEditor
                         value={descriptionDraft}
-                        onChange={(event) => setDescriptionDraft(event.target.value)}
-                        rows={5}
-                        className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm focus:border-gray-400 focus:outline-none"
-                        placeholder="Nhập mô tả tổng quan"
+                        onChange={setDescriptionDraft}
+                        className="mt-2"
                       />
                     </div>
                     <div>
                       <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
                         Mô tả chi tiết
                       </p>
-                      <textarea
+                      <RichTextEditor
                         value={courseDetailDraft}
-                        onChange={(event) => setCourseDetailDraft(event.target.value)}
-                        rows={5}
-                        className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm focus:border-gray-400 focus:outline-none"
-                        placeholder="Nhập mô tả chi tiết"
+                        onChange={setCourseDetailDraft}
+                        className="mt-2"
                       />
                     </div>
                     {overviewError && (
@@ -397,9 +396,16 @@ export default function TeacherCourseDetailPage() {
                   </div>
                 ) : (
                   <>
-                    <p className="mt-4 text-sm font-medium leading-relaxed text-gray-600">
-                      {course.description || "Chưa có mô tả."}
-                    </p>
+                    {course.description ? (
+                      <div
+                        className="mt-4 text-sm font-medium leading-relaxed text-gray-600"
+                        dangerouslySetInnerHTML={{ __html: course.description }}
+                      />
+                    ) : (
+                      <p className="mt-4 text-sm font-medium leading-relaxed text-gray-600">
+                        Chưa có mô tả.
+                      </p>
+                    )}
 
                     <div className="my-6 h-px bg-gray-100" />
 
@@ -407,9 +413,16 @@ export default function TeacherCourseDetailPage() {
                       <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
                         MÔ TẢ CHI TIẾT
                       </p>
-                      <p className="mt-2 text-sm font-medium italic text-gray-500">
-                        {course.courseDetail || "Không có mô tả gì"}
-                      </p>
+                      {course.courseDetail ? (
+                        <div
+                          className="mt-2 text-sm font-medium italic text-gray-500"
+                          dangerouslySetInnerHTML={{ __html: course.courseDetail }}
+                        />
+                      ) : (
+                        <p className="mt-2 text-sm font-medium italic text-gray-500">
+                          Không có mô tả gì
+                        </p>
+                      )}
                     </div>
                   </>
                 )}
@@ -570,12 +583,11 @@ export default function TeacherCourseDetailPage() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-gray-500">Giới thiệu ngắn</p>
-                      <textarea
+                      <RichTextEditor
                         value={shortDescriptionDraft}
-                        onChange={(e) => setShortDescriptionDraft(e.target.value)}
-                        rows={3}
-                        className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm focus:border-gray-400 focus:outline-none"
-                        placeholder="Nhập giới thiệu ngắn"
+                        onChange={setShortDescriptionDraft}
+                        className="mt-2"
+                        editorClassName="min-h-[120px] rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm focus:outline-none"
                       />
                     </div>
                     <div>
@@ -650,9 +662,18 @@ export default function TeacherCourseDetailPage() {
                       <p className="text-sm font-bold text-gray-900">
                         Giới thiệu ngắn
                       </p>
-                      <p className="mt-1 text-xs font-medium italic text-gray-500">
-                        {course.publicInfo?.shortDescription || "Chưa cập nhật"}
-                      </p>
+                      {course.publicInfo?.shortDescription ? (
+                        <div
+                          className="mt-1 text-xs font-medium italic text-gray-500"
+                          dangerouslySetInnerHTML={{
+                            __html: course.publicInfo.shortDescription,
+                          }}
+                        />
+                      ) : (
+                        <p className="mt-1 text-xs font-medium italic text-gray-500">
+                          Chưa cập nhật
+                        </p>
+                      )}
                     </div>
                     <div className="rounded-2xl bg-gray-50 p-4">
                       <p className="text-sm font-bold text-gray-900">
@@ -699,42 +720,7 @@ export default function TeacherCourseDetailPage() {
             {/* Column 2 */}
             <div className="flex flex-col gap-6">
               {/* Giáo viên */}
-              <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-                <h2 className="text-xl font-bold text-gray-900">Giáo viên</h2>
-                <div className="mt-6 flex items-center gap-4">
-                  <div className="h-14 w-14 overflow-hidden rounded-full bg-gray-100">
-                    {course.teacher?.profilePicture ? (
-                      <Image
-                        src={course.teacher.profilePicture}
-                        alt="Avatar"
-                        width={56}
-                        height={56}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-slate-800 text-lg font-bold text-white">
-                        {course.teacher?.firstName?.[0] ||
-                          course.teacher?.email?.[0]?.toUpperCase() ||
-                          "T"}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-base font-bold text-gray-900">
-                      {teacherName}
-                    </p>
-                    <p className="text-xs font-medium text-gray-500">
-                      Senior Instructor
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-6 flex items-center gap-3 text-sm font-medium text-gray-600">
-                  <Mail className="h-4 w-4 text-gray-400" />
-                  <span className="truncate">
-                    {course.teacher?.email || "Chưa cập nhật email"}
-                  </span>
-                </div>
-              </section>
+              <TeacherCourseInstructorCard teacher={course.teacher} teacherName={teacherName} />
 
               {/* Lịch trình */}
               <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
