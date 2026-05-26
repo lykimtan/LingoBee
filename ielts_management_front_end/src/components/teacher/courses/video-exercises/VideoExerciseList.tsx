@@ -253,8 +253,17 @@ export default function VideoExerciseList({
                                 
                                 {question.transcript && (
                                   <div className="mt-3 border-t border-gray-200 pt-3 text-gray-500 italic">
-                                    <span className="font-semibold not-italic text-gray-700">Transcript:</span> {question.transcript}
-                                  </div>
+                                      {/* Thêm block và mb-1 để chữ Transcript đứng riêng một hàng cho đẹp, vì nội dung transcript bên dưới thường khá dài */}
+                                      <span className="font-semibold not-italic text-gray-700 block mb-1">
+                                        Transcript:
+                                      </span>
+                                      
+                                      {/* Tạo một thẻ div riêng để render HTML của Transcript */}
+                                      <div 
+                                        className="leading-relaxed text-sm"
+                                        dangerouslySetInnerHTML={{ __html: question.transcript }} 
+                                      />
+                                    </div>
                                 )}
                                 
                                 <div className="mt-2">
@@ -273,9 +282,14 @@ export default function VideoExerciseList({
                               <div className="mt-4 flex gap-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3 text-sm text-blue-800">
                                 <Info className="h-5 w-5 flex-shrink-0 text-blue-500" />
                                 <div>
-                                  <span className="mb-0.5 block font-bold text-blue-900">Giải thích / Hướng dẫn</span>
-                                  <p className="leading-relaxed">{question.explanation}</p>
-                                </div>
+                                    <span className="mb-0.5 block font-bold text-blue-900">
+                                      Giải thích / Hướng dẫn
+                                    </span>
+                                    <div 
+                                      className=" prose leading-relaxed [&>p]:mb-2 [&>h1]:text-lg [&>h1]:font-bold [&>h2]:text-base [&>h2]:font-semibold"
+                                      dangerouslySetInnerHTML={{ __html: question.explanation }} 
+                                    />
+                                  </div>
                               </div>
                             )}
                           </div>

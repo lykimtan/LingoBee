@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "react-toastify";
-import { apiClient } from "@/utils/api";
 import { CourseVideo } from "@/types";
 import VideoExerciseHeader from "@/components/teacher/courses/video-exercises/VideoExerciseHeader";
 import VideoExercisePlayer from "@/components/teacher/courses/video-exercises/VideoExercisePlayer";
@@ -12,12 +11,11 @@ import VideoExerciseForm from "@/components/teacher/courses/video-exercises/Vide
 import SelectModal, { type SelectOption } from "@/components/teacher/SelectModal";
 import ConfirmModal from "@/components/teacher/ConfirmModal";
 import { exerciseService, type ExerciseRecord } from "@/services/exerciseService";
+import { CourseSummary } from "@/types";
+import { courseService } from "@/services/courseService";
+import { videoService } from "@/services/videoService";
+import { TeacherVideoFeedbackTab } from "@/components/teacher/courses/TeacherVideoFeedbackTab";
 
-type CourseSummary = {
-  _id: string;
-  title: string;
-  slug: string;
-};
 
 export default function TeacherVideoExercisesPage() {
   const params = useParams<{ slug?: string | string[]; videoId?: string | string[] }>();
@@ -33,6 +31,7 @@ export default function TeacherVideoExercisesPage() {
   const [isDeletingExercise, setIsDeletingExercise] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"content" | "feedback">("content");
   const formRef = useRef<HTMLDivElement | null>(null);
 
   const resolveQuestionMode = (exercise: ExerciseRecord | null) => {
@@ -59,9 +58,7 @@ export default function TeacherVideoExercisesPage() {
         return;
       }
 
-      const courseResponse = await apiClient.get<CourseSummary>(
-        `/api/courses/my/${slug}`
-      );
+     const courseResponse = await courseService.getMyCourseBySlug<CourseSummary>(slug);
 
       if (!isActive) return;
 
@@ -73,8 +70,8 @@ export default function TeacherVideoExercisesPage() {
 
       setCourse(courseResponse.data);
 
-      const videoResponse = await apiClient.get<CourseVideo[]>(
-        `/api/videos/course/${courseResponse.data._id}`
+      const videoResponse = await videoService.getVideosByCourse(
+        courseResponse.data._id
       );
 
       if (!isActive) return;
@@ -202,37 +199,75 @@ export default function TeacherVideoExercisesPage() {
         courseTitle={course?.title}
         videoTitle={video?.title}
       />
-      <VideoExercisePlayer video={video} isLoading={isLoading} error={error} />
-      <VideoExerciseList
-        exercises={exercises}
-        isLoading={isLoading}
-        error={error}
-        onEdit={handleEditExercise}
-        onDelete={handleRequestDeleteExercise}
-      />
-      {(selectedExercise || questionMode) && (
-        <div ref={formRef}>
-          <VideoExerciseForm
-            videoTitle={video?.title}
-            courseId={course?._id}
-            videoId={video?._id}
-            isDisabled={isLoading || !!error}
-            onSaved={handleExerciseSaved}
-            onCancel={handleCancelForm}
-            initialExercise={selectedExercise}
-            questionMode={questionMode}
-          />
-        </div>
-      )}
-      <div className="flex justify-end">
+
+      {/* Tabs */}
+      <div className="flex items-center gap-6 border-b border-gray-100 px-2">
         <button
-          type="button"
-          onClick={handleCreateNewExercise}
-          className="rounded-2xl border border-gray-200 px-5 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900"
+          onClick={() => setActiveTab("content")}
+          className={`relative pb-4 text-sm font-bold uppercase tracking-widest transition-colors ${
+            activeTab === "content" ? "text-gray-900" : "text-gray-400 hover:text-gray-700"
+          }`}
         >
-          Tạo bộ bài tập mới
+          Nội dung
+          {activeTab === "content" && (
+            <span className="absolute bottom-0 left-0 h-0.5 w-full bg-black rounded-t-full" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("feedback")}
+          className={`relative pb-4 text-sm font-bold uppercase tracking-widest transition-colors ${
+            activeTab === "feedback" ? "text-gray-900" : "text-gray-400 hover:text-gray-700"
+          }`}
+        >
+          Feedback
+          {activeTab === "feedback" && (
+            <span className="absolute bottom-0 left-0 h-0.5 w-full bg-black rounded-t-full" />
+          )}
         </button>
       </div>
+
+      {/* Tab Panels */}
+      {activeTab === "content" && (
+        <div className="flex flex-col gap-8">
+          <VideoExercisePlayer video={video} isLoading={isLoading} error={error} />
+          <VideoExerciseList
+            exercises={exercises}
+            isLoading={isLoading}
+            error={error}
+            onEdit={handleEditExercise}
+            onDelete={handleRequestDeleteExercise}
+          />
+          {(selectedExercise || questionMode) && (
+            <div ref={formRef}>
+              <VideoExerciseForm
+                videoTitle={video?.title}
+                courseId={course?._id}
+                videoId={video?._id}
+                isDisabled={isLoading || !!error}
+                onSaved={handleExerciseSaved}
+                onCancel={handleCancelForm}
+                initialExercise={selectedExercise}
+                questionMode={questionMode}
+              />
+            </div>
+          )}
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={handleCreateNewExercise}
+              className="rounded-2xl border border-gray-200 px-5 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900"
+            >
+              Tạo bộ bài tập mới
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "feedback" && (
+        <div className="flex flex-col gap-8">
+          <TeacherVideoFeedbackTab videoId={videoId as string} />
+        </div>
+      )}
       <SelectModal
         isOpen={isSelectModalOpen}
         onClose={() => setIsSelectModalOpen(false)}

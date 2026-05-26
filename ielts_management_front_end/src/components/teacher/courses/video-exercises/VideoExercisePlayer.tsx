@@ -71,7 +71,10 @@ export default function VideoExercisePlayer({
       )}
 
       {video?.description && (
-        <p className="text-sm font-medium text-gray-600">{video.description}</p>
+        <div
+           className="prose prose-sm max-w-none text-gray-600"
+            dangerouslySetInnerHTML={{ __html: video.description }}
+        />
       )}
     </section>
   );

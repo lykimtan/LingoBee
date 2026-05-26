@@ -1,5 +1,5 @@
 import { apiClient } from '@/utils/api';
-import { ApiResponse, TeacherCourseItem } from '@/types';
+import { AdminCourseItem, ApiResponse, TeacherCourseItem } from '@/types';
 
 export interface CreateCourseShellPayload {
   title: string;
@@ -42,6 +42,15 @@ class CourseService {
   async updateCourse<T = unknown>(courseId: string, payload: unknown): Promise<ApiResponse<T>> {
     const encoded = encodeURIComponent(courseId);
     return apiClient.put<T>(`/api/courses/${encoded}`, payload);
+  }
+
+  async getAllCourses() {
+  return apiClient.get<AdminCourseItem[]>("/api/courses");
+}
+
+  async getAdminCourseBySlug<T = AdminCourseItem>(slug: string): Promise<ApiResponse<T>> {
+    const encoded = encodeURIComponent(slug);
+    return apiClient.get<T>(`/api/courses/slug/${encoded}`);
   }
 
 }

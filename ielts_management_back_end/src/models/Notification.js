@@ -27,13 +27,14 @@ const notificationSchema = new mongoose.Schema(
         'payment_required',
         'course_started',
         'course_invitation',
+        'video_feedback',
       ],
       required: true,
     },
     relatedEntity: {
       type: {
         type: String,
-        enum: ['lesson', 'exercise', 'mocktest', 'message', 'course', 'course_invitation'],
+        enum: ['lesson', 'exercise', 'mocktest', 'message', 'course', 'course_invitation', 'feedback'],
         default: null,
       },
       id: {

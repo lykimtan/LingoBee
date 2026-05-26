@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { apiClient } from "@/utils/api";
 import ConfirmModal from "@/components/teacher/ConfirmModal";
 import dynamic from "next/dynamic";
 import {videoService} from "@/services/videoService";
@@ -13,13 +12,9 @@ const VideoPlayerModal = dynamic(() => import("@/components/teacher/VideoPlayerM
 import { ArrowLeft } from "lucide-react";
 import TeacherVideoUploadForm from "@/components/teacher/courses/TeacherVideoUploadForm";
 import TeacherVideoList from "@/components/teacher/courses/TeacherVideoList";
-import { CourseVideo} from "@/types"
+import { CourseVideo, CourseSummary} from "@/types"
+import { courseService } from "@/services/courseService";
 
-type CourseSummary = {
-  _id: string;
-  title: string;
-  slug: string;
-};
 
 export default function TeacherCourseVideosPage() {
   const params = useParams<{ slug?: string | string[] }>();
@@ -41,9 +36,7 @@ export default function TeacherCourseVideosPage() {
       setIsLoading(true);
       setError(null);
 
-      const courseResponse = await apiClient.get<CourseSummary>(
-        `/api/courses/my/${slug}`
-      );
+      const courseResponse = await courseService.getMyCourseBySlug<CourseSummary>(slug);
       if (courseResponse.status === "error" || !courseResponse.data) {
         setError(courseResponse.message || "Không thể tải thông tin khóa học.");
         setIsLoading(false);

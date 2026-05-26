@@ -5,22 +5,19 @@ import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { apiClient } from "@/utils/api";
 import { CourseVideo } from "@/types";
 import TeacherVideoList from "@/components/teacher/courses/TeacherVideoList";
 import ExerciseListGroup from "@/components/teacher/courses/exercises/ExerciseListGroup";
 import ConfirmModal from "@/components/teacher/ConfirmModal";
 import { videoService } from "@/services/videoService";
+import { CourseSummary } from "@/types";
+import { courseService } from "@/services/courseService";
 
 const VideoPlayerModal = dynamic(() => import("@/components/teacher/VideoPlayerModal"), {
   ssr: false,
 });
 
-type CourseSummary = {
-  _id: string;
-  title: string;
-  slug: string;
-};
+
 
 export default function TeacherCourseExercisesPage() {
   const params = useParams<{ slug?: string | string[] }>();
@@ -48,9 +45,7 @@ export default function TeacherCourseExercisesPage() {
         return;
       }
 
-      const courseResponse = await apiClient.get<CourseSummary>(
-        `/api/courses/my/${slug}`
-      );
+      const courseResponse = await courseService.getMyCourseBySlug<CourseSummary>(slug);
 
       if (!isActive) return;
 

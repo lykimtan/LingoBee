@@ -1,7 +1,8 @@
 "use client";
 
-import { CourseVideo } from "../TeacherVideoList";
+import { CourseVideo } from "@/types";
 import { PlaySquare, ChevronRight } from "lucide-react";
+import Image from "next/image";
 
 interface ExerciseVideoSidebarProps {
   videos: CourseVideo[];
@@ -41,7 +42,7 @@ export default function ExerciseVideoSidebar({ videos, activeVideoId }: Exercise
               <div className="flex items-center gap-3 overflow-hidden">
                 <div className="relative h-10 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-200">
                   {video.thumbnailUrl ? (
-                    <img
+                    <Image
                       src={video.thumbnailUrl}
                       alt={video.title}
                       className="h-full w-full object-cover"

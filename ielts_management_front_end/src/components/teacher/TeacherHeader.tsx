@@ -7,8 +7,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuthContext } from "@/context/AuthContext";
-import { apiClient } from "@/utils/api";
 import { API_BASE_URL, STORAGE_KEYS } from "@/constants";
+import { notificationService } from "@/services/notificationService";
 
 type NotificationItem = {
   _id?: string;
@@ -55,7 +55,7 @@ export function TeacherHeader() {
   }, [notifications]);
 
   const markAllRead = async () => {
-    const response = await apiClient.post("/api/notifications/read-all");
+    const response = await notificationService.markAllAsRead();
     if (response.status === "success") {
       setNotifications((prev) =>
         prev.map((item) => ({
@@ -109,9 +109,7 @@ export function TeacherHeader() {
     }
 
     const loadNotifications = async () => {
-      const response = await apiClient.get<NotificationItem[]>(
-        "/api/notifications?isRead=false&limit=50"
-      );
+      const response = await notificationService.getUnreadNotifications();
 
       if (response.status === "success" && Array.isArray(response.data)) {
         setNotifications(response.data);

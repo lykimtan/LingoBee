@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import ConfirmModal from "@/components/teacher/ConfirmModal";
 import { uploadService } from "@/services/uploadService";
 import { exerciseService, type ExerciseRecord } from "@/services/exerciseService";
+import RichTextEditor  from "@/components/teacher/RichTextEditor";
 
 interface VideoExerciseFormProps {
   videoTitle?: string;
@@ -446,25 +447,23 @@ function MultipleChoiceEditor({
           </div>
           <div>
             <FieldLabel label="Transcript (optional)" />
-            <TextArea
-              value={question.transcript}
-              onChange={(value) => onChange({ transcript: value })}
-              placeholder="Nhập transcript để giải thích"
-              disabled={disabled}
-              rows={3}
-            />
+            <div className={disabled ? "pointer-events-none opacity-60" : undefined}>
+              <RichTextEditor
+                value={question.transcript}
+                onChange={(value) => onChange({ transcript: value })}
+              />
+            </div>
           </div>
         </div>
       )}
       <div>
         <FieldLabel label="Giải thích / Đáp án chi tiết" />
-        <TextArea
-          value={question.explanation}
-          onChange={(value) => onChange({ explanation: value })}
-          placeholder="Nhập đáp án chi tiết hoặc giải thích cho câu hỏi này..."
-          disabled={disabled}
-          rows={3}
-        />
+        <div className={disabled ? "pointer-events-none opacity-60" : undefined}>
+          <RichTextEditor
+            value={question.explanation}
+            onChange={(value) => onChange({ explanation: value })}
+          />
+        </div>
       </div>
     </>
   );
@@ -651,13 +650,13 @@ function FillBlankEditor({
 
       <div>
         <FieldLabel label="Giai thich / Dap an chi tiet" />
-        <TextArea
-          value={question.explanation}
-          onChange={(value) => onChange({ explanation: value })}
-          placeholder="Nhap giai thich"
-          disabled={disabled}
-          rows={3}
-        />
+        <div className={disabled ? "pointer-events-none opacity-60" : undefined}>
+          <RichTextEditor
+            value={question.explanation}
+            onChange={(value) => onChange({ explanation: value })}
+            editorClassName="min-h-[140px] rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm focus:outline-none"
+          />
+        </div>
       </div>
 
       {isListening && (
@@ -682,13 +681,13 @@ function FillBlankEditor({
           </div>
           <div>
             <FieldLabel label="Transcript (optional)" />
-            <TextArea
-              value={question.transcript}
-              onChange={(value) => onChange({ transcript: value })}
-              placeholder="Nhap transcript de giai thich"
-              disabled={disabled}
-              rows={3}
-            />
+            <div className={disabled ? "pointer-events-none opacity-60" : undefined}>
+              <RichTextEditor
+                value={question.transcript}
+                onChange={(value) => onChange({ transcript: value })}
+                editorClassName="min-h-[120px] rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm focus:outline-none"
+              />
+            </div>
           </div>
           <label className="flex items-center gap-3 text-sm font-semibold text-gray-600">
             <input

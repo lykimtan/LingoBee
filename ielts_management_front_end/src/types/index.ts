@@ -131,3 +131,45 @@ export type TeacherInvitation = {
   };
   createdAt?: string;
 };
+
+
+export type CourseSummary = {
+  _id: string;
+  title: string;
+  slug: string;
+};
+
+export type CourseUser = {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  profilePicture?: string;
+};
+
+export type AdminCourseItem = {
+  _id: string;
+  title: string;
+  description?: string;
+  category?: string;
+  level?: string;
+  status?: string;
+  totalStudents?: number;
+  slug?: string;
+  teacher?: CourseUser | null;
+  publicInfo?: {
+    thumbnail?: string | null;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+
+export type NotificationItem = {
+  _id?: string;
+  id?: string;
+  notificationType?: string;
+  title?: string;
+  message?: string;
+  createdAt?: string;
+  isRead?: boolean;
+};

@@ -2,6 +2,18 @@ import { apiClient } from "@/utils/api";
 import { CourseVideo } from "@/types";
 
 export const videoService = {
+
+  createVideoByCourse: async (
+    courseId: string,
+    payload: Partial<CourseVideo>
+  ) => {
+    const encoded = encodeURIComponent(courseId);
+    return await apiClient.post<CourseVideo>(
+      `/api/videos/course/${encoded}`,
+      payload
+    );
+  },
+  
   getVideosByCourse: async (courseId: string) => {
     return await apiClient.get<CourseVideo[]>(`/api/videos/course/${courseId}`);
   },

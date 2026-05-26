@@ -1,19 +1,15 @@
 "use client";
 
 import { Bell } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import Image from "next/image";
-import { apiClient } from "@/utils/api";
+import { NotificationItem } from "@/types";
+import { notificationService } from "@/services/notificationService";
+import { io, Socket } from "socket.io-client";
+import { useAuthContext } from "@/context/AuthContext";
+import { API_BASE_URL, STORAGE_KEYS } from "@/constants";
 
-type NotificationItem = {
-  _id?: string;
-  id?: string;
-  notificationType?: string;
-  title?: string;
-  message?: string;
-  createdAt?: string;
-  isRead?: boolean;
-};
+
 
 const formatDateLabel = (value: string) => {
   const date = new Date(value);
@@ -42,17 +38,17 @@ const formatTimeLabel = (value: string) => {
 };
 
 export function NotificationWidget() {
+  const { user } = useAuthContext();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     const loadNotifications = async () => {
       setIsLoading(true);
       setError(null);
-      const response = await apiClient.get<NotificationItem[]>(
-        "/api/notifications?limit=200"
-      );
+      const response = await notificationService.getNotifications(200);
 
       if (response.status === "success" && Array.isArray(response.data)) {
         setNotifications(response.data);
@@ -64,6 +60,41 @@ export function NotificationWidget() {
 
     void loadNotifications();
   }, []);
+
+  useEffect(() => {
+    const storedToken =
+      typeof window === "undefined"
+        ? null
+        : localStorage.getItem(STORAGE_KEYS.USER_TOKEN) ||
+        sessionStorage.getItem(STORAGE_KEYS.USER_TOKEN);
+
+    if (!storedToken || !user?.id) {
+      return;
+    }
+
+    socketRef.current = io(API_BASE_URL, {
+      auth: { token: storedToken },
+      transports: ["websocket"],
+    });
+
+    socketRef.current.on("notification:new", (payload: NotificationItem) => {
+      if (payload !== user.id) {
+        return;
+      }
+
+      setNotifications((prev) => {
+        // Prevent duplicates if already fetched via API at same time
+        const exists = prev.find(n => (n._id === payload._id) || (n.id === payload.id));
+        if (exists) return prev;
+        return [payload, ...prev];
+      });
+    });
+
+    return () => {
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+    };
+  }, [user?.id]);
 
   const groupedNotifications = useMemo(() => {
     const groups: { date: string; items: NotificationItem[] }[] = [];
@@ -86,7 +117,7 @@ export function NotificationWidget() {
   }, [notifications]);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-[2rem] bg-gray-900 text-white shadow-xl">
+    <div className="flex flex-col h-[680px] w-full overflow-hidden rounded-[2rem] bg-gray-900 text-white shadow-xl">
       <div className="flex items-center justify-between p-6 pb-4">
         <div>
           <h3 className="text-lg font-medium">Thông báo</h3>
@@ -95,14 +126,14 @@ export function NotificationWidget() {
           </p>
         </div>
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
-            <Image
-                src="/teacher/notifications.gif"
-                alt="Đề thi tổng hợp"
-                    width={50}
-                    height={50}
-                    unoptimized
-                className="h-8 w-auto"
-              />
+          <Image
+            src="/teacher/notifications.gif"
+            alt="Đề thi tổng hợp"
+            width={50}
+            height={50}
+            unoptimized
+            className="h-8 w-auto"
+          />
         </span>
       </div>
 

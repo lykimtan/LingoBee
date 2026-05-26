@@ -1,9 +1,10 @@
 "use client";
 
-import { CourseVideo } from "../TeacherVideoList";
+import { CourseVideo } from "@/types";
 import ExerciseCard from "./ExerciseCard";
 import Link from "next/link";
 import { PlusCircle, Video as VideoIcon } from "lucide-react";
+import Image from "next/image";
 
 interface ExerciseListGroupProps {
   videos: CourseVideo[];
@@ -39,9 +40,11 @@ export default function ExerciseListGroup({ videos, slug }: ExerciseListGroupPro
               <div className="flex items-center gap-4">
                 <div className="flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
                   {video.thumbnailUrl ? (
-                    <img
+                    <Image
                       src={video.thumbnailUrl}
                       alt={video.title}
+                      width={128}
+                      height={80}
                       className="h-full w-full object-cover"
                     />
                   ) : (

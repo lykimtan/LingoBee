@@ -14,6 +14,7 @@ const DiscountCode = require('./DiscountCode');
 const VideoProgress = require('./VideoProgress');
 const Notification = require('./Notification');
 const CourseInvitation = require('./CourseInvitation');
+const Feedback = require('./Feedback');
 
 module.exports = {
   User,
@@ -30,4 +31,5 @@ module.exports = {
   VideoProgress,
   Notification,
   CourseInvitation,
+  Feedback,
 };

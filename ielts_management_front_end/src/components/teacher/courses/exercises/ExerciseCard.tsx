@@ -1,6 +1,6 @@
 "use client";
 
-import { Exercise } from "../TeacherVideoList";
+import { Exercise } from "@/types";
 import { FileText, Edit, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -32,9 +32,6 @@ export default function ExerciseCard({ exercise, onDeleteRequest }: ExerciseCard
         <div className="mt-2 flex items-center gap-2">
           <span className="rounded bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-600">
             {questionCount} Câu hỏi
-          </span>
-          <span className="text-[11px] font-medium text-gray-400">
-            {new Date(exercise.createdAt || Date.now()).toLocaleDateString("vi-VN")}
           </span>
         </div>
       </div>

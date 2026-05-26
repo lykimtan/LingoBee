@@ -4,33 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CourseSideNav, CourseTab } from "./CourseSideNav";
 import { motion, AnimatePresence } from "motion/react";
-import { apiClient } from "@/utils/api";
 import { CreateCourseHeader } from "@/components/admin/courses/create/CreateCourseHeader";
 import { CreateCourseShellForm } from "@/components/admin/courses/create/CreateCourseShellForm";
 import { CourseShellSidebar } from "@/components/admin/courses/create/CourseShellSidebar";
+import { AdminCourseItem } from "@/types";
+import { courseService } from "@/services/courseService";
 
-type CourseUser = {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  profilePicture?: string;
-};
 
-type AdminCourseItem = {
-  _id: string;
-  title: string;
-  category?: string;
-  level?: string;
-  status?: string;
-  totalStudents?: number;
-  slug?: string;
-  teacher?: CourseUser | null;
-  publicInfo?: {
-    thumbnail?: string | null;
-  };
-  createdAt?: string;
-  updatedAt?: string;
-};
 
 const formatDate = (value?: string) => {
   if (!value) return "Chưa cập nhật";
@@ -68,7 +48,7 @@ export function CoursesManager() {
     const loadCourses = async () => {
       setIsLoading(true);
       setError(null);
-      const response = await apiClient.get<AdminCourseItem[]>("/api/courses");
+      const response = await courseService.getAllCourses();
       if (response.status === "success" && Array.isArray(response.data)) {
         setCourses(response.data);
       } else {

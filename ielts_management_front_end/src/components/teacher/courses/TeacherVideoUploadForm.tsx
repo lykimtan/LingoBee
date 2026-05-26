@@ -1,17 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiClient } from "@/utils/api";
 import { uploadService } from "@/services/uploadService";
 import { videoService } from "@/services/videoService";
 import Loader from "@/components/teacher/Loader";
 import { CloudUpload, ArrowUpFromLine } from "lucide-react";
 import { toast } from "react-toastify";
 import { CourseVideo } from "@/types";
+import Image from "next/image";
+import RichTextEditor  from "@/components/teacher/RichTextEditor";
 
 import Uppy from '@uppy/core';
 import Dashboard from '@uppy/react/dashboard';
 import vi_VN from '@uppy/locales/lib/vi_VN';
+
 
 import '@uppy/core/css/style.css';
 import '@uppy/dashboard/css/style.css';
@@ -45,7 +47,7 @@ export default function TeacherVideoUploadForm({
       restrictions: {
         maxNumberOfFiles: 1,
         allowedFileTypes: ['video/*'],
-        maxFileSize: 1000 * 1024 * 1024, // 500MB
+        maxFileSize: 1000 * 1024 * 1024, // 1GB
       },
       autoProceed: false,
     });
@@ -373,7 +375,7 @@ export default function TeacherVideoUploadForm({
         toast.success("Cập nhật video thành công!");
         onCancelEdit?.();
       } else {
-        const createResponse = await apiClient.post<CourseVideo>(`/api/videos/course/${courseId}`, payload);
+        const createResponse = await videoService.createVideoByCourse(courseId,payload);
 
         if (createResponse.status === "error" || !createResponse.data) {
           throw new Error(createResponse.message || "Không thể tạo video.");
@@ -440,9 +442,11 @@ export default function TeacherVideoUploadForm({
               {initialVideo?.thumbnailUrl && (
                 <div className="rounded-2xl border border-gray-200 bg-white p-3">
                   <p className="text-xs font-semibold text-gray-500">Thumbnail hien tai</p>
-                  <img
+                  <Image
                     src={initialVideo.thumbnailUrl}
                     alt={initialVideo.title}
+                    width={320}
+                    height={180}
                     className="mt-2 h-40 w-full rounded-xl object-cover"
                   />
                 </div>
@@ -462,12 +466,9 @@ export default function TeacherVideoUploadForm({
 
         <div>
           <label className="text-xs font-bold uppercase tracking-widest text-gray-500">Mô tả (Không bắt buộc)</label>
-          <textarea
+          <RichTextEditor
             value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-sm font-medium text-gray-900 outline-none transition-colors focus:border-gray-400"
-            rows={4}
-            placeholder="Nhập mô tả chi tiết cho video này..."
+            onChange={setDescription}
           />
         </div>
 
@@ -531,9 +532,9 @@ export default function TeacherVideoUploadForm({
           >
             {isSubmitting ? <Loader /> : <ArrowUpFromLine className="h-5 w-5" />}
             {isSubmitting
-              ? "Dang xu ly..."
+              ? "Loading..."
               : isEditing
-                ? "Cap nhat video"
+                ? "Update Video"
                 : "Upload video"}
           </button>
           {isEditing && (
@@ -543,7 +544,7 @@ export default function TeacherVideoUploadForm({
               disabled={isSubmitting}
               className="flex w-full items-center justify-center rounded-2xl border border-gray-200 px-6 py-4 text-base font-bold text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
-              Huy cap nhat
+              Hủy cập nhật
             </button>
           )}
         </div>

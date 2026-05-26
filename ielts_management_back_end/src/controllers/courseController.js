@@ -245,6 +245,35 @@ const getCourseById = async (req, res, next) => {
 };
 
 /**
+ * @desc    Get single course by slug (Admin)
+ * @route   GET /api/courses/slug/:slug
+ * @access  Private/Admin
+ */
+const getAdminCourseBySlug = async (req, res, next) => {
+  try {
+    const course = await Course.findOne({ slug: req.params.slug })
+      .populate('teacher', 'firstName lastName email profilePicture bio')
+      .populate('teachingAssistants', 'firstName lastName email profilePicture');
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: course,
+    });
+  } catch (error) {
+    logger.error(`Error in getAdminCourseBySlug: ${error.message}`);
+    next(error);
+  }
+};
+
+
+/**
  * @desc    Update course
  * @route   PUT /api/courses/:id
  * @access  Private/Admin
@@ -393,6 +422,7 @@ module.exports = {
   getMyTeachingCourses,
   getMyTeachingCourseBySlug,
   getCourseById,
+  getAdminCourseBySlug,
   updateCourse,
   deleteCourse,
   getPublicCourses,

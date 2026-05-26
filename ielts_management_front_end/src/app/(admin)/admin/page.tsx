@@ -1,7 +1,7 @@
 import { TopStats } from "@/components/admin/TopStats";
 import { ProfileWidget } from "@/components/admin/ProfileWidget";
 import { ActivityChartWidget } from "@/components/admin/ActivityChartWidget";
-import { TaskWidget } from "@/components/admin/TaskWidget";
+import { NotificationWidget } from "@/components/admin/NotificationWidget";
 import { ScheduleWidget } from "@/components/admin/ScheduleWidget";
 
 export default function AdminDashboardPage() {
@@ -19,7 +19,7 @@ export default function AdminDashboardPage() {
         {/* Center Column - Charts & Schedule */}
         <div className="flex flex-col gap-6">
           <ActivityChartWidget />
-          
+
           <div className="mt-2">
             <ScheduleWidget />
           </div>
@@ -27,7 +27,7 @@ export default function AdminDashboardPage() {
 
         {/* Right Column - Tasks */}
         <div className="flex flex-col h-full min-h-[500px]">
-          <TaskWidget />
+          <NotificationWidget />
         </div>
       </div>
     </div>

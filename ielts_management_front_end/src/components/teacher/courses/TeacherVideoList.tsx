@@ -94,9 +94,6 @@ export default function TeacherVideoList({ videos, onPlay, onDeleteRequest, onEd
               {/* Info */}
               <div className="min-w-0 flex-1 py-1 pr-20">
                 <h3 className="truncate text-sm font-bold text-gray-900">{video.title}</h3>
-                <p className="mt-0.5 truncate text-xs font-medium text-gray-500">
-                  {video.description || "Tải lên khóa học này"}
-                </p>
                 <div className="mt-2 flex items-center gap-3">
                   <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-600">
                     {video.isPublished ? "PUBLISHED" : "DRAFT"}
