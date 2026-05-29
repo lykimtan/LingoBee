@@ -28,6 +28,14 @@ export default function TeacherCoursesPage() {
 	const [coursesError, setCoursesError] = useState<string | null>(null);
 	const [invitationsError, setInvitationsError] = useState<string | null>(null);
 	const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+	const [filterStatus, setFilterStatus] = useState<string>("all");
+
+	const filteredCourses = useMemo(() => {
+		if (filterStatus === "all") {
+			return courses.filter(c => c.status !== 'invited');
+		}
+		return courses.filter((c) => c.status === filterStatus);
+	}, [courses, filterStatus]);
 
 	const loadCourses = useCallback(async () => {
 		setCoursesLoading(true);
@@ -92,15 +100,41 @@ export default function TeacherCoursesPage() {
 		}
 
 		return (
-			<TeacherCoursesList
-				courses={courses}
-				isLoading={coursesLoading}
-				error={coursesError}
-			/>
+			<div className="flex flex-col gap-4 w-full">
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+					<h3 className="text-lg font-bold text-gray-900">Danh sách khóa học</h3>
+					<div className="flex flex-wrap items-center gap-2">
+						{[
+							{ value: "all", label: "Tất cả" },
+							{ value: "accepted", label: "Chưa nộp" },
+							{ value: "review", label: "Đang kiểm duyệt" },
+							{ value: "published", label: "Đã xuất bản" },
+						].map((tab) => (
+							<button
+								key={tab.value}
+								onClick={() => setFilterStatus(tab.value)}
+								className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+									filterStatus === tab.value
+										? "bg-gray-900 text-white"
+										: "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+								}`}
+							>
+								{tab.label}
+							</button>
+						))}
+					</div>
+				</div>
+				<TeacherCoursesList
+					courses={filteredCourses}
+					isLoading={coursesLoading}
+					error={coursesError}
+				/>
+			</div>
 		);
 	}, [
 		activeTab,
-		courses,
+		filteredCourses,
+		filterStatus,
 		coursesError,
 		coursesLoading,
 		invitations,

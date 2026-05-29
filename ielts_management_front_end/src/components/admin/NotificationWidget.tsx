@@ -3,6 +3,7 @@
 import { Bell } from "lucide-react";
 import { useEffect, useMemo, useState, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { NotificationItem } from "@/types";
 import { notificationService } from "@/services/notificationService";
 import { io, Socket } from "socket.io-client";
@@ -159,10 +160,13 @@ export function NotificationWidget() {
                                     {group.date}
                                 </div>
                                 <div className="flex flex-col gap-4">
-                                    {group.items.map((item, idx) => (
-                                        <div
+                                    {group.items.map((item, idx) => {
+                                        const Component = item.actionUrl ? Link : "div";
+                                        return (
+                                        <Component
                                             key={item._id || item.id || `${group.date}-${idx}`}
-                                            className="flex items-start justify-between border-b border-gray-800 pb-4 last:border-0 last:pb-0"
+                                            href={item.actionUrl || ""}
+                                            className={`flex items-start justify-between border-b border-gray-800 pb-4 last:border-0 last:pb-0 ${item.actionUrl ? "cursor-pointer hover:bg-white/5 transition-colors -mx-4 px-4 pt-4 rounded-xl" : "pt-4"}`}
                                         >
                                             <div className="flex items-start gap-4">
                                                 <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
@@ -185,8 +189,9 @@ export function NotificationWidget() {
                                             {item.isRead === false && (
                                                 <span className="mt-2 h-2 w-2 rounded-full bg-[#ffb800]" />
                                             )}
-                                        </div>
-                                    ))}
+                                        </Component>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         ))}

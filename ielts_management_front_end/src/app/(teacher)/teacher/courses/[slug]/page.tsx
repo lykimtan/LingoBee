@@ -59,6 +59,7 @@ type CourseDetail = {
   slug: string;
   description?: string;
   courseDetail?: string | null;
+  learningOutcomes?: string[];
   category?: string;
   level?: string;
   status?: string;
@@ -100,6 +101,7 @@ export default function TeacherCourseDetailPage() {
   const [isEditingOverview, setIsEditingOverview] = useState(false);
   const [descriptionDraft, setDescriptionDraft] = useState("");
   const [courseDetailDraft, setCourseDetailDraft] = useState("");
+  const [learningOutcomesDraft, setLearningOutcomesDraft] = useState<string[]>([]);
   const [isSavingOverview, setIsSavingOverview] = useState(false);
   const [overviewError, setOverviewError] = useState<string | null>(null);
 
@@ -110,6 +112,20 @@ export default function TeacherCourseDetailPage() {
   const [isSavingPublicInfo, setIsSavingPublicInfo] = useState(false);
   const [publicInfoError, setPublicInfoError] = useState<string | null>(null);
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+  const [isRequestingPreview, setIsRequestingPreview] = useState(false);
+
+  const handleRequestPreview = async () => {
+    if (!course?._id) return;
+    setIsRequestingPreview(true);
+    const response = await courseService.requestCoursePreview(course._id);
+    if (response.status === "success") {
+      toast.success("Đã gửi lời mời preview cho Admin thành công!");
+      setCourse({ ...course, status: 'review' });
+    } else {
+      toast.error(response.message || "Có lỗi xảy ra khi gửi yêu cầu.");
+    }
+    setIsRequestingPreview(false);
+  };
 
   useEffect(() => {
     if (!slug) {
@@ -136,7 +152,8 @@ export default function TeacherCourseDetailPage() {
   useEffect(() => {
     setDescriptionDraft(course?.description || "");
     setCourseDetailDraft(course?.courseDetail || "");
-  }, [course?.description, course?.courseDetail]);
+    setLearningOutcomesDraft(course?.learningOutcomes || []);
+  }, [course?.description, course?.courseDetail, course?.learningOutcomes]);
 
   useEffect(() => {
     setThumbnailDraft(course?.publicInfo?.thumbnail || "");
@@ -161,6 +178,7 @@ export default function TeacherCourseDetailPage() {
     const response = await courseService.updateCourse<CourseDetail>(course._id, {
       description: descriptionDraft,
       courseDetail: courseDetailDraft.trim() ? courseDetailDraft.trim() : null,
+      learningOutcomes: learningOutcomesDraft.filter(val => val.trim() !== ""),
     });
 
     if (response.status === "success" && response.data) {
@@ -261,6 +279,20 @@ export default function TeacherCourseDetailPage() {
             <span className="rounded-full bg-gray-200/60 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-gray-700">
               {course?.status || "unknown"}
             </span>
+            {course?.status !== 'published' && course?.status !== 'review' && (
+              <button
+                onClick={handleRequestPreview}
+                disabled={isRequestingPreview}
+                className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isRequestingPreview ? "Đang gửi..." : "Gửi admin preview"}
+              </button>
+            )}
+            {course?.status === 'review' && (
+              <span className="rounded-full bg-amber-100 px-4 py-1.5 text-xs font-bold tracking-wide text-amber-700">
+                Đang trong quá trình kiểm duyệt
+              </span>
+            )}
             <span className="rounded-full bg-gray-200/60 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-gray-700">
               {course?.category || "Chưa phân loại"}
             </span>
@@ -323,6 +355,43 @@ export default function TeacherCourseDetailPage() {
                       className="mt-2"
                     />
                   </div>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mt-4 mb-2">
+                      Mục tiêu / Kết quả đạt được
+                    </p>
+                    {learningOutcomesDraft.map((outcome, idx) => (
+                      <div key={idx} className="flex gap-2 mb-2">
+                        <input
+                          type="text"
+                          value={outcome}
+                          onChange={(e) => {
+                            const newDraft = [...learningOutcomesDraft];
+                            newDraft[idx] = e.target.value;
+                            setLearningOutcomesDraft(newDraft);
+                          }}
+                          className="flex-1 rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
+                          placeholder="VD: Cải thiện kỹ năng nghe..."
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newDraft = learningOutcomesDraft.filter((_, i) => i !== idx);
+                            setLearningOutcomesDraft(newDraft);
+                          }}
+                          className="px-3 py-2 text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setLearningOutcomesDraft([...learningOutcomesDraft, ""])}
+                      className="text-sm font-medium text-[#1c7c78] hover:underline"
+                    >
+                      + Thêm mục tiêu
+                    </button>
+                  </div>
                   {overviewError && (
                     <p className="text-sm font-semibold text-red-500">
                       {overviewError}
@@ -340,6 +409,7 @@ export default function TeacherCourseDetailPage() {
                       onClick={() => {
                         setDescriptionDraft(course.description || "");
                         setCourseDetailDraft(course.courseDetail || "");
+                        setLearningOutcomesDraft(course.learningOutcomes || []);
                         setOverviewError(null);
                         setIsEditingOverview(false);
                       }}
@@ -353,7 +423,7 @@ export default function TeacherCourseDetailPage() {
                 <>
                   {course.description ? (
                     <div
-                      className="mt-4 text-sm font-medium leading-relaxed text-gray-600"
+                      className="mt-4 text-sm font-medium leading-relaxed text-gray-600 prose prose-sm max-w-none"
                       dangerouslySetInnerHTML={{ __html: course.description }}
                     />
                   ) : (
@@ -370,12 +440,31 @@ export default function TeacherCourseDetailPage() {
                     </p>
                     {course.courseDetail ? (
                       <div
-                        className="mt-2 text-sm font-medium italic text-gray-500"
+                        className="mt-2 text-sm text-gray-500 prose prose-sm max-w-none"
                         dangerouslySetInnerHTML={{ __html: course.courseDetail }}
                       />
                     ) : (
                       <p className="mt-2 text-sm font-medium italic text-gray-500">
-                        Không có mô tả gì
+                        Không có mô tả chi tiết
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="my-6 h-px bg-gray-100" />
+                  
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                      KẾT QUẢ ĐẠT ĐƯỢC
+                    </p>
+                    {course.learningOutcomes && course.learningOutcomes.length > 0 ? (
+                      <ul className="mt-2 list-disc pl-5 text-sm font-medium text-gray-600 space-y-1">
+                        {course.learningOutcomes.map((item, idx) => (
+                          <li key={idx}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-2 text-sm font-medium italic text-gray-500">
+                        Chưa có thông tin
                       </p>
                     )}
                   </div>

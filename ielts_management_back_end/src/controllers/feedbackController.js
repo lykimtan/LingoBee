@@ -45,7 +45,7 @@ const createFeedback = async (req, res, next) => {
       relatedEntity: { type: 'feedback', id: feedback._id },
       title: 'New Feedback on Video',
       message: `Admin has left a feedback on your video in course "${course.title}".`,
-      actionUrl: `/teacher/courses/${course.slug}/videos`, 
+      actionUrl: `/teacher/courses/${course.slug}/videos/${videoId}/exercises`, 
     });
 
     emitNotification(notification);

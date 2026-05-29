@@ -25,7 +25,7 @@ const CardCourse = ({ course }: CardCourseProps) => {
   return (
     <Link
       href={`/teacher/courses/${course.slug}`}
-      className="group relative w-[260px] shrink-0 overflow-hidden rounded-2xl border border-white/60 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[#1f6f5e]/40 hover:shadow-md"
+      className="group relative flex aspect-[3/4] flex-col justify-between overflow-hidden rounded-2xl border border-white/60 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[#1f6f5e]/40 hover:shadow-md"
     >
       {course.publicInfo?.thumbnail ? (
         <>
@@ -33,12 +33,14 @@ const CardCourse = ({ course }: CardCourseProps) => {
             className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
             style={{ backgroundImage: `url(${course.publicInfo.thumbnail})` }}
           />
-          <div className="absolute inset-0 z-0 bg-white/80 transition-colors group-hover:bg-white/70" />
+          {/* ĐÃ SỬA: Dùng gradient thay cho bg-white/80 để phần giữa trong suốt hơn */}
+          <div className="absolute inset-0 z-0 bg-gradient-to-b from-white/90 via-white/20 to-white/90 transition-all group-hover:via-white/10" />
         </>
       ) : (
         <div className="absolute inset-0 z-0 bg-white/80" />
       )}
 
+      {/* Các đốm màu trang trí (có thể giảm opacity nếu vẫn thấy hơi rối) */}
       <div className="pointer-events-none absolute z-0 -right-12 -top-12 h-24 w-24 rounded-full bg-[#1f6f5e]/10 blur-2xl" />
       <div className="pointer-events-none absolute z-0 -bottom-12 -left-10 h-24 w-24 rounded-full bg-[#ffb800]/15 blur-2xl" />
 
@@ -52,15 +54,15 @@ const CardCourse = ({ course }: CardCourseProps) => {
           </div>
           <span
             className={clsx(
-              "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
+              "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm",
               statusTone(course.status)
             )}
           >
-            {course.status}
+            {course.status === 'review' ? 'Đang kiểm duyệt' : course.status}
           </span>
         </div>
 
-        <div className="mt-auto flex flex-wrap gap-3 text-xs text-gray-500">
+        <div className="mt-auto flex flex-wrap gap-3 text-xs text-gray-700 font-medium">
           <span>Học viên: {course.totalStudents ?? 0}</span>
           {course.updatedAt && (
             <span>Cập nhật: {new Date(course.updatedAt).toLocaleDateString()}</span>

@@ -17,6 +17,7 @@ const {
 
 // Public route - get all published courses
 router.get('/public', courseController.getPublicCourses);
+router.get('/public/slug/:slug', courseController.getPublicCourseBySlug);
 
 // Admin routes - requires authentication and admin role
 router.post(
@@ -49,6 +50,7 @@ router.put(
   validate,
   courseController.updateCourse
 );
+router.post('/:id/request-preview', authMiddleware, isTeacher, courseController.requestCoursePreview);
 router.delete('/:id', authMiddleware, isAdmin, courseController.deleteCourse);
 router.post('/invitations/:id/accept', authMiddleware, isTeacher, acceptCourseInvitation);
 router.post('/invitations/:id/reject', authMiddleware, isTeacher, rejectCourseInvitation);

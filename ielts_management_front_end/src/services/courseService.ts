@@ -31,7 +31,7 @@ class CourseService {
   }
 
   async getMyCourses() {
-    return apiClient.get<TeacherCourseItem[]>("/api/courses/my?status=accepted");
+    return apiClient.get<TeacherCourseItem[]>("/api/courses/my");
   }
 
   async getMyCourseBySlug<T = unknown>(slug: string): Promise<ApiResponse<T>> {
@@ -44,9 +44,23 @@ class CourseService {
     return apiClient.put<T>(`/api/courses/${encoded}`, payload);
   }
 
+  async requestCoursePreview(courseId: string): Promise<ApiResponse<unknown>> {
+    const encoded = encodeURIComponent(courseId);
+    return apiClient.post(`/api/courses/${encoded}/request-preview`);
+  }
+
   async getAllCourses() {
   return apiClient.get<AdminCourseItem[]>("/api/courses");
 }
+
+  async getPublicCourses() {
+    return apiClient.get<AdminCourseItem[]>("/api/courses/public");
+  }
+
+  async getPublicCourseBySlug<T = AdminCourseItem>(slug: string): Promise<ApiResponse<T>> {
+    const encoded = encodeURIComponent(slug);
+    return apiClient.get<T>(`/api/courses/public/slug/${encoded}`);
+  }
 
   async getAdminCourseBySlug<T = AdminCourseItem>(slug: string): Promise<ApiResponse<T>> {
     const encoded = encodeURIComponent(slug);

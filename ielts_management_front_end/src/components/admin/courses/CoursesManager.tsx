@@ -9,6 +9,7 @@ import { CreateCourseShellForm } from "@/components/admin/courses/create/CreateC
 import { CourseShellSidebar } from "@/components/admin/courses/create/CourseShellSidebar";
 import { AdminCourseItem } from "@/types";
 import { courseService } from "@/services/courseService";
+import Link from "next/link";
 
 
 
@@ -27,6 +28,8 @@ export function CoursesManager() {
   const [courses, setCourses] = useState<AdminCourseItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterTeacher, setFilterTeacher] = useState<string>("all");
   const activeTab = useMemo<CourseTab>(() => {
     const tabParam = searchParams.get("tab");
     if (
@@ -66,6 +69,26 @@ export function CoursesManager() {
     return { total, published };
   }, [courses]);
 
+  const teachersList = useMemo(() => {
+    const teachersMap = new Map();
+    courses.forEach(c => {
+      if (c.teacher) {
+        const name = `${c.teacher.firstName || ""} ${c.teacher.lastName || ""}`.trim() || c.teacher.email || "Unknown";
+        teachersMap.set(c.teacher._id, name);
+      }
+    });
+    return Array.from(teachersMap.entries()).map(([id, name]) => ({ id, name }));
+  }, [courses]);
+
+  const filteredCourses = useMemo(() => {
+    return courses.filter((c) => {
+      const matchStatus = filterStatus === "all" || c.status === filterStatus;
+      const teacherId = c.teacher?._id || "unassigned";
+      const matchTeacher = filterTeacher === "all" || teacherId === filterTeacher;
+      return matchStatus && matchTeacher;
+    });
+  }, [courses, filterStatus, filterTeacher]);
+
   return (
     <div className="flex flex-col gap-6 md:flex-row px-6">
       {/* Side Navigation */}
@@ -94,12 +117,50 @@ export function CoursesManager() {
           >
             {activeTab === "list" && (
               <div className="flex h-full flex-col gap-6">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xl font-semibold text-white">Danh sách khóa học</p>
-                    <p className="text-sm text-white/60">
-                      Tổng {courseStats.total} khóa học • {courseStats.published} đã xuất bản
-                    </p>
+                <div className="flex flex-col gap-6 mb-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xl font-semibold text-white">Danh sách khóa học</p>
+                      <p className="text-sm text-white/60">
+                        Tổng {courseStats.total} khóa học • {courseStats.published} đã xuất bản
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={filterTeacher}
+                        onChange={(e) => setFilterTeacher(e.target.value)}
+                        className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-medium text-white shadow-sm focus:border-white/20 focus:outline-none custom-scrollbar"
+                      >
+                        <option value="all" className="bg-gray-800">Tất cả giáo viên</option>
+                        {teachersList.map((t) => (
+                          <option key={t.id} value={t.id} className="bg-gray-800">{t.name}</option>
+                        ))}
+                        <option value="unassigned" className="bg-gray-800">Chưa gán</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Tabs for status */}
+                  <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-4">
+                    {[
+                      { value: "all", label: "Tất cả" },
+                      { value: "published", label: "Đã xuất bản" },
+                      { value: "review", label: "Đang kiểm duyệt" },
+                      { value: "accepted", label: "Chưa nộp" },
+                      { value: "invited", label: "Được mời" },
+                    ].map((tab) => (
+                      <button
+                        key={tab.value}
+                        onClick={() => setFilterStatus(tab.value)}
+                        className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+                          filterStatus === tab.value
+                            ? "bg-white text-black"
+                            : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -115,15 +176,15 @@ export function CoursesManager() {
                   </div>
                 )}
 
-                {!isLoading && !error && courses.length === 0 && (
+                {!isLoading && !error && filteredCourses.length === 0 && (
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-white/60">
                     Chưa có khóa học nào.
                   </div>
                 )}
 
-                {!isLoading && !error && courses.length > 0 && (
+                {!isLoading && !error && filteredCourses.length > 0 && (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {courses.map((course) => {
+                    {filteredCourses.map((course) => {
                       const teacherName = course.teacher
                         ? `${course.teacher.firstName || ""} ${course.teacher.lastName || ""}`.trim() ||
                           course.teacher.email ||
@@ -138,13 +199,14 @@ export function CoursesManager() {
                           };
 
                       return (
-                        <div
+                        <Link
+                          href={`/admin/courses/${course.slug}/preview`}
                           key={course._id}
                           className="group relative flex aspect-[3/4] flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-white/5 text-white/90 shadow-sm"
                           style={backgroundStyle}
                         >
-                          <div className="absolute inset-0 bg-cover bg-center" style={backgroundStyle} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
+                          <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={backgroundStyle} />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10 transition-opacity duration-500 group-hover:opacity-80" />
                           <div className="relative z-10 flex h-full flex-col justify-between p-5">
                             <div className="flex items-start justify-between gap-3">
                               <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/90">
@@ -173,7 +235,7 @@ export function CoursesManager() {
                               {course.slug && <p>Slug: {course.slug}</p>}
                             </div>
                           </div>
-                        </div>
+                        </Link>
                       );
                     })}
                   </div>

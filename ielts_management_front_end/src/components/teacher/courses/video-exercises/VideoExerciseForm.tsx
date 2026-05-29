@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import ConfirmModal from "@/components/teacher/ConfirmModal";
 import { uploadService } from "@/services/uploadService";
 import { exerciseService, type ExerciseRecord } from "@/services/exerciseService";
-import RichTextEditor  from "@/components/teacher/RichTextEditor";
+import RichTextEditor from "@/components/teacher/RichTextEditor";
 
 interface VideoExerciseFormProps {
   videoTitle?: string;
@@ -62,23 +62,23 @@ const QUESTION_TYPES: {
   icon: LucideIcon;
   listening?: boolean;
 }[] = [
-  { value: "multipleChoice", label: "Multiple choice", icon: CircleDot },
-  { value: "fillBlank", label: "Fill in the blank", icon: MessageSquareMore },
-  { value: "essay", label: "Essay", icon: Pencil },
-  { value: "speaking", label: "Speaking", icon: MessageCircle },
-  {
-    value: "multipleChoice",
-    label: "Multiple choice listening",
-    icon: Headphones,
-    listening: true,
-  },
-  {
-    value: "fillBlank",
-    label: "Fill blank listening",
-    icon: Headphones,
-    listening: true,
-  },
-];
+    { value: "multipleChoice", label: "Multiple choice", icon: CircleDot },
+    { value: "fillBlank", label: "Fill in the blank", icon: MessageSquareMore },
+    { value: "essay", label: "Essay", icon: Pencil },
+    { value: "speaking", label: "Speaking", icon: MessageCircle },
+    {
+      value: "multipleChoice",
+      label: "Multiple choice listening",
+      icon: Headphones,
+      listening: true,
+    },
+    {
+      value: "fillBlank",
+      label: "Fill blank listening",
+      icon: Headphones,
+      listening: true,
+    },
+  ];
 
 const QUESTION_LABELS: Record<QuestionTypeValue, string> = {
   multipleChoice: "Multiple choice",
@@ -607,7 +607,7 @@ function FillBlankEditor({
         <TextInput
           value={question.prompt}
           onChange={(value) => onChange({ prompt: value })}
-          placeholder="Nhap noi dung cau hoi..."
+          placeholder="Nhập nội dung câu hỏi..."
           disabled={disabled}
         />
       </div>
@@ -727,11 +727,11 @@ export default function VideoExerciseForm({
 
   const visibleQuestionTypes = questionMode
     ? QUESTION_TYPES.filter((type) => {
-        if (questionMode === "essayBased") {
-          return type.value === "essay" || type.value === "speaking";
-        }
-        return type.value === "multipleChoice" || type.value === "fillBlank";
-      })
+      if (questionMode === "essayBased") {
+        return type.value === "essay" || type.value === "speaking";
+      }
+      return type.value === "multipleChoice" || type.value === "fillBlank";
+    })
     : QUESTION_TYPES;
 
   useEffect(() => {
@@ -816,23 +816,23 @@ export default function VideoExerciseForm({
     setNote(null);
 
     if (!courseId || !videoId) {
-      toast.error("Khong tim thay thong tin video hoac khoa hoc.");
+      toast.error("Không tìm thấy thông tin video hoặc khóa học.");
       return;
     }
 
     if (!title.trim()) {
-      toast.error("Vui long nhap tieu de bai tap.");
+      toast.error("Vui lòng nhập tiêu đề bài tập.");
       return;
     }
 
     if (questions.length === 0) {
-      toast.error("Hay them it nhat 1 cau hoi.");
+      toast.error("Hãy thêm ít nhất một câu hỏi");
       return;
     }
 
     for (const question of questions) {
       if (!question.prompt.trim()) {
-        toast.error("Vui long nhap noi dung cho tat ca cau hoi.");
+        toast.error("Vui lòng nhập nội dung câu hỏi.");
         return;
       }
 
@@ -876,22 +876,22 @@ export default function VideoExerciseForm({
       if (response.status === "error" || !response.data) {
         throw new Error(
           response.message ||
-            (currentExerciseId ? "Khong the cap nhat bai tap." : "Khong the tao bai tap.")
+          (currentExerciseId ? "Khong the cap nhat bai tap." : "Khong the tao bai tap.")
         );
       }
 
       setCurrentExerciseId(response.data._id);
       onSaved?.(response.data);
       toast.success(
-        currentExerciseId ? "Cap nhat bai tap thanh cong!" : "Tao bai tap thanh cong!"
+        currentExerciseId ? "Cập nhật thành công!" : "Tạo bài tập thành công!"
       );
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
           : currentExerciseId
-            ? "Cap nhat bai tap that bai."
-            : "Tao bai tap that bai.";
+            ? "Cập nhật bài tập thất bại"
+            : "Tạo bài tập thất bại";
       setNote(message);
       toast.error(message);
     } finally {
@@ -956,9 +956,9 @@ export default function VideoExerciseForm({
       items.map((item) =>
         item.id === questionId
           ? {
-              ...item,
-              options: [...item.options, { id: createId(), text: "" }],
-            }
+            ...item,
+            options: [...item.options, { id: createId(), text: "" }],
+          }
           : item
       )
     );
@@ -973,11 +973,11 @@ export default function VideoExerciseForm({
       items.map((item) =>
         item.id === questionId
           ? {
-              ...item,
-              options: item.options.map((option) =>
-                option.id === optionId ? { ...option, text: value } : option
-              ),
-            }
+            ...item,
+            options: item.options.map((option) =>
+              option.id === optionId ? { ...option, text: value } : option
+            ),
+          }
           : item
       )
     );
@@ -1016,12 +1016,12 @@ export default function VideoExerciseForm({
       items.map((item) =>
         item.id === questionId
           ? {
-              ...item,
-              acceptedAnswers: [
-                ...item.acceptedAnswers,
-                { id: createId(), text: "" },
-              ],
-            }
+            ...item,
+            acceptedAnswers: [
+              ...item.acceptedAnswers,
+              { id: createId(), text: "" },
+            ],
+          }
           : item
       )
     );
@@ -1036,11 +1036,11 @@ export default function VideoExerciseForm({
       items.map((item) =>
         item.id === questionId
           ? {
-              ...item,
-              acceptedAnswers: item.acceptedAnswers.map((answer) =>
-                answer.id === answerId ? { ...answer, text: value } : answer
-              ),
-            }
+            ...item,
+            acceptedAnswers: item.acceptedAnswers.map((answer) =>
+              answer.id === answerId ? { ...answer, text: value } : answer
+            ),
+          }
           : item
       )
     );
@@ -1051,11 +1051,11 @@ export default function VideoExerciseForm({
       items.map((item) =>
         item.id === questionId
           ? {
-              ...item,
-              acceptedAnswers: item.acceptedAnswers.filter(
-                (answer) => answer.id !== answerId
-              ),
-            }
+            ...item,
+            acceptedAnswers: item.acceptedAnswers.filter(
+              (answer) => answer.id !== answerId
+            ),
+          }
           : item
       )
     );
@@ -1229,7 +1229,7 @@ export default function VideoExerciseForm({
                 <span className="inline-flex items-center gap-2">
                   {type.icon && <type.icon className="h-4 w-4" />}
                   {type.label}
-                
+
                 </span>
               </button>
             ))}

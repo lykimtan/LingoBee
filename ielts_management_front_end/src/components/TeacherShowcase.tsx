@@ -140,10 +140,10 @@ export const TeacherShowcase = () => {
 
             <div className="flex flex-wrap gap-4">
               <button className="rounded-full bg-[#ef4444] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#ef4444]/30 hover:scale-[1.02] transition-transform">
-                Dang ky tu van
+                Đăng ký tư vấn
               </button>
               <button className="rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 hover:border-[#1c7c78] hover:text-[#1c7c78] transition-colors">
-                Xem ho so giang vien
+                Xem hồ sơ giảng viên
               </button>
             </div>
           </div>
@@ -236,11 +236,10 @@ export const TeacherShowcase = () => {
                   type="button"
                   onClick={() => setActiveIndex(index)}
                   aria-label={`Go to ${teacher.name}`}
-                  className={`h-2.5 w-2.5 rounded-full transition-all ${
-                    index === activeIndex
-                      ? "bg-[#1c7c78] scale-110"
-                      : "bg-slate-300 hover:bg-[#1c7c78]/60"
-                  }`}
+                  className={`h-2.5 w-2.5 rounded-full transition-all ${index === activeIndex
+                    ? "bg-[#1c7c78] scale-110"
+                    : "bg-slate-300 hover:bg-[#1c7c78]/60"
+                    }`}
                 />
               ))}
             </div>

@@ -14,7 +14,7 @@ export const Footer = () => {
 						>
 							Reach Your Linguistic Dreams
 						</h2>
-                        <div className="max-w-sm rounded-2xl border border-white/10 bg-white/5 p-4">
+						<div className="max-w-sm rounded-2xl border border-white/10 bg-white/5 p-4">
 							<div className="relative aspect-[4/5] overflow-hidden rounded-xl">
 								<video
 									className="h-full w-full object-cover"
@@ -29,7 +29,7 @@ export const Footer = () => {
 								@lingobee.edu
 							</p>
 						</div>
-						
+
 					</div>
 
 					<div className="space-y-12">
@@ -63,7 +63,7 @@ export const Footer = () => {
 								</Link>
 							</div>
 							<div className="space-y-3">
-								<p className="text-xs uppercase tracking-[0.3em] text-white/60">Khoa hoc</p>
+								<p className="text-xs uppercase tracking-[0.3em] text-white/60">Khóa học</p>
 								<Link href="#" className="block text-white/70 hover:text-white">
 									IELTS Academic
 								</Link>
@@ -80,9 +80,9 @@ export const Footer = () => {
 									Privacy Policy
 								</Link>
 							</div>
-						<button className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-xs font-semibold uppercase tracking-[0.35em] text-black hover:bg-white/90 transition">
-							Liên hệ ngay
-						</button>
+							<button className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-xs font-semibold uppercase tracking-[0.35em] text-black hover:bg-white/90 transition">
+								Liên hệ ngay
+							</button>
 						</div>
 					</div>
 				</div>

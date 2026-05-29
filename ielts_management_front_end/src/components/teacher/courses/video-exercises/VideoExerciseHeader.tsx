@@ -24,7 +24,7 @@ export default function VideoExerciseHeader({
           Tạo bài tập cho video
         </h1>
         <p className="mt-2 text-sm font-medium text-gray-500">
-          {courseTitle ? `Khoa hoc: ${courseTitle}. ` : ""}
+          {courseTitle ? `Khóa học: ${courseTitle}. ` : ""}
           {videoTitle ? `Video: ${videoTitle}.` : "Chon video de bat dau."}
         </p>
       </div>

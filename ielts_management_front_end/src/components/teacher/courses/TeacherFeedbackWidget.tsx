@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { feedbackService, FeedbackRecord } from "@/services/feedbackService";
 import { MessageSquareWarning, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { createSafeHtml } from '@/utils/utils';
 
 interface TeacherFeedbackWidgetProps {
@@ -11,6 +13,8 @@ interface TeacherFeedbackWidgetProps {
 }
 
 export function TeacherFeedbackWidget({ courseId }: TeacherFeedbackWidgetProps) {
+  const params = useParams();
+  const slug = params?.slug as string;
   const [feedbacks, setFeedbacks] = useState<FeedbackRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,9 +64,16 @@ export function TeacherFeedbackWidget({ courseId }: TeacherFeedbackWidgetProps) 
 
       <div className="mt-6 flex flex-col gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
         {feedbacks.map((fb) => {
-          const videoTitle = typeof fb.videoId === 'object' ? fb.videoId.title : "Unknown Video";
+          const videoObj = typeof fb.videoId === 'object' ? fb.videoId : null;
+          const videoTitle = videoObj?.title || "Unknown Video";
+          const videoId = videoObj?._id || fb.videoId;
+          
           return (
-            <div key={fb._id} className="rounded-2xl border border-gray-100 bg-gray-50 p-4 transition-all hover:bg-gray-100 hover:shadow-sm">
+            <Link 
+              href={`/teacher/courses/${slug}/videos/${videoId}/exercises`}
+              key={fb._id} 
+              className="block rounded-2xl border border-gray-100 bg-gray-50 p-4 transition-all hover:bg-gray-200 hover:shadow-sm"
+            >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -118,7 +129,7 @@ export function TeacherFeedbackWidget({ courseId }: TeacherFeedbackWidgetProps) 
                   </span>
                 </div>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>

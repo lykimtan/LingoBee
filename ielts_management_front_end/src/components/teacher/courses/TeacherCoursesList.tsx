@@ -33,7 +33,7 @@ export function TeacherCoursesList({ courses, isLoading, error }: TeacherCourses
   }
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-2">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pb-2">
       {courses.map((course) => (
         <CardCourse key={course._id} course={course} />
       ))}

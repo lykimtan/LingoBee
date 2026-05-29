@@ -16,6 +16,10 @@ const courseSchema = new mongoose.Schema(
       type: String,
       default: null, // Detailed description for paid students only
     },
+    learningOutcomes: {
+      type: [String],
+      default: [],
+    },
     category: {
       type: String,
       enum: ['speaking', 'listening', 'reading', 'writing', 'full-test', 'grammar', 'vocabulary'],

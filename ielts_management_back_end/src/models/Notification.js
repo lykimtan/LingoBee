@@ -28,6 +28,7 @@ const notificationSchema = new mongoose.Schema(
         'course_started',
         'course_invitation',
         'video_feedback',
+        'course_preview_request',
       ],
       required: true,
     },

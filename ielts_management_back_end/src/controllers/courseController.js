@@ -14,6 +14,7 @@ const createCourse = async (req, res, next) => {
       title,
       description,
       courseDetail,
+      learningOutcomes,
       category,
       level,
       teacher,
@@ -53,6 +54,7 @@ const createCourse = async (req, res, next) => {
       title,
       description,
       courseDetail,
+      learningOutcomes: learningOutcomes || [],
       category,
       level,
       teacher,
@@ -400,9 +402,9 @@ const getPublicCourses = async (req, res, next) => {
 
     const courses = await Course.find(query)
       .select(
-        'title slug description category level totalVideos totalExercises priceTiers publicInfo teacher totalStudents averageRating totalReviews durationInHours estimatedWeeks promoVideoUrl'
+        'title slug description category level totalVideos totalExercises priceTiers publicInfo teacher totalStudents averageRating totalReviews durationInHours estimatedWeeks promoVideoUrl learningOutComes'
       )
-      .populate('teacher', 'firstName lastName profilePicture bio')
+      .populate('teacher', 'name avatar')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -412,6 +414,91 @@ const getPublicCourses = async (req, res, next) => {
     });
   } catch (error) {
     logger.error(`Error in getPublicCourses: ${error.message}`);
+    next(error);
+  }
+};
+
+/**
+ * @desc    Get public course by slug
+ * @route   GET /api/courses/public/slug/:slug
+ * @access  Public
+ */
+const getPublicCourseBySlug = async (req, res, next) => {
+  try {
+    const course = await Course.findOne({
+      slug: req.params.slug,
+      $or: [{ status: 'published' }, { isPublished: true }],
+    }).populate('teacher', 'name avatar bio');
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: course,
+    });
+  } catch (error) {
+    logger.error(`Error in getPublicCourseBySlug: ${error.message}`);
+    next(error);
+  }
+};
+
+/**
+ * @desc    Request admin to preview course
+ * @route   POST /api/courses/:id/request-preview
+ * @access  Private/Teacher
+ */
+const requestCoursePreview = async (req, res, next) => {
+  try {
+    const course = await Course.findById(req.params.id);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found',
+      });
+    }
+
+    if (course.teacher.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to request preview for this course',
+      });
+    }
+
+    course.status = 'review';
+    await course.save();
+
+    const admins = await User.find({ role: 'admin' });
+
+    const notifications = admins.map(admin => ({
+      recipientUser: admin._id,
+      courseId: course._id,
+      notificationType: 'course_preview_request',
+      relatedEntity: { type: 'course', id: course._id },
+      title: 'Yêu cầu xem trước khóa học',
+      message: `Giáo viên ${req.user.name || 'ẩn danh'} yêu cầu bạn xem trước khóa học ${course.title}.`,
+      actionUrl: `/admin/courses/${course.slug}/preview`,
+    }));
+
+    if (notifications.length > 0) {
+      const createdNotifications = await Notification.insertMany(notifications);
+      createdNotifications.forEach(notif => emitNotification(notif));
+    }
+
+    logger.info(`Course preview requested by ${req.user.id}: ${course._id}`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Preview request sent successfully',
+      data: course,
+    });
+  } catch (error) {
+    logger.error(`Error in requestCoursePreview: ${error.message}`);
     next(error);
   }
 };
@@ -426,4 +513,6 @@ module.exports = {
   updateCourse,
   deleteCourse,
   getPublicCourses,
+  getPublicCourseBySlug,
+  requestCoursePreview
 };

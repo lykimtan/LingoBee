@@ -40,7 +40,7 @@ export default function TeacherCourseExercisesPage() {
       setVideos([]);
 
       if (!slug) {
-        setError("Khong tim thay khoa hoc.");
+        setError("Không tìm thấy khóa học.");
         setIsLoading(false);
         return;
       }
@@ -50,7 +50,7 @@ export default function TeacherCourseExercisesPage() {
       if (!isActive) return;
 
       if (courseResponse.status === "error" || !courseResponse.data) {
-        setError(courseResponse.message || "Khong the tai thong tin khoa hoc.");
+        setError(courseResponse.message || "Không thể tải thông tin khóa học.");
         setIsLoading(false);
         return;
       }

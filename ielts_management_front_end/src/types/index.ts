@@ -140,10 +140,14 @@ export type CourseSummary = {
 };
 
 export type CourseUser = {
+  _id: string;
   firstName?: string;
   lastName?: string;
+  name?: string;
   email?: string;
   profilePicture?: string;
+  avatar?: string;
+  bio?: string;
 };
 
 export type AdminCourseItem = {
@@ -161,6 +165,12 @@ export type AdminCourseItem = {
   };
   createdAt?: string;
   updatedAt?: string;
+  priceTiers?: {
+    name: string;
+    price: number;
+    description?: string;
+    features?: string[];
+  }[];
 };
 
 
@@ -171,5 +181,7 @@ export type NotificationItem = {
   title?: string;
   message?: string;
   createdAt?: string;
+  actionUrl?: string | null;
   isRead?: boolean;
+  recipientUser?: string | null;
 };

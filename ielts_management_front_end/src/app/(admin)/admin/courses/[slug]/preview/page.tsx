@@ -58,14 +58,33 @@ export default function AdminCoursePreviewPage() {
       setIsPublishing(true);
       const res = await courseService.updateCourse(course._id, { status: newStatus });
       if (res.status === 'success' || res.success) {
-        toast.success(`Course status updated to ${newStatus}`);
+        toast.success(`Khóa học đã được cập nhập trạng thái: ${newStatus}`);
         setCourse(prev => prev ? { ...prev, status: newStatus } : null);
       } else {
-        toast.error('Failed to update course status.');
+        toast.error('Không thể cập nhập trạng thái khóa học.');
       }
     } catch (error) {
-      console.error('Error updating course status:', error);
-      toast.error('An error occurred while updating status.');
+      console.error('Lỗi cập nhập trạng thái khóa học:', error);
+      toast.error('Có lỗi xảy ra trong quá trình cập nhập trạng thái.');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleUpdatePrice = async (priceTiers: any[]) => {
+    if (!course || !course._id) return;
+    try {
+      setIsPublishing(true);
+      const res = await courseService.updateCourse(course._id, { priceTiers });
+      if (res.status === 'success' || res.success) {
+        toast.success(`Thiết lập giá thành công!`);
+        setCourse(prev => prev ? { ...prev, priceTiers } : null);
+      } else {
+        toast.error('Không thể thiết lập giá khóa học.');
+      }
+    } catch (error) {
+      console.error('Lỗi thiết lập giá khóa học:', error);
+      toast.error('Có lỗi xảy ra trong quá trình thiết lập giá.');
     } finally {
       setIsPublishing(false);
     }
@@ -84,6 +103,7 @@ export default function AdminCoursePreviewPage() {
       <CoursePreviewHeader
         course={course}
         onStatusChange={handleStatusChange}
+        onUpdatePrice={handleUpdatePrice}
         isPublishing={isPublishing}
       />
 

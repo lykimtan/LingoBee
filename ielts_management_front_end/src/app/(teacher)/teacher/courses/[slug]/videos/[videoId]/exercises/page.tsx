@@ -53,17 +53,17 @@ export default function TeacherVideoExercisesPage() {
       setSelectedExercise(null);
 
       if (!slug || !videoId) {
-        setError("Thieu thong tin video hoac khoa hoc.");
+        setError("Thiếu thông tin video hoặc khóa học.");
         setIsLoading(false);
         return;
       }
 
-     const courseResponse = await courseService.getMyCourseBySlug<CourseSummary>(slug);
+      const courseResponse = await courseService.getMyCourseBySlug<CourseSummary>(slug);
 
       if (!isActive) return;
 
       if (courseResponse.status === "error" || !courseResponse.data) {
-        setError(courseResponse.message || "Khong the tai thong tin khoa hoc.");
+        setError(courseResponse.message || "Không thể tải thông tin khóa học");
         setIsLoading(false);
         return;
       }
@@ -204,9 +204,8 @@ export default function TeacherVideoExercisesPage() {
       <div className="flex items-center gap-6 border-b border-gray-100 px-2">
         <button
           onClick={() => setActiveTab("content")}
-          className={`relative pb-4 text-sm font-bold uppercase tracking-widest transition-colors ${
-            activeTab === "content" ? "text-gray-900" : "text-gray-400 hover:text-gray-700"
-          }`}
+          className={`relative pb-4 text-sm font-bold uppercase tracking-widest transition-colors ${activeTab === "content" ? "text-gray-900" : "text-gray-400 hover:text-gray-700"
+            }`}
         >
           Nội dung
           {activeTab === "content" && (
@@ -215,9 +214,8 @@ export default function TeacherVideoExercisesPage() {
         </button>
         <button
           onClick={() => setActiveTab("feedback")}
-          className={`relative pb-4 text-sm font-bold uppercase tracking-widest transition-colors ${
-            activeTab === "feedback" ? "text-gray-900" : "text-gray-400 hover:text-gray-700"
-          }`}
+          className={`relative pb-4 text-sm font-bold uppercase tracking-widest transition-colors ${activeTab === "feedback" ? "text-gray-900" : "text-gray-400 hover:text-gray-700"
+            }`}
         >
           Feedback
           {activeTab === "feedback" && (
