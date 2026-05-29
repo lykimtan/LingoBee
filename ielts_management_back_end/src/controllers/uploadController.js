@@ -1,8 +1,8 @@
 const cloudinary = require('../config/cloudinary');
 const logger = require('../utils/logger');
 
-const allowedResourceTypes = new Set(['image', 'video']);
-const allowedFolders = new Set(['avatars', 'videos', 'thumbnails', 'audios']);
+const allowedResourceTypes = new Set(['image', 'video', 'raw']);
+const allowedFolders = new Set(['avatars', 'videos', 'thumbnails', 'audios', 'materials']);
 
 const extractPublicIdFromUrl = (url) => {
   if (!url || typeof url !== 'string') {
@@ -60,7 +60,7 @@ const getUploadSignature = async (req, res) => {
     if (!allowedResourceTypes.has(resourceType)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid resource type. Only image or video is allowed.',
+        message: 'Invalid resource type. Only image, video or raw is allowed.',
       });
     }
 

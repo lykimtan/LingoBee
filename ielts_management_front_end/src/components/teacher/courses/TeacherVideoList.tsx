@@ -39,7 +39,7 @@ export default function TeacherVideoList({ videos, onPlay, onDeleteRequest, onEd
   const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
 
   return (
-    <section className="flex flex-col w-[600px] shrink-0 rounded-3xl border border-gray-100 bg-white p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+    <section className="flex flex-col w-full lg:w-[400px] xl:w-[450px] shrink-0 rounded-3xl border border-gray-100 bg-white p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <PlaySquare className="h-7 w-7 text-gray-900" />

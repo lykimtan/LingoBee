@@ -21,7 +21,7 @@ export default function VideoExerciseHeader({
       </Link>
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl">
-          Tạo bài tập cho video
+          Tạo tài liệu cho video bài giảng
         </h1>
         <p className="mt-2 text-sm font-medium text-gray-500">
           {courseTitle ? `Khóa học: ${courseTitle}. ` : ""}

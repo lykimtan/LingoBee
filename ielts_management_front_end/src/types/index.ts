@@ -47,7 +47,7 @@ export interface PaginatedData<T> {
 }
 
 // Cloudinary upload types
-export type UploadResourceType = 'image' | 'video';
+export type UploadResourceType = 'image' | 'video' | 'raw';
 
 export interface CloudinarySignatureResponse {
   signature: string;
@@ -55,7 +55,7 @@ export interface CloudinarySignatureResponse {
   cloudName: string;
   apiKey: string;
   uploadPreset?: string | null;
-  folder: 'avatars' | 'videos' | 'thumbnails';
+  folder: 'avatars' | 'videos' | 'thumbnails' | 'materials';
   resourceType: UploadResourceType;
 }
 
@@ -77,6 +77,8 @@ export type CourseVideo = {
   duration: number;
   videoUrl: string;
   thumbnailUrl?: string;
+  materialUrl?: string;
+  materialName?: string;
   order: number;
   skills?: string[];
   isPublished?: boolean;

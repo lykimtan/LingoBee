@@ -144,10 +144,13 @@ const updateVideo = async (req, res, next) => {
       skills,
       isPublished,
       isMandatory,
+      materialUrl,
+      materialName,
     } = req.body || {};
 
     const previousVideoUrl = video.videoUrl;
     const previousThumbnailUrl = video.thumbnailUrl;
+    const previousMaterialUrl = video.materialUrl;
 
     if (typeof title === 'string') video.title = title;
     if (typeof description === 'string') video.description = description;
@@ -158,6 +161,8 @@ const updateVideo = async (req, res, next) => {
     if (Array.isArray(skills)) video.skills = skills;
     if (typeof isPublished === 'boolean') video.isPublished = isPublished;
     if (typeof isMandatory === 'boolean') video.isMandatory = isMandatory;
+    if (typeof materialUrl === 'string') video.materialUrl = materialUrl;
+    if (typeof materialName === 'string') video.materialName = materialName;
 
     await video.save();
 
@@ -171,6 +176,14 @@ const updateVideo = async (req, res, next) => {
       previousThumbnailUrl !== thumbnailUrl
     ) {
       await deleteCloudinaryAsset(previousThumbnailUrl, 'image');
+    }
+
+    if (
+      typeof materialUrl === 'string' &&
+      previousMaterialUrl &&
+      previousMaterialUrl !== materialUrl
+    ) {
+      await deleteCloudinaryAsset(previousMaterialUrl, 'image');
     }
 
     return res.status(200).json({
@@ -221,11 +234,15 @@ const deleteVideo = async (req, res, next) => {
 
     const videoUrl = video.videoUrl;
     const thumbnailUrl = video.thumbnailUrl;
+    const materialUrl = video.materialUrl;
     await video.deleteOne();
     await Course.findByIdAndUpdate(video.courseId, { $inc: { totalVideos: -1 } });
     await deleteCloudinaryAsset(videoUrl, 'video');
     if (thumbnailUrl) {
       await deleteCloudinaryAsset(thumbnailUrl, 'image');
+    }
+    if (materialUrl) {
+      await deleteCloudinaryAsset(materialUrl, 'image');
     }
 
     return res.status(200).json({

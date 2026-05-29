@@ -132,7 +132,7 @@ export default function TeacherCourseExercisesPage() {
             onPlay={setVideoToPlay}
             onDeleteRequest={setVideoToDelete}
           />
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <ExerciseListGroup videos={videos} slug={course.slug} />
           </div>
         </div>

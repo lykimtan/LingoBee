@@ -449,9 +449,9 @@ export default function TeacherCourseDetailPage() {
                       </p>
                     )}
                   </div>
-                  
+
                   <div className="my-6 h-px bg-gray-100" />
-                  
+
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
                       KẾT QUẢ ĐẠT ĐƯỢC
@@ -832,19 +832,7 @@ export default function TeacherCourseDetailPage() {
                   <div className="flex items-center gap-3">
                     <ClipboardList className="h-5 w-5 text-gray-700" />
                     <span className="text-sm font-bold text-gray-900">
-                      Đăng tải bài tập
-                    </span>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-gray-400 transition-colors group-hover:text-gray-700" />
-                </Link>
-                <Link
-                  href={`/teacher/courses/${slug}/materials`}
-                  className="group flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-4 transition-colors hover:bg-gray-100"
-                >
-                  <div className="flex items-center gap-3">
-                    <Book className="h-5 w-5 text-gray-700" />
-                    <span className="text-sm font-bold text-gray-900">
-                      Đăng tải tài liệu
+                      Đăng tải bài tập/ tài liệu
                     </span>
                   </div>
                   <ChevronRight className="h-4 w-4 text-gray-400 transition-colors group-hover:text-gray-700" />

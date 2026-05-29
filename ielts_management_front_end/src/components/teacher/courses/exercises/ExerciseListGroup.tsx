@@ -36,8 +36,11 @@ export default function ExerciseListGroup({ videos, slug }: ExerciseListGroupPro
             className="flex flex-col rounded-3xl border border-gray-100 bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]"
           >
             {/* Header section for the video */}
-            <div className="flex items-center justify-between border-b border-gray-100 p-6 sm:px-8">
-              <div className="flex items-center gap-4">
+            {/* Đã thêm gap-4 ở đây để phòng hờ text dính sát vào nút */}
+            <div className="flex items-center justify-between gap-4 border-b border-gray-100 p-6 sm:px-8">
+
+              {/* Thêm flex-1 và min-w-0 để khối chứa text và ảnh có thể co lại */}
+              <div className="flex min-w-0 flex-1 items-center gap-4">
                 <div className="flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
                   {video.thumbnailUrl ? (
                     <Image
@@ -51,19 +54,29 @@ export default function ExerciseListGroup({ videos, slug }: ExerciseListGroupPro
                     <VideoIcon className="h-6 w-6 text-gray-400" />
                   )}
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">{video.title}</h3>
+
+                {/* Thêm min-w-0 để hỗ trợ truncate cho h3 */}
+                <div className="min-w-0 flex-1">
+                  {/* Thêm truncate để cắt chữ thành dấu ... và title để xem tooltip */}
+                  <h3
+                    className="truncate text-lg font-bold text-gray-900"
+                    title={video.title}
+                  >
+                    {video.title}
+                  </h3>
                   <p className="text-sm font-medium text-gray-500">
                     {exercises.length} Bài tập
                   </p>
                 </div>
               </div>
+
+              {/* Thêm shrink-0 để nút không bao giờ bị ép nhỏ lại */}
               <Link
                 href={`/teacher/courses/${slug}/videos/${video._id}/exercises`}
-                className="flex items-center gap-2 rounded-xl bg-black px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-gray-800"
+                className="flex shrink-0 items-center gap-2 rounded-xl bg-black px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-gray-800"
               >
                 <PlusCircle className="h-4 w-4" />
-                <span className="hidden sm:inline">Thêm bài tập</span>
+                <span className="hidden sm:inline">Thêm bài tập/ tài liệu</span>
               </Link>
             </div>
 

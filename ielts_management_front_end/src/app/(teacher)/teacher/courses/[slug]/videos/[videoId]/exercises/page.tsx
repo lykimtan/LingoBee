@@ -15,6 +15,9 @@ import { CourseSummary } from "@/types";
 import { courseService } from "@/services/courseService";
 import { videoService } from "@/services/videoService";
 import { TeacherVideoFeedbackTab } from "@/components/teacher/courses/TeacherVideoFeedbackTab";
+import TeacherMaterialUploader from "@/components/teacher/courses/TeacherMaterialUploader";
+import PdfImageViewer from "@/components/public/PdfImageViewer";
+import { FileText, Trash2 } from "lucide-react";
 
 
 export default function TeacherVideoExercisesPage() {
@@ -31,7 +34,9 @@ export default function TeacherVideoExercisesPage() {
   const [isDeletingExercise, setIsDeletingExercise] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"content" | "feedback">("content");
+  const [isDeleteMaterialModalOpen, setIsDeleteMaterialModalOpen] = useState(false);
+  const [isDeletingMaterial, setIsDeletingMaterial] = useState(false);
+  const [activeTab, setActiveTab] = useState<"content" | "feedback" | "material">("content");
   const formRef = useRef<HTMLDivElement | null>(null);
 
   const resolveQuestionMode = (exercise: ExerciseRecord | null) => {
@@ -170,6 +175,52 @@ export default function TeacherVideoExercisesPage() {
     }
   };
 
+  const handleUploadMaterialSuccess = async (materialUrl: string, materialName: string) => {
+    if (!video) return;
+    try {
+      const response = await videoService.updateVideo(video._id, {
+        materialUrl,
+        materialName,
+      });
+
+      if (response.status === "error" || !response.data) {
+        throw new Error(response.message || "Không thể cập nhật tài liệu cho video.");
+      }
+
+      setVideo(response.data);
+      toast.success("Tải lên tài liệu thành công!");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Có lỗi xảy ra khi lưu tài liệu");
+    }
+  };
+
+  const handleDeleteMaterial = async () => {
+    setIsDeleteMaterialModalOpen(true);
+  }
+
+  const confirmDeleteMaterial = async () => {
+    if (!video) return;
+    setIsDeletingMaterial(true);
+    try {
+      const response = await videoService.updateVideo(video._id, {
+        materialUrl: "",
+        materialName: "",
+      });
+      if (response.status === "error" || !response.data) {
+        throw new Error(response.message || "Không thể xóa tài liệu");
+      };
+
+      setVideo(response.data);
+      toast.success("Đã xóa tài liệu thành công!");
+
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Có lỗi xảy ra khi xóa tài liệu");
+    } finally {
+      setIsDeletingMaterial(false);
+      setIsDeleteMaterialModalOpen(false);
+    }
+  };
+
   const questionModeOptions: SelectOption[] = [
     {
       value: "autoGraded",
@@ -213,6 +264,16 @@ export default function TeacherVideoExercisesPage() {
           )}
         </button>
         <button
+          onClick={() => setActiveTab("material")}
+          className={`relative pb-4 text-sm font-bold uppercase tracking-widest transition-colors ${activeTab === "material" ? "text-gray-900" : "text-gray-400 hover:text-gray-700"
+            }`}
+        >
+          Tài liệu đính kèm
+          {activeTab === "material" && (
+            <span className="absolute bottom-0 left-0 h-0.5 w-full bg-black rounded-t-full" />
+          )}
+        </button>
+        <button
           onClick={() => setActiveTab("feedback")}
           className={`relative pb-4 text-sm font-bold uppercase tracking-widest transition-colors ${activeTab === "feedback" ? "text-gray-900" : "text-gray-400 hover:text-gray-700"
             }`}
@@ -222,6 +283,7 @@ export default function TeacherVideoExercisesPage() {
             <span className="absolute bottom-0 left-0 h-0.5 w-full bg-black rounded-t-full" />
           )}
         </button>
+
       </div>
 
       {/* Tab Panels */}
@@ -266,6 +328,52 @@ export default function TeacherVideoExercisesPage() {
           <TeacherVideoFeedbackTab videoId={videoId as string} />
         </div>
       )}
+
+      {activeTab === "material" && (
+        <div className="flex flex-col gap-8">
+          <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm overflow-hidden">
+            <h3 className="text-lg font-bold text-gray-900 mb-6">Tài liệu đính kèm</h3>
+            {video?.materialUrl ? (
+              <div className="flex flex-col gap-6">
+                <div className="rounded-2xl border border-green-100 bg-green-50/50 p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-600">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-green-800 mb-0.5">Tài liệu đang hiển thị:</p>
+                      <span className="truncate text-sm font-bold text-green-700 block text-left">
+                        {video.materialName || "Tài liệu không tên"}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleDeleteMaterial}
+                    className="shrink-0 rounded-xl bg-white p-2 text-red-500 shadow-sm border border-red-100 hover:bg-red-50 hover:text-red-600 transition-colors group"
+                    title="Xóa tài liệu"
+                  >
+                    <Trash2 className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                  </button>
+                </div>
+
+                <div className="rounded-xl border border-gray-100 overflow-hidden shadow-inner bg-gray-50 p-2 sm:p-4">
+                  <PdfImageViewer pdfUrl={video.materialUrl} />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-4">
+                  Chưa có tài liệu đính kèm cho bài học này. Kéo thả file PDF vào đây để tải lên:
+                </p>
+                <TeacherMaterialUploader
+                  onUploadSuccess={handleUploadMaterialSuccess}
+                  maxFileSizeMB={20}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <SelectModal
         isOpen={isSelectModalOpen}
         onClose={() => setIsSelectModalOpen(false)}
@@ -292,6 +400,21 @@ export default function TeacherVideoExercisesPage() {
         isDestructive
         isLoading={isDeletingExercise}
       />
+      <ConfirmModal
+        isOpen={isDeleteMaterialModalOpen}
+        onClose={() => {
+          // Nếu không đang loading xóa thì mới cho phép đóng
+          if (!isDeletingMaterial) setIsDeleteMaterialModalOpen(false);
+        }}
+        onConfirm={confirmDeleteMaterial}
+        title="Xóa tài liệu đính kèm?"
+        message="Tài liệu này sẽ bị xóa vĩnh viễn khỏi bài học. Bạn có chắc chắn muốn xóa không?"
+        confirmText="Xóa tài liệu"
+        cancelText="Hủy"
+        isDestructive={true}
+        isLoading={isDeletingMaterial}
+      />
+
     </div>
   );
 }

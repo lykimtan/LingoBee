@@ -29,6 +29,14 @@ const videoSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    materialUrl: {
+      type: String,
+      default: '', // Cloud URL for PDF
+    },
+    materialName: {
+      type: String,
+      default: '', // Original file name
+    },
     order: {
       type: Number,
       required: true, // Must follow strict order
