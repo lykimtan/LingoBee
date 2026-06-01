@@ -73,7 +73,7 @@ export default function PdfImageViewer({ pdfUrl, className = "" }: PdfImageViewe
   };
 
   return (
-    <div className={`flex flex-col items-center bg-gray-50/50 rounded-xl overflow-hidden ${className}`}>
+    <div className={`flex flex-col items-center bg-gray-50/50 rounded-xl overflow-hidden max-h-[75vh] overflow-y-auto ${className}`}>
       {pages.map((pageNumber) => {
         // If this page errored out (likely 404 because we exceeded the PDF length), don't render it
         if (errorPages.has(pageNumber)) {

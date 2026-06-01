@@ -30,6 +30,11 @@ import {
 import TeacherCourseInstructorCard from "@/components/teacher/courses/TeacherCourseInstructorCard";
 import RichTextEditor from "@/components/teacher/RichTextEditor";
 import { TeacherFeedbackWidget } from "@/components/teacher/courses/TeacherFeedbackWidget";
+import Uppy from '@uppy/core';
+import Dashboard from '@uppy/react/dashboard';
+import vi_VN from '@uppy/locales/lib/vi_VN';
+import '@uppy/core/css/style.css';
+import '@uppy/dashboard/css/style.css';
 
 type CoursePriceTier = {
   name: string;
@@ -114,6 +119,10 @@ export default function TeacherCourseDetailPage() {
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
   const [isRequestingPreview, setIsRequestingPreview] = useState(false);
 
+  const [promoVideoUrlDraft, setPromoVideoUrlDraft] = useState("");
+  const [uppyPromoVideo, setUppyPromoVideo] = useState<any>(null);
+  const [isDeletingPromo, setIsDeletingPromo] = useState(false);
+
   const handleRequestPreview = async () => {
     if (!course?._id) return;
     setIsRequestingPreview(true);
@@ -150,6 +159,65 @@ export default function TeacherCourseDetailPage() {
   }, [slug]);
 
   useEffect(() => {
+    const u = new Uppy({
+      id: 'uppyPromoVideo',
+      locale: vi_VN,
+      restrictions: { maxNumberOfFiles: 1, allowedFileTypes: ['video/*'], maxFileSize: 500 * 1024 * 1024 },
+      autoProceed: true,
+    });
+    u.addUploader(async (fileIDs) => {
+      for (const fileID of fileIDs) {
+        const file = u.getFile(fileID);
+        try {
+          const signatureResponse = await uploadService.requestSignature({ resourceType: "video", folder: "videos" });
+          if (signatureResponse.status === "error" || !signatureResponse.data) throw new Error(signatureResponse.message || "Lỗi lấy chữ ký");
+          const sigData = signatureResponse.data;
+          const formData = new FormData();
+          formData.append('file', file.data as Blob);
+          formData.append('api_key', sigData.apiKey);
+          formData.append('timestamp', String(sigData.timestamp));
+          formData.append('signature', sigData.signature);
+          formData.append('folder', sigData.folder);
+          if (sigData.uploadPreset) formData.append('upload_preset', sigData.uploadPreset);
+
+          await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `https://api.cloudinary.com/v1_1/${sigData.cloudName}/video/upload`);
+            xhr.upload.onprogress = (event) => {
+              if (event.lengthComputable) {
+                const currentFile = u.getFile(fileID);
+                u.setFileState(fileID, {
+                  progress: { 
+                    ...currentFile.progress, 
+                    uploadStarted: currentFile.progress?.uploadStarted ?? Date.now(),
+                    bytesUploaded: event.loaded, 
+                    bytesTotal: event.total, 
+                    percentage: Math.round((event.loaded / event.total) * 100) 
+                  } as any
+                });
+              }
+            };
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                const response = JSON.parse(xhr.responseText);
+                setPromoVideoUrlDraft(response.secure_url);
+                resolve(response);
+              } else reject(new Error(`Lỗi Cloudinary`));
+            };
+            xhr.onerror = () => reject(new Error('Network error'));
+            xhr.send(formData);
+          });
+        } catch (err) {
+          u.emit('upload-error', file, err instanceof Error ? err : new Error('Upload failed'));
+          throw err;
+        }
+      }
+    });
+    setUppyPromoVideo(u);
+    return () => u.destroy();
+  }, []);
+
+  useEffect(() => {
     setDescriptionDraft(course?.description || "");
     setCourseDetailDraft(course?.courseDetail || "");
     setLearningOutcomesDraft(course?.learningOutcomes || []);
@@ -159,7 +227,8 @@ export default function TeacherCourseDetailPage() {
     setThumbnailDraft(course?.publicInfo?.thumbnail || "");
     setShortDescriptionDraft(course?.publicInfo?.shortDescription || "");
     setTargetLevelDraft(course?.publicInfo?.targetLevel || "");
-  }, [course?.publicInfo]);
+    setPromoVideoUrlDraft(course?.promoVideoUrl || "");
+  }, [course?.publicInfo, course?.promoVideoUrl]);
 
   const handleSaveOverview = async () => {
     if (!course?._id) return;
@@ -204,6 +273,7 @@ export default function TeacherCourseDetailPage() {
         shortDescription: shortDescriptionDraft.trim(),
         targetLevel: targetLevelDraft.trim(),
       },
+      promoVideoUrl: promoVideoUrlDraft.trim() ? promoVideoUrlDraft.trim() : null,
     });
 
     if (response.status === "success" && response.data) {
@@ -215,6 +285,24 @@ export default function TeacherCourseDetailPage() {
       toast.error(response.message || "Không thể cập nhật thông tin công khai.");
     }
     setIsSavingPublicInfo(false);
+  };
+
+  const handleDeletePromoVideo = async () => {
+    if (!promoVideoUrlDraft) return;
+    setIsDeletingPromo(true);
+    try {
+      await uploadService.deleteUpload(promoVideoUrlDraft, 'video');
+      setPromoVideoUrlDraft("");
+      if (course?._id) {
+         await courseService.updateCourse(course._id, { promoVideoUrl: null });
+         setCourse((prev) => prev ? { ...prev, promoVideoUrl: null } : prev);
+      }
+      toast.success("Xóa video xem thử thành công");
+    } catch (err) {
+      toast.error("Không thể xóa video.");
+    } finally {
+      setIsDeletingPromo(false);
+    }
   };
 
   const handleThumbnailUpload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -644,6 +732,39 @@ export default function TeacherCourseDetailPage() {
                       placeholder="Ví dụ: 6.5+, 7.0 IELTS"
                     />
                   </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-2 block">
+                      Video xem thử (Promo Video)
+                    </p>
+                    {promoVideoUrlDraft ? (
+                      <div className="relative rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                        <video src={promoVideoUrlDraft} controls className="w-full rounded-xl max-h-64 object-contain" />
+                        <button
+                          type="button"
+                          onClick={handleDeletePromoVideo}
+                          disabled={isDeletingPromo}
+                          className="absolute top-6 right-6 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-red-500 shadow hover:bg-red-50 disabled:opacity-50"
+                        >
+                          {isDeletingPromo ? "Đang xóa..." : "Xóa Video"}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="overflow-hidden rounded-3xl border border-gray-200 bg-gray-50">
+                        {uppyPromoVideo ? (
+                          <Dashboard
+                            uppy={uppyPromoVideo}
+                            hideUploadButton={true}
+                            proudlyDisplayPoweredByUppy={false}
+                            height={250}
+                            width="100%"
+                            theme="light"
+                          />
+                        ) : (
+                          <div className="h-[250px] flex items-center justify-center animate-pulse text-gray-400">Đang tải uploader...</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   {publicInfoError && (
                     <p className="text-sm font-semibold text-red-500">
                       {publicInfoError}
@@ -666,6 +787,7 @@ export default function TeacherCourseDetailPage() {
                         setThumbnailDraft(course.publicInfo?.thumbnail || "");
                         setShortDescriptionDraft(course.publicInfo?.shortDescription || "");
                         setTargetLevelDraft(course.publicInfo?.targetLevel || "");
+                        setPromoVideoUrlDraft(course.promoVideoUrl || "");
                         setPublicInfoError(null);
                         setIsEditingPublicInfo(false);
                       }}
@@ -727,6 +849,14 @@ export default function TeacherCourseDetailPage() {
                       {course.publicInfo?.targetLevel || "Chưa cập nhật"}
                     </p>
                   </div>
+                  {course.promoVideoUrl && (
+                    <div className="rounded-2xl bg-gray-50 p-4">
+                      <p className="text-sm font-bold text-gray-900 mb-2">
+                        Video xem thử (Promo Video)
+                      </p>
+                      <video src={course.promoVideoUrl} controls className="w-full max-h-64 object-contain rounded-xl" />
+                    </div>
+                  )}
                   {/* Widget Feedback từ Admin */}
                   <TeacherFeedbackWidget courseId={course._id} />
                 </div>

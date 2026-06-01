@@ -3,6 +3,7 @@ import { jwtVerify } from 'jose';
 
 const ADMIN_ROLE = 'admin';
 const TEACHER_ROLE = 'teacher';
+const STUDENT_ROLE = 'student';
 const verifyRoleAccess = async (request: NextRequest, roles: string[]): Promise<boolean> => {
   const token = request.cookies.get('authToken')?.value;
   const secret = process.env.JWT_SECRET;

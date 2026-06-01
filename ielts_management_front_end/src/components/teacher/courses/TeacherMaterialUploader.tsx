@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Uppy from '@uppy/core';
 import Dashboard from '@uppy/react/dashboard';
 import vi_VN from '@uppy/locales/lib/vi_VN';
@@ -19,7 +19,14 @@ export default function TeacherMaterialUploader({
   onUploadSuccess,
   maxFileSizeMB = 20,
 }: TeacherMaterialUploaderProps) {
-  const [uppy] = useState(() => {
+  const [uppy, setUppy] = useState<Uppy | null>(null);
+  const onUploadSuccessRef = useRef(onUploadSuccess);
+
+  useEffect(() => {
+    onUploadSuccessRef.current = onUploadSuccess;
+  }, [onUploadSuccess]);
+
+  useEffect(() => {
     const u = new Uppy({
       id: 'uppyMaterial',
       locale: vi_VN,
@@ -28,7 +35,7 @@ export default function TeacherMaterialUploader({
         allowedFileTypes: ['application/pdf'],
         maxFileSize: maxFileSizeMB * 1024 * 1024,
       },
-      autoProceed: true, // Auto start upload when file is dropped
+      autoProceed: true,
     });
 
     u.addUploader(async (fileIDs) => {
@@ -36,9 +43,8 @@ export default function TeacherMaterialUploader({
         const file = u.getFile(fileID);
         
         try {
-          // 1. Lấy chữ ký từ backend
           const signatureResponse = await uploadService.requestSignature({
-            resourceType: "image", // Use image so Cloudinary can process PDF pages
+            resourceType: "image",
             folder: "materials",
           });
 
@@ -48,7 +54,6 @@ export default function TeacherMaterialUploader({
 
           const sigData = signatureResponse.data;
 
-          // 2. Chuẩn bị FormData
           const formData = new FormData();
           formData.append('file', file.data as Blob);
           formData.append('api_key', sigData.apiKey);
@@ -59,7 +64,6 @@ export default function TeacherMaterialUploader({
             formData.append('upload_preset', sigData.uploadPreset);
           }
 
-          // 3. Upload bằng XHR để Uppy có thể hiển thị tiến trình (progress)
           await new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open('POST', `https://api.cloudinary.com/v1_1/${sigData.cloudName}/image/upload`);
@@ -93,8 +97,7 @@ export default function TeacherMaterialUploader({
                 });
                 u.emit('upload-success', file, { status: xhr.status, body: response, uploadURL: response.secure_url });
                 
-                // Gọi callback khi thành công
-                onUploadSuccess(response.secure_url, file.name || "TaiLieu.pdf");
+                onUploadSuccessRef.current(response.secure_url, file.name || "TaiLieu.pdf");
                 resolve(response);
               } else {
                 let errorMsg = `Lỗi Cloudinary (${xhr.status})`;
@@ -125,8 +128,16 @@ export default function TeacherMaterialUploader({
       }
     });
 
-    return u;
-  });
+    setUppy(u);
+
+    return () => {
+      u.destroy();
+    };
+  }, [maxFileSizeMB]);
+
+  if (!uppy) {
+    return <div className="h-[250px] rounded-xl border border-gray-200 bg-gray-50 flex animate-pulse"></div>;
+  }
 
   return (
     <div className="uppy-material-container rounded-xl overflow-hidden border border-gray-200">

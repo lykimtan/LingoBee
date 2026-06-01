@@ -153,4 +153,23 @@ courseSchema.pre('validate', function () {
   }
 });
 
+const knowledgeSyncService = require('../services/knowledgeSyncService');
+
+courseSchema.post('save', function (doc) {
+  // Đồng bộ Course sang Knowledge Base (chạy ngầm)
+  knowledgeSyncService.syncCourse(doc);
+});
+
+courseSchema.post('findOneAndUpdate', async function (doc) {
+  if (doc) {
+    knowledgeSyncService.syncCourse(doc);
+  }
+});
+
+courseSchema.post('findOneAndDelete', async function (doc) {
+  if (doc) {
+    knowledgeSyncService.removeCourse(doc._id);
+  }
+});
+
 module.exports = mongoose.model('Course', courseSchema);

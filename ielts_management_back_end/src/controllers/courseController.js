@@ -2,6 +2,7 @@ const { Course, CourseInvitation, Notification, User, Exercise } = require('../m
 const { emitNotification } = require('../socket');
 const logger = require('../utils/logger');
 const { deleteCloudinaryAsset } = require('./uploadController');
+const { getValue, setWithTTL, deleteKeysByPattern, deleteKey } = require('../config/redis');
 
 /**
  * @desc    Create a new course
@@ -94,6 +95,11 @@ const createCourse = async (req, res, next) => {
     });
 
     emitNotification(notification);
+
+    // Invalidate course caches
+    const redisPrefix = process.env.REDIS_PREFIX || 'ielts:';
+    await deleteKeysByPattern(`${redisPrefix}courses:public*`);
+    await deleteKey(`${redisPrefix}course:public:slug:${course.slug}`);
 
     logger.info(`Course created by ${req.user.id}: ${course._id}`);
 
@@ -338,6 +344,11 @@ const updateCourse = async (req, res, next) => {
       await deleteCloudinaryAsset(existingThumbnail, 'image');
     }
 
+    // Invalidate course caches
+    const redisPrefix = process.env.REDIS_PREFIX || 'ielts:';
+    await deleteKeysByPattern(`${redisPrefix}courses:public*`);
+    await deleteKey(`${redisPrefix}course:public:slug:${course.slug}`);
+
     logger.info(`Course updated by ${req.user.id}: ${course._id}`);
 
     res.status(200).json({
@@ -369,6 +380,11 @@ const deleteCourse = async (req, res, next) => {
 
     await course.deleteOne();
 
+    // Invalidate course caches
+    const redisPrefix = process.env.REDIS_PREFIX || 'ielts:';
+    await deleteKeysByPattern(`${redisPrefix}courses:public*`);
+    await deleteKey(`${redisPrefix}course:public:slug:${course.slug}`);
+
     logger.info(`Course deleted by ${req.user.id}: ${req.params.id}`);
 
     res.status(200).json({
@@ -391,6 +407,20 @@ const getPublicCourses = async (req, res, next) => {
   try {
     const { category, level, search } = req.query;
 
+    // Check cache first
+    const redisPrefix = process.env.REDIS_PREFIX || 'ielts:';
+    const queryParams = new URLSearchParams(req.query).toString();
+    const cacheKey = `${redisPrefix}courses:public${queryParams ? `?${queryParams}` : ''}`;
+    
+    const cachedData = await getValue(cacheKey);
+    if (cachedData) {
+      return res.status(200).json({
+        success: true,
+        count: cachedData.length,
+        data: cachedData,
+      });
+    }
+
     const query = {
       $or: [{ status: 'published' }, { isPublished: true }],
     };
@@ -406,6 +436,9 @@ const getPublicCourses = async (req, res, next) => {
       )
       .populate('teacher', 'name avatar')
       .sort({ createdAt: -1 });
+
+    // Save to cache for 1 hour
+    await setWithTTL(cacheKey, courses, 3600);
 
     res.status(200).json({
       success: true,
@@ -425,8 +458,22 @@ const getPublicCourses = async (req, res, next) => {
  */
 const getPublicCourseBySlug = async (req, res, next) => {
   try {
+    const { slug } = req.params;
+
+    // Check cache first
+    const redisPrefix = process.env.REDIS_PREFIX || 'ielts:';
+    const cacheKey = `${redisPrefix}course:public:slug:${slug}`;
+    
+    const cachedData = await getValue(cacheKey);
+    if (cachedData) {
+      return res.status(200).json({
+        success: true,
+        data: cachedData,
+      });
+    }
+
     const course = await Course.findOne({
-      slug: req.params.slug,
+      slug,
       $or: [{ status: 'published' }, { isPublished: true }],
     }).populate('teacher', 'name avatar bio');
 
@@ -436,6 +483,9 @@ const getPublicCourseBySlug = async (req, res, next) => {
         message: 'Course not found',
       });
     }
+
+    // Save to cache for 1 hour
+    await setWithTTL(cacheKey, course, 3600);
 
     res.status(200).json({
       success: true,

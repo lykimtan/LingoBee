@@ -41,7 +41,8 @@ export default function TeacherVideoUploadForm({
   const [isMandatory, setIsMandatory] = useState(true);
   const isEditing = Boolean(initialVideo?._id);
 
-  const [uppy] = useState(() => {
+  const [uppy, setUppy] = useState<any>(null);
+  useEffect(() => {
     const u = new Uppy({
       locale: vi_VN,
       restrictions: {
@@ -144,10 +145,13 @@ export default function TeacherVideoUploadForm({
       }
     });
 
-    return u;
-  });
+    setUppy(u);
 
-  const [uppyThumbnail] = useState(() => {
+    return () => u.destroy();
+  }, []);
+
+  const [uppyThumbnail, setUppyThumbnail] = useState<any>(null);
+  useEffect(() => {
     const u = new Uppy({
       id: 'uppyThumbnail',
       locale: vi_VN,
@@ -250,8 +254,10 @@ export default function TeacherVideoUploadForm({
       }
     });
 
-    return u;
-  });
+    setUppyThumbnail(u);
+
+    return () => u.destroy();
+  }, []);
 
   useEffect(() => {
     if (initialVideo) {
@@ -260,8 +266,8 @@ export default function TeacherVideoUploadForm({
       setIsPublished(Boolean(initialVideo.isPublished));
       setIsMandatory(initialVideo.isMandatory !== false);
       setError(null);
-      uppy.cancelAll();
-      uppyThumbnail.cancelAll();
+      uppy?.cancelAll();
+      uppyThumbnail?.cancelAll();
       return;
     }
 
@@ -270,8 +276,8 @@ export default function TeacherVideoUploadForm({
     setIsPublished(false);
     setIsMandatory(true);
     setError(null);
-    uppy.cancelAll();
-    uppyThumbnail.cancelAll();
+    uppy?.cancelAll();
+    uppyThumbnail?.cancelAll();
   }, [initialVideo, uppy, uppyThumbnail]);
 
   const handleUpload = async () => {
@@ -280,6 +286,7 @@ export default function TeacherVideoUploadForm({
       return;
     }
 
+    if (!uppy || !uppyThumbnail) return;
     const files = uppy.getFiles();
     if (!isEditing && files.length === 0) {
       setError("Vui lòng chọn video để upload.");
@@ -388,8 +395,8 @@ export default function TeacherVideoUploadForm({
       // Reset form
       setTitle("");
       setDescription("");
-      uppy.cancelAll();
-      uppyThumbnail.cancelAll();
+      uppy?.cancelAll();
+      uppyThumbnail?.cancelAll();
       setIsPublished(false);
       setIsMandatory(true);
     } catch (err) {
@@ -475,30 +482,36 @@ export default function TeacherVideoUploadForm({
         <div>
           <label className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 block">Video File</label>
           <div className="mt-2 overflow-hidden rounded-3xl border border-gray-200 bg-gray-50">
-            {/* Uppy Dashboard UI */}
-            <Dashboard
-              uppy={uppy}
-              hideUploadButton={true}
-              proudlyDisplayPoweredByUppy={false}
-              height={300}
-              width="100%"
-              theme="light"
-            />
+            {uppy ? (
+              <Dashboard
+                uppy={uppy}
+                hideUploadButton={true}
+                proudlyDisplayPoweredByUppy={false}
+                height={300}
+                width="100%"
+                theme="light"
+              />
+            ) : (
+              <div className="h-[300px] flex items-center justify-center animate-pulse text-gray-400">Đang tải...</div>
+            )}
           </div>
         </div>
 
         <div>
           <label className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 block">Thumbnail (Không bắt buộc)</label>
           <div className="mt-2 overflow-hidden rounded-3xl border border-gray-200 bg-gray-50">
-            {/* Uppy Dashboard UI cho Thumbnail */}
-            <Dashboard
-              uppy={uppyThumbnail}
-              hideUploadButton={true}
-              proudlyDisplayPoweredByUppy={false}
-              height={200}
-              width="100%"
-              theme="light"
-            />
+            {uppyThumbnail ? (
+              <Dashboard
+                uppy={uppyThumbnail}
+                hideUploadButton={true}
+                proudlyDisplayPoweredByUppy={false}
+                height={200}
+                width="100%"
+                theme="light"
+              />
+            ) : (
+              <div className="h-[200px] flex items-center justify-center animate-pulse text-gray-400">Đang tải...</div>
+            )}
           </div>
         </div>
 

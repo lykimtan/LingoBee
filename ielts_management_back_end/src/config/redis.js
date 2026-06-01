@@ -125,6 +125,21 @@ const exists = async (key) => {
   }
 };
 
+// Helper: Delete keys by pattern
+const deleteKeysByPattern = async (pattern) => {
+  try {
+    if (!client) return false;
+    const keys = await client.keys(pattern);
+    if (keys.length > 0) {
+      await client.del(keys);
+    }
+    return true;
+  } catch (error) {
+    logger.error(`Redis deleteKeysByPattern error: ${error.message}`);
+    return false;
+  }
+};
+
 module.exports = {
   initializeRedis,
   getRedis,
@@ -133,4 +148,5 @@ module.exports = {
   getValue,
   deleteKey,
   exists,
+  deleteKeysByPattern,
 };

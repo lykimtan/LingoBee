@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const logger = require('../utils/logger');
-const { getValue } = require('../config/redis');
+const { getValue, setWithTTL } = require('../config/redis');
 
 /**
  * JWT Authentication Middleware
@@ -35,19 +35,27 @@ const authMiddleware = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Find user
-    const user = await User.findById(decoded.userId);
+    // Find user in cache first
+    const redisPrefix = process.env.REDIS_PREFIX || 'ielts:';
+    const cacheKey = `${redisPrefix}user:${decoded.userId}`;
+    let user = await getValue(cacheKey);
+
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'User not found',
-      });
+      user = await User.findById(decoded.userId).lean();
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not found',
+        });
+      }
+      // Cache user for 30 minutes
+      await setWithTTL(cacheKey, user, 1800);
     }
 
     // Check if token was issued before password change
     if (
       user.passwordChangedAt &&
-      decoded.iat < Math.floor(user.passwordChangedAt.getTime() / 1000)
+      decoded.iat < Math.floor(new Date(user.passwordChangedAt).getTime() / 1000)
     ) {
       return res.status(401).json({
         success: false,
@@ -56,6 +64,7 @@ const authMiddleware = async (req, res, next) => {
     }
 
     // Attach user to request
+    user.id = user.id || (user._id ? user._id.toString() : null);
     req.user = user;
     logger.info(`User authenticated: ${user.email}`);
 
@@ -103,9 +112,20 @@ const authMiddlewareOptional = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Find user
-    const user = await User.findById(decoded.userId);
+    // Find user in cache first
+    const redisPrefix = process.env.REDIS_PREFIX || 'ielts:';
+    const cacheKey = `${redisPrefix}user:${decoded.userId}`;
+    let user = await getValue(cacheKey);
+
+    if (!user) {
+      user = await User.findById(decoded.userId).lean();
+      if (user) {
+        await setWithTTL(cacheKey, user, 1800);
+      }
+    }
+
     if (user) {
+      user.id = user.id || (user._id ? user._id.toString() : null);
       req.user = user;
       logger.info(`User authenticated (optional): ${user.email}`);
     }

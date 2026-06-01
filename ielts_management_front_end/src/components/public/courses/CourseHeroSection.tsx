@@ -28,11 +28,12 @@ export const CourseHeroSection = () => {
                 Liên hệ tư vấn ngay
                 <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <button
+              <a
+                href="#course-slider-section"
                 className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl border-2 border-white/20 text-white font-semibold hover:bg-white/5 transition-colors"
               >
                 Xem khoá học
-              </button>
+              </a>
             </div>
 
             <div className="border-t border-white/10 mt-8 pt-8">

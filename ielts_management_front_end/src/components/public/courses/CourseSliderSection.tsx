@@ -40,7 +40,7 @@ export const CourseSliderSection = ({ courses }: CourseSliderSectionProps) => {
     };
 
     return (
-        <section className="w-full py-24 bg-transparent relative overflow-hidden">
+        <section id="course-slider-section" className="w-full py-24 bg-transparent relative overflow-hidden">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="text-center mb-16">

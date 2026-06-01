@@ -140,6 +140,10 @@ const verifyEmail = async (req, res) => {
     user.emailVerificationExpiry = undefined;
     await user.save();
 
+    // Invalidate user cache
+    const redisPrefix = process.env.REDIS_PREFIX || 'ielts:';
+    await deleteKey(`${redisPrefix}user:${user._id}`);
+
     logger.info(`Email verified: ${user.email}`);
 
     return res.json({
@@ -497,6 +501,10 @@ const resetPassword = async (req, res) => {
     user.passwordChangedAt = new Date();
     await user.save();
 
+    // Invalidate user cache
+    const redisPrefix = process.env.REDIS_PREFIX || 'ielts:';
+    await deleteKey(`${redisPrefix}user:${user._id}`);
+
     logger.info(`Password reset: ${user.email}`);
 
     return res.json({
@@ -705,6 +713,10 @@ const updateProfile = async (req, res) => {
       });
     }
 
+    // Invalidate user cache
+    const redisPrefix = process.env.REDIS_PREFIX || 'ielts:';
+    await deleteKey(`${redisPrefix}user:${userId}`);
+
     logger.info(`User profile updated: ${updatedUser.email}`);
 
     return res.json({
@@ -757,6 +769,10 @@ const changePassword = async (req, res) => {
     user.password = newPassword;
     user.passwordChangedAt = new Date();
     await user.save();
+
+    // Invalidate user cache
+    const redisPrefix = process.env.REDIS_PREFIX || 'ielts:';
+    await deleteKey(`${redisPrefix}user:${userId}`);
 
     logger.info(`Password changed: ${user.email}`);
 

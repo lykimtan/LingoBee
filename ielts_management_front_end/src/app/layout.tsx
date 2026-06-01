@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Instrument_Serif, Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastContainer } from "react-toastify";
+import ChatWidget from "@/components/ChatWidget";
 import "react-toastify/dist/ReactToastify.css";
 import "./globals.css";
 
@@ -49,11 +50,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${inter.variable} ${plusJakartaSans.variable} h-full antialiased`}
+      data-scroll-behavior="smooth"
+      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${inter.variable} ${plusJakartaSans.variable} h-full antialiased scroll-smooth`}
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>{children}</AuthProvider>
         <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
+        <ChatWidget />
       </body>
     </html>
   );

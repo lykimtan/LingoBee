@@ -26,7 +26,6 @@ export default async function CoursesPage() {
                 teacher: c.teacher?.name || "Unknown Teacher",
                 avatarTeacher: c.teacher?.avatar || "/CoursesPage/avatarTeacher.webp"
             }));
-            console.log('Course sliders: ', sliderCourses)
         }
     } catch (e) {
         console.error("Failed to fetch public courses:", e);
@@ -48,7 +47,7 @@ export default async function CoursesPage() {
             {/* Arrow Divider */}
             <div className="relative z-50 w-full flex justify-center -my-8 md:-my-12 pointer-events-none">
                 <div className=" flex items-center justify-center overflow-hidden  bg-white/5 ">
-                    <Image src="/CoursesPage/ArrowDown.gif" alt="ArrowDown" width={70} height={70} className="w-auto" />
+                    <Image unoptimized src="/CoursesPage/ArrowDown.gif" alt="ArrowDown" width={70} height={70} className="w-auto" />
                 </div>
             </div>
 

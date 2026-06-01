@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, CheckCircle2, Clock, Book, Target, MessageSquareText, ShieldCheck, Users } from "lucide-react";
-import { CourseCurriculum } from "@/components/public/courses/CourseCurriculum";
+import { CoursePreviewVideo } from "@/components/public/courses/CoursePreviewVideo";
 import { createSafeHtml } from '@/utils/utils';
 import { TeacherShowcase } from "@/components/TeacherShowcase";
 
@@ -16,38 +16,6 @@ interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-// Mock data since backend might not have this detailed structure yet
-
-
-const MOCK_CURRICULUM = [
-  {
-    title: "Tuần 01: Làm quen với phương pháp & Phát âm cơ bản",
-    lessons: [
-      "Giới thiệu tổng quan về khóa học và mục tiêu đầu ra.",
-      "Làm quen với hệ thống học tập trực tuyến.",
-      "Bảng chữ cái và cách phát âm chuẩn quốc tế (IPA) cơ bản.",
-      "Thực hành phát âm nguyên âm và phụ âm đơn giản."
-    ]
-  },
-  {
-    title: "Tuần 02: Xây dựng cấu trúc câu & Từ vựng theo chủ đề",
-    lessons: [
-      "Các thành phần cấu tạo nên một câu tiếng Anh hoàn chỉnh.",
-      "Từ vựng chủ đề: Bản thân, Gia đình, Sở thích.",
-      "Thực hành đặt câu đơn giản giới thiệu bản thân.",
-      "Bài tập nghe hiểu cơ bản về các đoạn hội thoại ngắn."
-    ]
-  },
-  {
-    title: "Tuần 03: Ngữ pháp nền tảng - Các thì hiện tại",
-    lessons: [
-      "Thì Hiện tại đơn: Cấu trúc, cách dùng và dấu hiệu nhận biết.",
-      "Thì Hiện tại tiếp diễn: Cấu trúc, cách dùng và phân biệt.",
-      "Bài tập thực hành chia động từ và viết lại câu.",
-      "Thực hành nói: Miêu tả thói quen hằng ngày và các hoạt động đang diễn ra."
-    ]
-  }
-];
 
 export default async function CourseDetailPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
@@ -61,7 +29,6 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
     if (res.data) {
       course = res.data as any; // Using any for simplicity with populated fields
     }
-    console.log(course)
   } catch (error) {
     console.error("Failed to fetch course details:", error);
   }
@@ -184,15 +151,12 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
                 </div>
               </div>
 
-              {/* Curriculum */}
+              {/* Preview Video */}
               <div className="mb-12 relative z-10">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-white">Nội dung chương trình học</h2>
-                  <span className="text-sm font-medium text-[#1c7c78] bg-[#1c7c78]/20 px-3 py-1 rounded-full border border-[#1c7c78]/30">
-                    {MOCK_CURRICULUM.length} Tuần
-                  </span>
+                  <h2 className="text-2xl font-bold text-white">Video xem thử khóa học</h2>
                 </div>
-                <CourseCurriculum modules={MOCK_CURRICULUM} />
+                <CoursePreviewVideo previewVideoUrl={course.promoVideoUrl || course.videoUrl} />
               </div>
 
             </div>
@@ -211,11 +175,6 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                    <div className="w-16 h-16 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                      <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[16px] border-l-[#ef4444] border-b-[10px] border-b-transparent ml-1" />
-                    </div>
-                  </div>
                 </div>
 
                 {/* Pricing & CTA */}

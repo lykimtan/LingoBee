@@ -88,4 +88,22 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
 // Index for role field (email and googleId already have unique indexes)
 userSchema.index({ role: 1 });
 
+const knowledgeSyncService = require('../services/knowledgeSyncService');
+
+userSchema.post('save', function (doc) {
+  knowledgeSyncService.syncTeacher(doc);
+});
+
+userSchema.post('findOneAndUpdate', async function (doc) {
+  if (doc) {
+    knowledgeSyncService.syncTeacher(doc);
+  }
+});
+
+userSchema.post('findOneAndDelete', async function (doc) {
+  if (doc) {
+    knowledgeSyncService.removeTeacher(doc._id);
+  }
+});
+
 module.exports = mongoose.model('User', userSchema);

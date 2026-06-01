@@ -3,13 +3,13 @@ import dynamic from 'next/dynamic';
 const Plyr = dynamic(async () => (await import('plyr-react')).Plyr, { ssr: false });
 import 'plyr-react/plyr.css';
 import { CourseVideo, AdminCourseItem } from '@/types';
-import { Send, PlayCircle, Clock } from 'lucide-react';
+import { Send, PlayCircle, Clock, FileText } from 'lucide-react';
 import { toast } from 'react-toastify';
 import CoursePreviewExercises from './CoursePreviewExercises';
 import { feedbackService, FeedbackRecord } from '@/services/feedbackService';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import { createSafeHtml } from '@/utils/utils';
-
+import PdfImageViewer from '@/components/public/PdfImageViewer';
 
 interface CoursePreviewVideoProps {
   course: AdminCourseItem | null;
@@ -21,8 +21,10 @@ const CoursePreviewVideo: React.FC<CoursePreviewVideoProps> = ({ course, activeV
   const [isSending, setIsSending] = useState(false);
   const [feedbacks, setFeedbacks] = useState<FeedbackRecord[]>([]);
   const [isLoadingFeedbacks, setIsLoadingFeedbacks] = useState(false);
+  const [activeTab, setActiveTab] = useState<'exercises' | 'material'>('exercises');
 
   useEffect(() => {
+    setActiveTab('exercises');
     if (activeVideo?._id) {
       fetchFeedbacks();
     } else {
@@ -180,8 +182,64 @@ const CoursePreviewVideo: React.FC<CoursePreviewVideoProps> = ({ course, activeV
         />
       </div>
 
+      {/* Content Tabs */}
+      <div className="flex border-b border-white/20 mt-8 mb-4">
+        <button
+          onClick={() => setActiveTab('exercises')}
+          className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 -mb-px ${activeTab === 'exercises'
+              ? 'border-white text-white'
+              : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+        >
+          Bài tập
+        </button>
+        <button
+          onClick={() => setActiveTab('material')}
+          className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 -mb-px ${activeTab === 'material'
+              ? 'border-white text-white'
+              : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+        >
+          Tài liệu đính kèm
+        </button>
+      </div>
+
       {/* Exercises Section */}
-      <CoursePreviewExercises activeVideo={activeVideo} />
+      {activeTab === 'exercises' && (
+        <CoursePreviewExercises activeVideo={activeVideo} />
+      )}
+
+      {/* Material Section */}
+      {activeTab === 'material' && (
+        <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 shadow-sm">
+          {activeVideo?.materialUrl ? (
+            <div className="flex flex-col gap-6">
+              <div className="rounded-xl border border-white/20 bg-white/5 p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/20 text-blue-400">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-gray-400 mb-0.5">Tài liệu đang hiển thị:</p>
+                    <span className="truncate text-sm font-bold text-white block text-left">
+                      {activeVideo.materialName || "Tài liệu không tên"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-white/20 overflow-hidden bg-white/5 p-2 sm:p-4">
+                <PdfImageViewer pdfUrl={activeVideo.materialUrl} />
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-10 text-gray-400">
+              <FileText className="w-12 h-12 mx-auto mb-3 opacity-20" />
+              <p>Không có tài liệu đính kèm cho video này.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Feedback History */}
       {feedbacks.length > 0 && (
