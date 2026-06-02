@@ -5,6 +5,8 @@ import { useChat } from '@ai-sdk/react';
 import { X, Send, User } from 'lucide-react';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
+import CourseSuggestionCard from './CourseSuggestionCard';
+import SuggestedQuestions from './SuggestedQuestions';
 import { usePathname } from 'next/navigation';
 import { getChatTransport } from '@/services/chatService';
 
@@ -79,7 +81,7 @@ export default function ChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-6 right-6 z-200">
       {/* Bong bóng suy nghĩ */}
       {!isOpen && (
         <div
@@ -107,7 +109,7 @@ export default function ChatWidget() {
             width={100}
             height={100}
             priority
-            className="object-contain"
+            className="object-contain w-auto h-auto"
           />}
       </button>
 
@@ -123,7 +125,7 @@ export default function ChatWidget() {
                   width={100}
                   height={100}
                   priority
-                  className="object-contain"
+                  className="object-contain w-auto h-auto"
                 />
               </div>
               <div>
@@ -149,17 +151,27 @@ export default function ChatWidget() {
                     alt="LingoBee AI Support"
                     width={150}
                     height={150}
-                    className="object-contain"
+                    className="object-contain w-auto h-auto"
                   />
                 </div>
                 <div>
                   <h4 className="font-semibold text-white">Xin chào!</h4>
                   <p className="text-sm text-white/70 mt-1">Mình là trợ lý AI của LingoBee.<br />Bạn muốn tìm hiểu về khóa học nào?</p>
                 </div>
+                <SuggestedQuestions
+                  questions={[
+                    'Khóa học IELTS nào phù hợp với tôi?',
+                    'Hiện nay trung tâm đang có những khóa học nào?',
+                    'Tôi nên bắt đầu từ đâu nếu mất gốc?',
+                    'Có khóa học nào chuyên về speaking không?'
+                  ]}
+                  onSelect={(q) => submitMessage({ role: 'user', content: q })}
+                />
               </div>
             ) : (
               <div className="space-y-5">
                 {messages.map((message: any) => {
+                  console.log("Chat Message:", message.id, message.role, message.toolInvocations);
                   let textContent = message.content;
                   if (!textContent && message.parts) {
                     textContent = message.parts
@@ -196,19 +208,64 @@ export default function ChatWidget() {
                             {message.role === 'user' ? 'Bạn' : 'Bee Thân Thiện'}
                           </span>
                         </div>
-                        <div className="text-sm leading-relaxed text-white">
-                          <ReactMarkdown
-                            components={{
-                              p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
-                              ul: ({ node, ...props }) => <ul className="list-disc ml-5 mb-2 last:mb-0" {...props} />,
-                              ol: ({ node, ...props }) => <ol className="list-decimal ml-5 mb-2 last:mb-0" {...props} />,
-                              li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                              strong: ({ node, ...props }) => <strong className="font-bold" {...props} />,
-                            }}
-                          >
-                            {textContent}
-                          </ReactMarkdown>
-                        </div>
+                        {textContent && (
+                          <div className="text-sm leading-relaxed text-white">
+                            <ReactMarkdown
+                              components={{
+                                p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                                ul: ({ node, ...props }) => <ul className="list-disc ml-5 mb-2 last:mb-0" {...props} />,
+                                ol: ({ node, ...props }) => <ol className="list-decimal ml-5 mb-2 last:mb-0" {...props} />,
+                                li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                                strong: ({ node, ...props }) => <strong className="font-bold" {...props} />,
+                                code: ({ node, className, children, ...props }: any) => {
+                                  const match = /language-json:courses/.exec(className || '');
+                                  if (match) {
+                                    try {
+                                      const courses = JSON.parse(String(children).replace(/\n$/, ''));
+                                      if (Array.isArray(courses)) {
+                                        return (
+                                          <div className="mt-3 flex gap-3 overflow-x-auto pb-2 snap-x scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+                                            {courses.map((course: any, index: number) => (
+                                              <div key={course.slug || `course-${index}`} className="snap-start shrink-0">
+                                                <CourseSuggestionCard course={course} />
+                                              </div>
+                                            ))}
+                                          </div>
+                                        );
+                                      }
+                                    } catch (e) {
+                                      // Do đang stream nên chuỗi JSON bị cắt dở, không thể parse. 
+                                      // Ta hiển thị trạng thái loading chờ JSON hoàn thiện.
+                                      return (
+                                        <div className="mt-3 flex items-center gap-2 text-[11px] text-amber-500 bg-amber-500/10 px-3 py-2 rounded-lg border border-amber-500/20 w-max">
+                                          <div className="w-3 h-3 rounded-full border-2 border-amber-500 border-t-transparent animate-spin"></div>
+                                          <span>Đang lấy thông tin khóa học...</span>
+                                        </div>
+                                      );
+                                    }
+                                  }
+                                  return <code className={className} {...props}>{children}</code>;
+                                }
+                              }}
+                            >
+                              {textContent}
+                            </ReactMarkdown>
+                          </div>
+                        )}
+
+                        {/* Render Dynamic Suggested Questions */}
+                        {message.role === 'assistant' && message.toolInvocations?.map((tool: any) => {
+                          if (tool.toolName === 'suggestQuestions' && tool.args?.questions) {
+                            return (
+                              <SuggestedQuestions
+                                key={tool.toolCallId}
+                                questions={tool.args.questions}
+                                onSelect={(q) => submitMessage({ role: 'user', content: q })}
+                              />
+                            );
+                          }
+                          return null;
+                        })}
                       </div>
                     </div>
                   )

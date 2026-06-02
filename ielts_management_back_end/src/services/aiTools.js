@@ -33,7 +33,9 @@ const aiTools = {
           return 'Không tìm thấy khóa học nào phù hợp với yêu cầu này.';
         }
 
-        return courses;
+        // Trả về JSON để AI copy y nguyên cho Frontend render UI
+        const jsonBlock = `\n\n\`\`\`json:courses\n${JSON.stringify(courses)}\n\`\`\`\n\n`;
+        return `Đây là thông tin các khóa học tìm được. BẠN BẮT BUỘC PHẢI TỰ LỌC lại mảng JSON bên dưới. CHỈ LẤY đúng object của (các) khóa học mà bạn thực sự nhắc đến/gợi ý trong câu trả lời văn bản, đặt trong mảng và chép thành khối mã \`\`\`json:courses ... \`\`\` vào BÊN DƯỚI CÙNG câu trả lời của bạn để frontend hiển thị giao diện. (Tuyệt đối không chép những khóa học bạn không nhắc đến):\n${jsonBlock}`;
       } catch (error) {
         console.error('Error in searchCourses tool:', error);
         return 'Có lỗi xảy ra khi tìm kiếm khóa học.';
@@ -57,7 +59,8 @@ const aiTools = {
           return 'Không tìm thấy khóa học với slug này.';
         }
 
-        return course;
+        const jsonBlock = `\n\n\`\`\`json:courses\n${JSON.stringify([course])}\n\`\`\`\n\n`;
+        return `Đây là chi tiết khóa học. BẠN BẮT BUỘC PHẢI chép y nguyên khối mã JSON này vào cuối câu trả lời của bạn để frontend hiển thị giao diện:\n${jsonBlock}`;
       } catch (error) {
         console.error('Error in getCourseDetails tool:', error);
         return 'Có lỗi xảy ra khi lấy chi tiết khóa học.';

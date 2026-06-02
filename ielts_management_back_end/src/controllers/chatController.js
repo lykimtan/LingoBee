@@ -26,6 +26,14 @@ Tuyệt đối không được tự bịa ra tên khóa học, giá tiền hay t
 
     // Đảm bảo các message từ frontend luôn có 'parts' vì convertToModelMessages v6 bắt buộc cần 'parts'
     const safeMessages = messages.map(msg => {
+      // Remove suggestQuestions from toolInvocations to prevent backend crash on client-side tools
+      if (msg.toolInvocations) {
+        msg.toolInvocations = msg.toolInvocations.filter(t => t.toolName !== 'suggestQuestions');
+        if (msg.toolInvocations.length === 0) {
+          delete msg.toolInvocations;
+        }
+      }
+
       if (!msg.parts && msg.content) {
         return {
           ...msg,
@@ -35,10 +43,19 @@ Tuyệt đối không được tự bịa ra tên khóa học, giá tiền hay t
       return msg;
     });
 
+    let modelMessages = [];
+    try {
+      modelMessages = await convertToModelMessages(safeMessages);
+    } catch (e) {
+      console.error('CONVERT ERROR:', e);
+      const filteredMessages = safeMessages.filter(m => m.role !== 'tool');
+      modelMessages = await convertToModelMessages(filteredMessages);
+    }
+
     const result = streamText({
       model: googleProvider('gemini-flash-lite-latest'),
       system: systemPrompt,
-      messages: await convertToModelMessages(safeMessages),
+      messages: modelMessages,
       tools: aiTools,
       stopWhen: stepCountIs(5),
     });
