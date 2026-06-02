@@ -23,6 +23,10 @@ const discountCodeSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    maxDiscountAmount: {
+      type: Number,
+      default: null, // null means no limit. Useful for percentage discounts.
+    },
     maxUsageTotal: {
       type: Number,
       required: true,

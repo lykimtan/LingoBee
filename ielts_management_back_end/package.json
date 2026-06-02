@@ -38,6 +38,7 @@
     "redis": "^4.6.12",
     "slugify": "^1.6.9",
     "socket.io": "^4.8.1",
+    "vnpay": "^2.5.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

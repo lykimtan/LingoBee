@@ -70,9 +70,14 @@ const paymentSchema = new mongoose.Schema(
       type: String,
       default: null, // From payment gateway
     },
+    txnRef: {
+      type: String,
+      unique: true,
+      sparse: true, // Mã duy nhất gửi sang VNPay làm vnp_TxnRef
+    },
     paymentMethod: {
       type: String,
-      enum: ['credit_card', 'debit_card', 'momo', 'bank_transfer'],
+      enum: ['credit_card', 'debit_card', 'momo', 'bank_transfer', 'vnpay'],
       default: null,
     },
     paymentDate: {
@@ -82,6 +87,15 @@ const paymentSchema = new mongoose.Schema(
     enrollmentDate: {
       type: Date,
       default: null, // When student officially enrolled
+    },
+    vnpayData: {
+      vnp_TransactionNo: String, // Mã giao dịch ghi nhận tại hệ thống VNPay
+      vnp_BankCode: String,      // Mã ngân hàng (vd: NCB, VCB...)
+      vnp_BankTranNo: String,    // Mã giao dịch tại ngân hàng
+      vnp_CardType: String,      // Loại thẻ (ATM, QRCODE, VISA...)
+      vnp_PayDate: String,       // Thời gian thanh toán do VNPay trả về
+      vnp_ResponseCode: String,  // Mã phản hồi (00 là thành công)
+      vnp_OrderInfo: String,     // Thông tin đơn hàng
     },
   },
   { timestamps: true }

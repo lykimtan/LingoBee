@@ -8,6 +8,7 @@ import { Star, CheckCircle2, Clock, Book, Target, MessageSquareText, ShieldCheck
 import { CoursePreviewVideo } from "@/components/public/courses/CoursePreviewVideo";
 import { createSafeHtml } from '@/utils/utils';
 import { TeacherShowcase } from "@/components/TeacherShowcase";
+import { EnrollButton } from "@/components/public/courses/EnrollButton";
 
 interface PageProps {
   params: Promise<{
@@ -43,7 +44,6 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
   const rating = course.averageRating || 4.5;
   const reviews = course.totalReviews || 120;
   const originalPrice = course.priceTiers?.[0]?.price || 5000000;
-  const discountedPrice = originalPrice * 0.7; // Fake 30% discount for demo
 
   return (
     <div className="relative w-full overflow-hidden min-h-screen">
@@ -182,23 +182,13 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
                   <div className="text-center mb-6">
                     <h3 className="text-2xl font-bold text-white mb-2">Đăng ký ngay hôm nay</h3>
                     <div className="flex items-center justify-center gap-3">
-                      <span className="text-3xl font-extrabold text-[#ef4444]">
-                        {discountedPrice.toLocaleString('vi-VN')}đ
-                      </span>
-                      <span className="text-lg text-gray-500 line-through font-medium">
+                      <span className="text-3xl font-extrabold text-[#1c7c78]">
                         {originalPrice.toLocaleString('vi-VN')}đ
                       </span>
                     </div>
-                    <div className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-red-400 bg-red-900/30 px-3 py-1.5 rounded-full border border-red-500/30">
-                      <Clock className="w-4 h-4" />
-                      Ưu đãi kết thúc sớm!
-                    </div>
                   </div>
 
-                  <button className="w-full bg-[#1c7c78] hover:bg-[#15615e] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-[#1c7c78]/30 hover:shadow-xl hover:shadow-[#1c7c78]/40 flex items-center justify-center gap-2 mb-6">
-                    <MessageSquareText className="w-5 h-5" />
-                    Đăng ký tư vấn ngay
-                  </button>
+                  <EnrollButton courseId={course._id} price={originalPrice} />
 
                   {/* Features List */}
                   <div className="space-y-4 pt-6 border-t border-white/10">

@@ -155,6 +155,24 @@ const buildEmailContent = (template, variables = {}) => {
         `,
       };
     }
+    case 'welcome_newbie': {
+      const name = variables.name || 'bạn';
+      const code = variables.code || 'NEWBIE10';
+      return {
+        text: `Chào mừng ${name} đến với hệ thống! Tặng bạn mã giảm giá ${code} giảm 10% học phí, có giá trị trong 14 ngày.`,
+        html: `
+          <h3>🎉 Chúc mừng ${name} đã xác thực tài khoản thành công!</h3>
+          <p>Cảm ơn bạn đã tham gia cùng chúng tôi. Để chào mừng thành viên mới, hệ thống xin dành tặng riêng cho bạn một món quà đặc biệt:</p>
+          <div style="background-color: #f3f4f6; padding: 16px; text-align: center; border-radius: 8px; margin: 16px 0;">
+            <p style="margin: 0; font-size: 14px; color: #4b5563;">Mã giảm giá của bạn</p>
+            <h2 style="margin: 8px 0; color: #1c7c78; font-size: 24px; letter-spacing: 2px;">${code}</h2>
+            <p style="margin: 0; font-size: 12px; color: #ef4444;">Giảm ngay 10% học phí khóa học bất kỳ!</p>
+          </div>
+          <p><strong>Lưu ý:</strong> Mã này chỉ có giá trị trong vòng <strong>14 ngày</strong> kể từ hôm nay và chỉ áp dụng 1 lần duy nhất cho tài khoản của bạn.</p>
+          <p>Hãy nhanh tay chọn cho mình một khóa học phù hợp và bắt đầu hành trình chinh phục IELTS nhé!</p>
+        `,
+      };
+    }
     default:
       return {
         text: variables.message || 'Bạn có một thông báo mới.',

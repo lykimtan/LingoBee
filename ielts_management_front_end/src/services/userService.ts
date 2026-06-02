@@ -23,6 +23,10 @@ class UserService {
   async getTeachers(limit: number = 200): Promise<ApiResponse<UserListResponse>> {
     return apiClient.get<UserListResponse>(`/api/users?role=teacher&limit=${limit}`);
   }
+
+  async getUserProfile(): Promise<ApiResponse<any>> {
+    return apiClient.get<any>('/api/users/profile');
+  }
 }
 
 export const userService = new UserService();

@@ -146,6 +146,19 @@ const verifyEmail = async (req, res) => {
 
     logger.info(`Email verified: ${user.email}`);
 
+    // Send welcome email with discount code (if email service configured)
+    if (process.env.EMAIL_SERVICE_KEY) {
+      // Import sendEmail from apiService (it is already imported at the top of the file)
+      try {
+        await sendEmail(user.email, 'Chào mừng bạn! Tặng bạn mã giảm giá 10%', 'welcome_newbie', {
+          name: user.name,
+          code: 'NEWBIE10'
+        });
+      } catch (err) {
+        logger.warn(`Failed to send welcome email to ${user.email}: ${err.message}`);
+      }
+    }
+
     return res.json({
       success: true,
       message: 'Email verified successfully',
