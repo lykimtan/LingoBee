@@ -188,7 +188,7 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
                     </div>
                   </div>
 
-                  <EnrollButton courseId={course._id} price={originalPrice} />
+                  <EnrollButton courseId={course._id} price={originalPrice} slug={slug} />
 
                   {/* Features List */}
                   <div className="space-y-4 pt-6 border-t border-white/10">

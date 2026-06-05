@@ -3,6 +3,7 @@ import { Navigation } from "@/components/Navigation";
 import { HeroSection } from "@/components/HeroSection";
 import { ProgramStats } from "@/components/ProgramStats";
 import { TeacherShowcase } from "@/components/TeacherShowcase";
+import { PromoSection } from "@/components/PromoSection";
 import { Footer } from "@/components/Footer";
 
 export default async function Home() {
@@ -37,6 +38,9 @@ export default async function Home() {
 
       {/* Teacher Showcase Section */}
       <TeacherShowcase />
+
+      {/* Promo Section for new users */}
+      <PromoSection />
 
       {/* Footer */}
       <Footer />

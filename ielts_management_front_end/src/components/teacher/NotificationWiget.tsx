@@ -161,13 +161,8 @@ export function NotificationWidget() {
                 </div>
                 <div className="flex flex-col gap-4">
                   {group.items.map((item, idx) => {
-                    const Component = item.actionUrl ? Link : "div";
-                    return (
-                      <Component
-                        key={item._id || item.id || `${group.date}-${idx}`}
-                        href={item.actionUrl || ""}
-                        className={`flex items-start justify-between border-b border-gray-800 pb-4 last:border-0 last:pb-0 ${item.actionUrl ? "cursor-pointer hover:bg-white/5 transition-colors -mx-4 px-4 pt-4 rounded-xl" : "pt-4"}`}
-                      >
+                    const content = (
+                      <>
                         <div className="flex items-start gap-4">
                           <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
                             <Bell className="h-4 w-4 text-gray-300" />
@@ -189,7 +184,28 @@ export function NotificationWidget() {
                         {item.isRead === false && (
                           <span className="mt-2 h-2 w-2 rounded-full bg-[#ffb800]" />
                         )}
-                      </Component>
+                      </>
+                    );
+
+                    if (item.actionUrl) {
+                      return (
+                        <Link
+                          key={item._id || item.id || `${group.date}-${idx}`}
+                          href={item.actionUrl}
+                          className="flex items-start justify-between border-b border-gray-800 pb-4 last:border-0 last:pb-0 cursor-pointer hover:bg-white/5 transition-colors -mx-4 px-4 pt-4 rounded-xl"
+                        >
+                          {content}
+                        </Link>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={item._id || item.id || `${group.date}-${idx}`}
+                        className="flex items-start justify-between border-b border-gray-800 pb-4 last:border-0 last:pb-0 pt-4"
+                      >
+                        {content}
+                      </div>
                     );
                   })}
                 </div>

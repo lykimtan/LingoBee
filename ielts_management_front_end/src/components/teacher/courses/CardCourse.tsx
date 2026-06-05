@@ -54,11 +54,11 @@ const CardCourse = ({ course }: CardCourseProps) => {
           </div>
           <span
             className={clsx(
-              "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm",
+              "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm capitalize",
               statusTone(course.status)
             )}
           >
-            {course.status === 'review' ? 'Đang kiểm duyệt' : course.status}
+            {course.status}
           </span>
         </div>
 

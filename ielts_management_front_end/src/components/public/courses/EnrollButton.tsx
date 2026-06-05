@@ -12,9 +12,10 @@ import Link from 'next/link';
 interface EnrollButtonProps {
   courseId: string;
   price: number;
+  slug: string;
 }
 
-export function EnrollButton({ courseId, price }: EnrollButtonProps) {
+export function EnrollButton({ courseId, price, slug }: EnrollButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [checkingEnrollment, setCheckingEnrollment] = useState(true);
@@ -116,9 +117,12 @@ export function EnrollButton({ courseId, price }: EnrollButtonProps) {
   }
 
   if (isEnrolled) {
+    // Navigate to a generic learning route for now. We can fetch the specific videoId later if needed.
+    const learningUrl = `/course/${slug}/learn/getting-started`;
+    
     return (
       <Link
-        href="/profile"
+        href={learningUrl}
         className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-[#2563eb]/30 hover:shadow-xl hover:shadow-[#2563eb]/40 flex items-center justify-center gap-2 mb-6"
       >
         <PlayCircle className="w-5 h-5" />

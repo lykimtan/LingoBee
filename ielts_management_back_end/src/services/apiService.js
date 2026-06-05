@@ -161,7 +161,7 @@ const buildEmailContent = (template, variables = {}) => {
       return {
         text: `Chào mừng ${name} đến với hệ thống! Tặng bạn mã giảm giá ${code} giảm 10% học phí, có giá trị trong 14 ngày.`,
         html: `
-          <h3>🎉 Chúc mừng ${name} đã xác thực tài khoản thành công!</h3>
+          <h3> Chúc mừng ${name} đã xác thực tài khoản thành công!</h3>
           <p>Cảm ơn bạn đã tham gia cùng chúng tôi. Để chào mừng thành viên mới, hệ thống xin dành tặng riêng cho bạn một món quà đặc biệt:</p>
           <div style="background-color: #f3f4f6; padding: 16px; text-align: center; border-radius: 8px; margin: 16px 0;">
             <p style="margin: 0; font-size: 14px; color: #4b5563;">Mã giảm giá của bạn</p>

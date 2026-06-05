@@ -20,7 +20,7 @@ export default function TeacherCourseInstructorCard({
 }: TeacherCourseInstructorCardProps) {
   return (
     <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-      <h2 className="text-xl font-bold text-gray-900">Giao vien</h2>
+      <h2 className="text-xl font-bold text-gray-900"></h2>
       <div className="mt-6 flex items-center gap-4">
         <div className="h-14 w-14 overflow-hidden rounded-full bg-gray-100">
           {teacher?.profilePicture ? (

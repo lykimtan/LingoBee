@@ -423,7 +423,7 @@ function MultipleChoiceEditor({
             <span className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 text-gray-500">
               +
             </span>
-            Them phuong an
+            Thêm phương án
           </button>
         </div>
       </div>
@@ -442,7 +442,7 @@ function MultipleChoiceEditor({
               <div className="flex w-full items-center justify-center rounded-2xl border border-gray-200 bg-white px-3 py-2 md:w-44">
                 <audio controls className="h-8 w-full" src={question.audioUrl || undefined} />
               </div>
-              {isUploading && <span className="text-xs font-semibold text-gray-500">Dang tai...</span>}
+              {isUploading && <span className="text-xs font-semibold text-gray-500">Đang tải...</span>}
             </div>
           </div>
           <div>
@@ -482,11 +482,11 @@ function EssayEditor({
     <>
       <div className="grid gap-4 md:grid-cols-[1fr_180px]">
         <div>
-          <FieldLabel label="De bai tu luan" />
+          <FieldLabel label="Đề bài tự luận" />
           <TextInput
             value={question.prompt}
             onChange={(value) => onChange({ prompt: value })}
-            placeholder="Nhap de bai..."
+            placeholder="Nhập đề bài"
             disabled={disabled}
           />
         </div>
@@ -529,16 +529,16 @@ function SpeakingEditor({
     <>
       <div className="grid gap-4 md:grid-cols-[1fr_200px]">
         <div>
-          <FieldLabel label="Cau hoi noi" />
+          <FieldLabel label="Câu hỏi Speaking" />
           <TextInput
             value={question.prompt}
             onChange={(value) => onChange({ prompt: value })}
-            placeholder="Nhap cau hoi noi..."
+            placeholder="Nhập câu hỏi"
             disabled={disabled}
           />
         </div>
         <div>
-          <FieldLabel label="Gioi han thoi gian (giay)" />
+          <FieldLabel label="Giới hạn thời gian (giây)" />
           <TextInput
             value={String(question.timeLimit)}
             onChange={(value) =>
@@ -675,7 +675,7 @@ function FillBlankEditor({
                 <audio controls className="h-8 w-full" src={question.audioUrl || undefined} />
               </div>
               {isUploading && (
-                <span className="text-xs font-semibold text-gray-500">Dang tai...</span>
+                <span className="text-xs font-semibold text-gray-500">Đang tải...</span>
               )}
             </div>
           </div>

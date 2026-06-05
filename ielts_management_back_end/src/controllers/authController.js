@@ -357,6 +357,18 @@ const googleLogin = async (req, res) => {
       await Student.create({
         userId: user._id,
       });
+
+      // Send welcome email with discount code for new Google users
+      if (process.env.EMAIL_SERVICE_KEY) {
+        try {
+          await sendEmail(user.email, 'Chào mừng bạn! Tặng bạn mã giảm giá 10%', 'welcome_newbie', {
+            name: user.name,
+            code: 'NEWBIE10'
+          });
+        } catch (err) {
+          logger.warn(`Failed to send welcome email to ${user.email} (Google Login): ${err.message}`);
+        }
+      }
     } else {
       let updated = false;
 

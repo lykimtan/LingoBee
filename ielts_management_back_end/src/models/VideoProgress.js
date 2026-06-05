@@ -57,7 +57,7 @@ const videoProgressSchema = new mongoose.Schema(
 );
 
 // Indexes
-videoProgressSchema.index({ studentId: 1, courseId: 1, videoId: 1 });
+videoProgressSchema.index({ studentId: 1, courseId: 1, videoId: 1 }, { unique: true });
 videoProgressSchema.index({ studentId: 1, isCompleted: 1 });
 
 module.exports = mongoose.model('VideoProgress', videoProgressSchema);

@@ -94,6 +94,7 @@ app.use('/api/feedbacks', require('./routes/feedbackRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 // app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api/learning', require('./routes/learningRoutes'));
 
 // ============================================
 // 404 HANDLER

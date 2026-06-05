@@ -4,6 +4,7 @@
  */
 
 "use client";
+import Link from "next/link";
 
 export const HeroSection = () => {
   return (
@@ -32,9 +33,9 @@ export const HeroSection = () => {
         </p>
 
         {/* CTA Button */}
-        <button className="animate-fade-rise-delay-2 liquid-glass rounded-full px-14 py-5 text-base text-foreground mt-12 hover:scale-[1.03] transition-transform cursor-pointer">
+        <Link href="/courses" className="animate-fade-rise-delay-2 liquid-glass rounded-full px-14 py-5 text-base text-foreground mt-12 hover:scale-[1.03] transition-transform cursor-pointer">
           Begin Journey
-        </button>
+        </Link>
 
         {/* Caption */}
         <p className="animate-fade-rise-delay-2 text-muted-foreground text-xs tracking-widest uppercase mt-6">

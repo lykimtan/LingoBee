@@ -15,6 +15,7 @@ const VideoProgress = require('./VideoProgress');
 const Notification = require('./Notification');
 const CourseInvitation = require('./CourseInvitation');
 const Feedback = require('./Feedback');
+const ExerciseAttempt = require('./AnswerSub');
 
 module.exports = {
   User,
@@ -32,4 +33,5 @@ module.exports = {
   Notification,
   CourseInvitation,
   Feedback,
+  ExerciseAttempt,
 };

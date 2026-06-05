@@ -33,7 +33,7 @@ export default function VideoExercisePlayer({
 
       {!error && isLoading && (
         <div className="rounded-2xl border border-gray-100 bg-gray-50 p-8 text-center text-sm font-medium text-gray-500">
-          Dang tai video...
+          Đang tải video...
         </div>
       )}
 
@@ -72,8 +72,8 @@ export default function VideoExercisePlayer({
 
       {video?.description && (
         <div
-           className="prose prose-sm max-w-none text-gray-600"
-            dangerouslySetInnerHTML={{ __html: video.description }}
+          className="prose prose-sm max-w-none text-gray-600"
+          dangerouslySetInnerHTML={{ __html: video.description }}
         />
       )}
     </section>

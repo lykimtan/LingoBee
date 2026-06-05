@@ -169,6 +169,7 @@ export default function EditProfilePage() {
 								width={140}
 								height={140}
 								unoptimized
+								style={{ width: "auto", height: "auto" }}
 							/>
 							<p className="text-sm font-semibold uppercase tracking-[0.3em] text-white/80">
 								Đang lưu
