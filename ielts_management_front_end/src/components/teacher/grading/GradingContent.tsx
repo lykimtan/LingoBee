@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useRef, useState, useEffect } from "react";
-import { Play, Pause, RotateCcw, RotateCw } from "lucide-react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
+import { Play, Pause, RotateCcw, RotateCw, Bot } from "lucide-react";
+import SpeakingAIFeedback from "@/components/learning/Exercise/SpeakingAIFeedback";
 
 interface GradingContentProps {
   isLoading: boolean;
@@ -86,7 +87,18 @@ export default function GradingContent({
       {/* Content specific to type */}
       <div className="flex-1">
         {isSpeaking && answer.audioRecordUrl && (
-          <AudioPlayer url={answer.audioRecordUrl} />
+          <div className="flex flex-col gap-6">
+            <AudioPlayer url={answer.audioRecordUrl} />
+            {answer.aiAssessment && (
+              <div className="bg-gray-900 rounded-3xl p-2 -mx-2 shadow-2xl">
+                <div className="px-4 pt-2 flex items-center gap-2">
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="text-emerald-400 text-xs font-bold uppercase tracking-wider">AI Assessed</span>
+                </div>
+                <SpeakingAIFeedback assessment={answer.aiAssessment} />
+              </div>
+            )}
+          </div>
         )}
 
         {isSpeaking && !answer.audioRecordUrl && (

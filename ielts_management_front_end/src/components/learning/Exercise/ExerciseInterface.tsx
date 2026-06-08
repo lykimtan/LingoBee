@@ -10,6 +10,8 @@ import {
 } from "@/services/learningService";
 import { Loader2, Save, Send, ArrowLeft, ArrowRight, RotateCcw, FileText, Clock } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal";
+import { WordCountIndicator } from '@/components/common/WordCountIndicator';
+import SpeakingAIFeedback from './SpeakingAIFeedback';
 import { toast } from "react-toastify";
 import ResultModal from "./ResultModal";
 import AudioRecorder from "./AudioRecorder";
@@ -28,6 +30,7 @@ export const ExerciseInterface = ({ exerciseId }: ExerciseInterfaceProps) => {
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isRetakeModalOpen, setIsRetakeModalOpen] = useState(false);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [isAIGrading, setIsAIGrading] = useState(false);
 
   useEffect(() => {
     const fetchExercise = async () => {
@@ -94,14 +97,14 @@ export const ExerciseInterface = ({ exerciseId }: ExerciseInterfaceProps) => {
       if (response.success && response.data) {
         setData(prev => prev ? {
           ...prev,
-          attempt: response.data || null,
+          attempt: response.data!.attempt || null,
           exercise: {
             ...prev.exercise,
-            questions: (response as any).questions || prev.exercise.questions
+            questions: response.data!.questions || prev.exercise.questions
           }
         } : null);
-        if (response.data.answers) {
-          setAnswers(response.data.answers);
+        if (response.data!.attempt?.answers) {
+          setAnswers(response.data!.attempt.answers);
         }
         toast.success("Đã nộp bài thành công!");
         setIsResultModalOpen(true);
@@ -109,6 +112,35 @@ export const ExerciseInterface = ({ exerciseId }: ExerciseInterfaceProps) => {
     } catch (err) {
       toast.error("Lỗi khi nộp bài");
     } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAIGrading = async () => {
+    try {
+      setIsAIGrading(true);
+      setSaving(true);
+
+      // Save current draft first so backend has latest audio urls
+      await learningService.saveExerciseProgress(exerciseId, answers);
+
+      // Call AI Grading endpoint
+      const response = await learningService.gradeSpeakingWithAI(exerciseId);
+
+      if (response.success && response.data) {
+        setData(prev => prev ? {
+          ...prev,
+          attempt: response.data || null,
+        } : null);
+        if (response.data.answers) {
+          setAnswers(response.data.answers);
+        }
+        toast.success("AI đã chấm điểm xong!");
+      }
+    } catch (err) {
+      toast.error("Lỗi khi chấm điểm bằng AI");
+    } finally {
+      setIsAIGrading(false);
       setSaving(false);
     }
   };
@@ -344,7 +376,7 @@ export const ExerciseInterface = ({ exerciseId }: ExerciseInterfaceProps) => {
 
               {/* Essay */}
               {currentQuestion.questionType === 'essay' && (
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
                   <textarea
                     placeholder="Nhập bài luận của bạn..."
                     value={currentAnswer?.essayAnswer || ""}
@@ -353,26 +385,35 @@ export const ExerciseInterface = ({ exerciseId }: ExerciseInterfaceProps) => {
                     rows={8}
                     className="w-full bg-white/5 border-2 border-white/10 rounded-xl p-4 text-white placeholder-white/30 focus:border-white/30 outline-none transition-all resize-y disabled:opacity-50 font-medium"
                   />
+                  <div className="flex justify-end mt-1">
+                    <WordCountIndicator
+                      text={currentAnswer?.essayAnswer || ""}
+                      minWords={currentQuestion.minWords}
+                    />
+                  </div>
                 </div>
               )}
 
               {/* Speaking */}
               {currentQuestion.questionType === 'speaking' && (
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-4">
                   <AudioRecorder
                     existingAudioUrl={currentAnswer?.audioRecordUrl}
                     onUploadSuccess={(url, publicId) => {
                       setAnswers(prev => prev.map(ans =>
-                        ans.questionId === currentQuestion._id ? { ...ans, audioRecordUrl: url, audioPublicId: publicId } : ans
+                        ans.questionId === currentQuestion._id ? { ...ans, audioRecordUrl: url, audioPublicId: publicId, aiAssessment: undefined } : ans
                       ));
                     }}
                     onDelete={() => {
                       setAnswers(prev => prev.map(ans =>
-                        ans.questionId === currentQuestion._id ? { ...ans, audioRecordUrl: null, audioPublicId: null } : ans
+                        ans.questionId === currentQuestion._id ? { ...ans, audioRecordUrl: null, audioPublicId: null, aiAssessment: undefined } : ans
                       ));
                     }}
                     disabled={isSubmitted}
                   />
+                  {currentAnswer?.aiAssessment && (
+                    <SpeakingAIFeedback assessment={currentAnswer.aiAssessment} />
+                  )}
                 </div>
               )}
 
@@ -405,7 +446,7 @@ export const ExerciseInterface = ({ exerciseId }: ExerciseInterfaceProps) => {
                 <div className="flex flex-col gap-4 mt-6 bg-white/5 border border-white/10 rounded-xl p-5 shadow-lg">
                   <h3 className="text-lg font-bold text-white flex items-center gap-2">
                     <Image src="/learning/corrected.gif" alt="Teacher Feedback" width={24} height={24} className="object-contain" />
-                    Đánh giá từ giáo viên 
+                    Đánh giá từ giáo viên
                     {data?.attempt?.gradedBy && data.attempt.gradedBy.name && (
                       <span className="text-sm font-normal text-indigo-300 ml-1">
                         ({data.attempt.gradedBy.name})
@@ -553,11 +594,12 @@ export const ExerciseInterface = ({ exerciseId }: ExerciseInterfaceProps) => {
                         {saving ? "Đang xử lý..." : "Gửi giáo viên chấm"}
                       </button>
                       <button
-                        onClick={() => { }}
-                        disabled={saving}
+                        onClick={handleAIGrading}
+                        disabled={saving || isAIGrading}
                         className="px-6 py-3 rounded-full bg-indigo-500 text-white font-bold hover:bg-indigo-600 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-indigo-500/20 border border-indigo-400/30"
                       >
-                        Chấm điểm bằng AI
+                        {isAIGrading && <Loader2 className="w-4 h-4 animate-spin" />}
+                        {isAIGrading ? "AI Đang chấm..." : "Chấm điểm phát âm bằng AI"}
                       </button>
                     </div>
                   ) : (

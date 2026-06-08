@@ -75,6 +75,15 @@ const answerSubSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+
+    aiAssessment: {
+      pronunciationScore: Number,
+      accuracyScore: Number,
+      fluencyScore: Number,
+      completenessScore: Number,
+      prosodyScore: Number,
+      words: [mongoose.Schema.Types.Mixed]
+    },
   },
   { _id: true }
 );

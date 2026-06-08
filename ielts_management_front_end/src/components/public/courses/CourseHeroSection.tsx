@@ -32,7 +32,7 @@ export const CourseHeroSection = () => {
                 href="#course-slider-section"
                 className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl border-2 border-white/20 text-white font-semibold hover:bg-white/5 transition-colors"
               >
-                Xem khoá học
+                Xem khóa học
               </a>
             </div>
 

@@ -2,7 +2,7 @@
 
 import { Plyr, APITypes } from "plyr-react";
 import "plyr/dist/plyr.css";
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from "react";
 
 interface PlayrWrapperProps {
     videoUrl?: string;
@@ -15,8 +15,37 @@ const PLYR_OPTIONS = {
     controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen']
 };
 
-export const PlayrWrapper = ({ videoUrl, thumbnailUrl, initialTime, onProgressUpdate }: PlayrWrapperProps) => {
+export interface PlayrWrapperRef {
+    pause: () => void;
+    play: () => void;
+    getCurrentTime: () => number;
+    seekTo: (time: number) => void;
+}
+
+export const PlayrWrapper = forwardRef<PlayrWrapperRef, PlayrWrapperProps>(({ videoUrl, thumbnailUrl, initialTime, onProgressUpdate }, parentRef) => {
     const ref = useRef<APITypes>(null);
+
+    useImperativeHandle(parentRef, () => ({
+        pause: () => {
+            const plyr = ref.current?.plyr as any;
+            if (plyr && typeof plyr.pause === "function") plyr.pause();
+        },
+        play: () => {
+            const plyr = ref.current?.plyr as any;
+            if (plyr && typeof plyr.play === "function") plyr.play();
+        },
+        getCurrentTime: () => {
+            const plyr = ref.current?.plyr as any;
+            return plyr ? plyr.currentTime : 0;
+        },
+        seekTo: (time: number) => {
+            const plyr = ref.current?.plyr as any;
+            if (plyr) {
+                plyr.currentTime = time;
+                if (typeof plyr.play === "function") plyr.play();
+            }
+        }
+    }));
 
     useEffect(() => {
         if (!onProgressUpdate) return;
@@ -105,4 +134,6 @@ export const PlayrWrapper = ({ videoUrl, thumbnailUrl, initialTime, onProgressUp
             />
         </div>
     );
-};
+});
+
+PlayrWrapper.displayName = "PlayrWrapper";

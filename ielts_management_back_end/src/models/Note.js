@@ -35,8 +35,8 @@ const noteSchema = new mongoose.Schema(
   }
 );
 
-noteSchema.index({ videoId: 1, userId: 1, timestamp: 1 });
+noteSchema.index({ videoId: 1, studentId: 1, timestamp: 1 });
 
-noteSchema.index({ courseId: 1, userId: 1, createdAt: -1 });
+noteSchema.index({ courseId: 1, studentId: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Note', noteSchema);

@@ -10,6 +10,7 @@ const {
   gradeExerciseAttempt,
   getGradingQueue,
   getAttemptDetailForGrading,
+  gradeSpeakingWithAI,
 } = require('../controllers/learningController');
 
 const router = express.Router();
@@ -37,6 +38,10 @@ router.put('/exercise/:exerciseId/progress', authMiddleware, saveExerciseProgres
 // Submit exercise attempt
 // Route: POST /api/learning/exercise/:exerciseId/submit
 router.post('/exercise/:exerciseId/submit', authMiddleware, submitExerciseAttempt);
+
+// Grade speaking via AI
+// Route: POST /api/learning/exercise/:exerciseId/grade-ai
+router.post('/exercise/:exerciseId/grade-ai', authMiddleware, gradeSpeakingWithAI);
 
 // Get grading queue (Teacher only)
 // Route: GET /api/learning/teacher/grading-queue

@@ -17,11 +17,6 @@ export const LearningHeader = ({ title = "Lesson Title", updatedAt = "May 2024" 
                     <span>•</span>
                 </p>
             </div>
-
-            <button className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-white/10 hover:border-white/20 whitespace-nowrap">
-                <PlusCircle className="h-4 w-4" />
-                Add Note at 10:32
-            </button>
         </div>
     );
 };

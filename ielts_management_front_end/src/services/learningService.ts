@@ -52,6 +52,33 @@ export interface ExerciseQuestion {
   minWords?: number;
 }
 
+export interface AiPhonemeAssessment {
+  phoneme: string;
+  accuracyScore: number;
+}
+
+export interface AiSyllableAssessment {
+  syllable: string;
+  accuracyScore: number;
+}
+
+export interface AiWordAssessment {
+  word: string;
+  accuracyScore: number;
+  errorType: string;
+  phonemes?: AiPhonemeAssessment[];
+  syllables?: AiSyllableAssessment[];
+}
+
+export interface AiAssessment {
+  pronunciationScore: number;
+  accuracyScore: number;
+  fluencyScore: number;
+  completenessScore: number;
+  prosodyScore: number;
+  words: AiWordAssessment[];
+}
+
 export interface ExerciseAttemptAnswer {
   questionId: string;
   questionType: string;
@@ -63,6 +90,7 @@ export interface ExerciseAttemptAnswer {
   isCorrect?: boolean | null;
   score?: number;
   teacherFeedback?: string;
+  aiAssessment?: AiAssessment;
 }
 
 export interface ExerciseAttempt {
@@ -84,6 +112,17 @@ export interface ExerciseStudentData {
     questions: ExerciseQuestion[];
   };
   attempt: ExerciseAttempt | null;
+}
+
+export interface VideoNote {
+  _id: string;
+  studentId: string;
+  videoId: string;
+  courseId: string;
+  timestamp: number;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 class LearningService {
@@ -110,8 +149,12 @@ class LearningService {
     return apiClient.put<ExerciseAttempt>(`/api/learning/exercise/${exerciseId}/progress`, { answers });
   }
 
-  async submitExerciseAttempt(exerciseId: string, answers: any[]): Promise<ApiResponse<any>> {
-    return apiClient.post<any>(`/api/learning/exercise/${exerciseId}/submit`, { answers });
+  async submitExerciseAttempt(exerciseId: string, answers: any[]): Promise<ApiResponse<{ attempt: ExerciseAttempt; questions: ExerciseQuestion[] }>> {
+    return apiClient.post<{ attempt: ExerciseAttempt; questions: ExerciseQuestion[] }>(`/api/learning/exercise/${exerciseId}/submit`, { answers });
+  }
+
+  async gradeSpeakingWithAI(exerciseId: string): Promise<ApiResponse<ExerciseAttempt>> {
+    return apiClient.post<ExerciseAttempt>(`/api/learning/exercise/${exerciseId}/grade-ai`);
   }
 
   async getGradingQueue(): Promise<ApiResponse<any>> {
@@ -124,6 +167,23 @@ class LearningService {
 
   async gradeExerciseAttempt(attemptId: string, answers: any[], gradeNote: string): Promise<ApiResponse<any>> {
     return apiClient.post<any>(`/api/learning/teacher/attempts/${attemptId}/grade`, { answers, gradeNote });
+  }
+
+  // --- NOTES ---
+  async getVideoNotes(videoId: string): Promise<ApiResponse<VideoNote[]>> {
+    return apiClient.get<VideoNote[]>(`/api/notes/video/${videoId}`);
+  }
+
+  async createNote(data: { videoId: string; courseId: string; timestamp: number; content: string }): Promise<ApiResponse<VideoNote>> {
+    return apiClient.post<VideoNote>(`/api/notes`, data);
+  }
+
+  async updateNote(noteId: string, content: string): Promise<ApiResponse<VideoNote>> {
+    return apiClient.put<VideoNote>(`/api/notes/${noteId}`, { content });
+  }
+
+  async deleteNote(noteId: string): Promise<ApiResponse<any>> {
+    return apiClient.delete<any>(`/api/notes/${noteId}`);
   }
 }
 

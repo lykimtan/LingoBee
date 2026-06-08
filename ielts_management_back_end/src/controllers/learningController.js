@@ -480,8 +480,10 @@ const submitExerciseAttempt = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'Exercise submitted successfully',
-      data: attempt,
-      questions: questionsWithAnswers,
+      data: {
+        attempt,
+        questions: questionsWithAnswers,
+      },
     });
   } catch (error) {
     if (error.name === 'ValidationError') {
@@ -539,6 +541,7 @@ const gradeExerciseAttempt = async (req, res, next) => {
     if (student) {
       const notification = await Notification.create({
         studentId: student._id,
+        recipientUser: student.userId,
         courseId: attempt.courseId,
         notificationType: 'exercise_graded',
         relatedEntity: {
@@ -639,6 +642,71 @@ const getAttemptDetailForGrading = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Grade speaking exercise with AI
+ * @route   POST /api/learning/exercise/:exerciseId/grade-ai
+ * @access  Private/Student
+ */
+const gradeSpeakingWithAI = async (req, res, next) => {
+  try {
+    const { exerciseId } = req.params;
+    const userId = req.user.id;
+
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ success: false, message: 'Only students can request AI grading' });
+    }
+
+    const student = await Student.findOne({ userId });
+    if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
+
+    // Fetch the latest attempt
+    let attempt = await ExerciseAttempt.findOne({
+      studentId: student._id,
+      exerciseId: exerciseId,
+    }).sort({ attemptNumber: -1 });
+
+    if (!attempt) {
+      return res.status(404).json({ success: false, message: 'No attempt found to grade' });
+    }
+
+    const azureSpeechService = require('../services/azureSpeechService');
+    
+    // We will assess all speaking answers that have audio
+    let assessedCount = 0;
+    for (const ans of attempt.answers) {
+      if (ans.questionType === 'speaking' && ans.audioRecordUrl) {
+        try {
+          const aiResult = await azureSpeechService.assessPronunciation(ans.audioRecordUrl);
+          ans.aiAssessment = aiResult;
+          
+          // Optionally, assign a score based on pronunciation
+          // Example: IELTS speaking is loosely mapped to HundredMark, let's just store it.
+          ans.isCorrect = aiResult.pronunciationScore > 60; 
+          
+          assessedCount++;
+        } catch (err) {
+          logger.error(`AI grading failed for answer ${ans._id}: ${err.message}`);
+          // Continue with other answers
+        }
+      }
+    }
+
+    if (assessedCount > 0) {
+      await attempt.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `AI grading completed for ${assessedCount} speaking question(s)`,
+      data: attempt
+    });
+
+  } catch (error) {
+    logger.error(`Error in gradeSpeakingWithAI: ${error.message}`);
+    next(error);
+  }
+};
+
 module.exports = {
   getCourseLearningData,
   updateVideoProgress,
@@ -649,4 +717,5 @@ module.exports = {
   gradeExerciseAttempt,
   getGradingQueue,
   getAttemptDetailForGrading,
+  gradeSpeakingWithAI,
 };
