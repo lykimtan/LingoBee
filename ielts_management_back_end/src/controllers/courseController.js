@@ -143,8 +143,8 @@ const getAllCourses = async (req, res, next) => {
     }
 
     const courses = await Course.find(query)
-      .populate('teacher', 'firstName lastName email profilePicture')
-      .populate('teachingAssistants', 'firstName lastName email profilePicture')
+      .populate('teacher', 'name avatar email')
+      .populate('teachingAssistants', 'name avatar email')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -166,7 +166,12 @@ const getAllCourses = async (req, res, next) => {
 const getMyTeachingCourses = async (req, res, next) => {
   try {
     const { status, search } = req.query;
-    const query = { teacher: req.user.id };
+    const query = {
+      $or: [
+        { teacher: req.user.id },
+        { teachingAssistants: req.user.id }
+      ]
+    };
 
     if (status) query.status = status;
     if (search) {
@@ -196,11 +201,14 @@ const getMyTeachingCourses = async (req, res, next) => {
 const getMyTeachingCourseBySlug = async (req, res, next) => {
   try {
     const course = await Course.findOne({
-      teacher: req.user.id,
       slug: req.params.slug,
+      $or: [
+        { teacher: req.user.id },
+        { teachingAssistants: req.user.id }
+      ]
     })
-      .populate('teacher', 'firstName lastName email profilePicture bio')
-      .populate('teachingAssistants', 'firstName lastName email profilePicture');
+      .populate('teacher', 'name avatar email bio')
+      .populate('teachingAssistants', 'name avatar email');
 
     if (!course) {
       return res.status(404).json({
@@ -232,8 +240,8 @@ const getMyTeachingCourseBySlug = async (req, res, next) => {
 const getCourseById = async (req, res, next) => {
   try {
     const course = await Course.findById(req.params.id)
-      .populate('teacher', 'firstName lastName email profilePicture bio')
-      .populate('teachingAssistants', 'firstName lastName email profilePicture');
+      .populate('teacher', 'name avatar email bio')
+      .populate('teachingAssistants', 'name avatar email');
 
     if (!course) {
       return res.status(404).json({
@@ -260,8 +268,8 @@ const getCourseById = async (req, res, next) => {
 const getAdminCourseBySlug = async (req, res, next) => {
   try {
     const course = await Course.findOne({ slug: req.params.slug })
-      .populate('teacher', 'firstName lastName email profilePicture bio')
-      .populate('teachingAssistants', 'firstName lastName email profilePicture');
+      .populate('teacher', 'name avatar email bio')
+      .populate('teachingAssistants', 'name avatar email');
 
     if (!course) {
       return res.status(404).json({
@@ -475,7 +483,8 @@ const getPublicCourseBySlug = async (req, res, next) => {
     const course = await Course.findOne({
       slug,
       $or: [{ status: 'published' }, { isPublished: true }],
-    }).populate('teacher', 'name avatar bio');
+    }).populate('teacher', 'name avatar bio')
+      .populate('teachingAssistants', 'name avatar bio');
 
     if (!course) {
       return res.status(404).json({

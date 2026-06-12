@@ -94,6 +94,11 @@ export default function GradingSidebar({
                   
                   <div className={`text-[11px] font-medium uppercase tracking-wider flex justify-between ${isSelected ? "text-gray-400" : "text-gray-400"}`}>
                     <span>{submittedAgo}</span>
+                    {item.status === 'graded' ? (
+                      <span className="text-green-500 font-bold">Đã chấm</span>
+                    ) : (
+                      <span className="text-orange-500 font-bold">Chưa chấm</span>
+                    )}
                   </div>
                 </div>
               );

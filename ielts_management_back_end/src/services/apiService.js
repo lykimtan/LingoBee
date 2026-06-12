@@ -173,6 +173,22 @@ const buildEmailContent = (template, variables = {}) => {
         `,
       };
     }
+    case 'course_invitation': {
+      const name = variables.name || 'bạn';
+      const courseName = variables.courseName || 'Khóa học';
+      const senderName = variables.senderName || 'Một giáo viên';
+      const actionUrl = variables.actionUrl || process.env.FRONTEND_URL || '';
+      return {
+        text: `Xin chào ${name}, ${senderName} đã mời bạn làm trợ giảng cho khóa học ${courseName}. Vui lòng đăng nhập và kiểm tra lời mời tại: ${actionUrl}`,
+        html: `
+          <h3>Xin chào ${name},</h3>
+          <p><strong>${senderName}</strong> vừa gửi cho bạn một lời mời làm trợ giảng cho khóa học <strong>${courseName}</strong>.</p>
+          <p>Để xem chi tiết và phản hồi lời mời, vui lòng đăng nhập vào hệ thống và kiểm tra thông báo của bạn hoặc nhấn vào liên kết dưới đây:</p>
+          <p><a href="${actionUrl}" style="display:inline-block;padding:10px 20px;background-color:#1c7c78;color:#fff;text-decoration:none;border-radius:4px;">Xem lời mời</a></p>
+          <p>Nếu bạn có thắc mắc, vui lòng liên hệ lại với giáo viên chính của khóa học.</p>
+        `,
+      };
+    }
     default:
       return {
         text: variables.message || 'Bạn có một thông báo mới.',

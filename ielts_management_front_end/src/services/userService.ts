@@ -27,6 +27,10 @@ class UserService {
   async getUserProfile(): Promise<ApiResponse<any>> {
     return apiClient.get<any>('/api/users/profile');
   }
+
+  async searchTeachers(query: string): Promise<ApiResponse<{ results: UserListItem[], count: number }>> {
+    return apiClient.get(`/api/users/teachers/search?query=${encodeURIComponent(query)}`);
+  }
 }
 
 export const userService = new UserService();

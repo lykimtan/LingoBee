@@ -161,6 +161,8 @@ const assessPronunciation = async (audioUrl) => {
               words: words,
             };
 
+
+
             resolve(finalResult);
           },
           (err) => reject(err)

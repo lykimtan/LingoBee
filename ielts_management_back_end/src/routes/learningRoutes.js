@@ -9,8 +9,10 @@ const {
   submitExerciseAttempt,
   gradeExerciseAttempt,
   getGradingQueue,
+  getCourseAttemptsForGrading,
   getAttemptDetailForGrading,
   gradeSpeakingWithAI,
+  explainQuestionWithAI,
 } = require('../controllers/learningController');
 
 const router = express.Router();
@@ -47,6 +49,10 @@ router.post('/exercise/:exerciseId/grade-ai', authMiddleware, gradeSpeakingWithA
 // Route: GET /api/learning/teacher/grading-queue
 router.get('/teacher/grading-queue', authMiddleware, getGradingQueue);
 
+// Get attempts for a specific course (Teacher only)
+// Route: GET /api/learning/teacher/courses/:courseId/attempts
+router.get('/teacher/courses/:courseId/attempts', authMiddleware, getCourseAttemptsForGrading);
+
 // Get attempt details for grading (Teacher only)
 // Route: GET /api/learning/teacher/attempts/:attemptId
 router.get('/teacher/attempts/:attemptId', authMiddleware, getAttemptDetailForGrading);
@@ -54,5 +60,9 @@ router.get('/teacher/attempts/:attemptId', authMiddleware, getAttemptDetailForGr
 // Grade exercise attempt (Teacher only)
 // Route: POST /api/learning/teacher/attempts/:attemptId/grade
 router.post('/teacher/attempts/:attemptId/grade', authMiddleware, gradeExerciseAttempt);
+
+// Explain question via AI Tutor
+// Route: POST /api/learning/explain
+router.post('/explain', authMiddleware, explainQuestionWithAI);
 
 module.exports = router;

@@ -31,13 +31,14 @@ const notificationSchema = new mongoose.Schema(
         'course_preview_request',
         'exercise_submitted',
         'exercise_graded',
+        'comment_reply',
       ],
       required: true,
     },
     relatedEntity: {
       type: {
         type: String,
-        enum: ['lesson', 'exercise', 'mocktest', 'message', 'course', 'course_invitation', 'feedback'],
+        enum: ['lesson', 'exercise', 'mocktest', 'message', 'course', 'course_invitation', 'feedback', 'video'],
         default: null,
       },
       id: {

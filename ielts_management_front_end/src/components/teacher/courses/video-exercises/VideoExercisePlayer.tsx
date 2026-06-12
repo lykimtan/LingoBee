@@ -12,12 +12,14 @@ interface VideoExercisePlayerProps {
   video: CourseVideo | null;
   isLoading: boolean;
   error: string | null;
+  plyrRef?: any;
 }
 
 export default function VideoExercisePlayer({
   video,
   isLoading,
   error,
+  plyrRef,
 }: VideoExercisePlayerProps) {
   return (
     <section className="flex flex-col gap-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
@@ -41,6 +43,7 @@ export default function VideoExercisePlayer({
         <div className="overflow-hidden rounded-2xl bg-black">
           <div className="aspect-video w-full bg-black">
             <Plyr
+              ref={plyrRef}
               source={{
                 type: "video",
                 sources: [

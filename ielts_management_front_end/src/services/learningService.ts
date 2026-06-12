@@ -101,6 +101,7 @@ export interface ExerciseAttempt {
   status: 'in_progress' | 'submitted' | 'graded';
   answers: ExerciseAttemptAnswer[];
   totalScore: number;
+  aiAssessmentCount?: number;
   gradedBy?: { name: string; avatar?: string };
 }
 
@@ -157,8 +158,12 @@ class LearningService {
     return apiClient.post<ExerciseAttempt>(`/api/learning/exercise/${exerciseId}/grade-ai`);
   }
 
-  async getGradingQueue(): Promise<ApiResponse<any>> {
-    return apiClient.get<any>(`/api/learning/teacher/grading-queue`);
+  async getGradingQueue(): Promise<ApiResponse<any[]>> {
+    return apiClient.get<any[]>('/api/learning/teacher/grading-queue');
+  }
+
+  async getCourseAttemptsForGrading(courseId: string): Promise<ApiResponse<any[]>> {
+    return apiClient.get<any[]>(`/api/learning/teacher/courses/${courseId}/attempts`);
   }
 
   async getAttemptDetailForGrading(attemptId: string): Promise<ApiResponse<any>> {

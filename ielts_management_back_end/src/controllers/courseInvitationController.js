@@ -1,6 +1,7 @@
 const { Course, CourseInvitation, Notification, User } = require('../models');
 const { emitNotification } = require('../socket');
 const logger = require('../utils/logger');
+const { sendEmail } = require('../services/apiService');
 
 /**
  * @desc    Invite a teacher to a course
@@ -78,6 +79,115 @@ const inviteTeacherToCourse = async (req, res, next) => {
 };
 
 /**
+ * @desc    Invite an assistant teacher to a course
+ * @route   POST /api/courses/:id/assistants/invite
+ * @access  Private/Teacher
+ */
+const inviteAssistantToCourse = async (req, res, next) => {
+  try {
+    const { teacherId, message } = req.body;
+
+    const course = await Course.findById(req.params.id);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found',
+      });
+    }
+
+    if (course.teacher.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the primary teacher can invite assistants',
+      });
+    }
+
+    const teacherUser = await User.findById(teacherId);
+    if (!teacherUser || teacherUser.role !== 'teacher') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid teacher ID or user is not a teacher',
+      });
+    }
+
+    if (course.teacher.toString() === teacherId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot invite the primary teacher as an assistant',
+      });
+    }
+
+    if (course.teachingAssistants && course.teachingAssistants.includes(teacherId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'User is already a teaching assistant for this course',
+      });
+    }
+
+    const existingInvite = await CourseInvitation.findOne({
+      course: course._id,
+      teacher: teacherUser._id,
+      status: 'pending',
+    });
+    if (existingInvite) {
+      return res.status(400).json({
+        success: false,
+        message: 'Teacher already has a pending invitation for this course',
+      });
+    }
+
+    const invitation = await CourseInvitation.create({
+      course: course._id,
+      teacher: teacherUser._id,
+      invitedBy: req.user.id,
+      message: message || '',
+      status: 'pending',
+      role: 'assistant',
+    });
+
+    const notification = await Notification.create({
+      recipientUser: teacherUser._id,
+      courseId: course._id,
+      notificationType: 'course_invitation',
+      relatedEntity: { type: 'course_invitation', id: invitation._id },
+      title: 'Trợ giảng khóa học',
+      message: message || `Bạn nhận được lời mời làm trợ giảng cho khóa học ${course.title}.`,
+      actionUrl: `/teacher/courses`,
+    });
+
+    emitNotification(notification);
+
+    try {
+      const senderUser = await User.findById(req.user.id);
+      await sendEmail(
+        teacherUser.email,
+        `Lời mời trợ giảng: ${course.title}`,
+        'course_invitation',
+        {
+          name: teacherUser.firstName || 'Giáo viên',
+          courseName: course.title,
+          senderName: senderUser ? `${senderUser.firstName} ${senderUser.lastName}`.trim() : 'Một giáo viên',
+          actionUrl: `${process.env.FRONTEND_URL}/teacher/courses`,
+        }
+      );
+    } catch (emailError) {
+      logger.error(`Failed to send invitation email to ${teacherUser.email}: ${emailError.message}`);
+    }
+
+    logger.info(`Course assistant invitation created by ${req.user.id}: ${invitation._id}`);
+
+    res.status(201).json({
+      success: true,
+      message: 'Invitation sent successfully',
+      data: invitation,
+    });
+  } catch (error) {
+    logger.error(`Error in inviteAssistantToCourse: ${error.message}`);
+    next(error);
+  }
+};
+
+/**
  * @desc    Accept a course invitation
  * @route   POST /api/courses/invitations/:id/accept
  * @access  Private/Teacher
@@ -110,11 +220,17 @@ const acceptCourseInvitation = async (req, res, next) => {
     invitation.respondedAt = new Date();
     await invitation.save();
 
-    await Course.findByIdAndUpdate(invitation.course, {
-      status: 'accepted',
-      teacher: invitation.teacher,
-      isPublished: false,
-    });
+    if (invitation.role === 'assistant') {
+      await Course.findByIdAndUpdate(invitation.course, {
+        $addToSet: { teachingAssistants: invitation.teacher },
+      });
+    } else {
+      await Course.findByIdAndUpdate(invitation.course, {
+        status: 'accepted',
+        teacher: invitation.teacher,
+        isPublished: false,
+      });
+    }
 
     const notification = await Notification.create({
       recipientUser: invitation.invitedBy,
@@ -235,6 +351,7 @@ const getMyCourseInvitations = async (req, res, next) => {
 
 module.exports = {
   inviteTeacherToCourse,
+  inviteAssistantToCourse,
   acceptCourseInvitation,
   rejectCourseInvitation,
   getMyCourseInvitations,

@@ -23,24 +23,25 @@ export default function AssessmentPanel({
 }: AssessmentPanelProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!attempt || manualGradingItems.length === 0) {
+  const manualGradingItem = manualGradingItems?.[activeQuestionIndex];
+  const questionId = manualGradingItem?.question?._id;
+  const draft = questionId ? gradesDraft[questionId] : undefined;
+  const safeDraft = draft || { c1: 6.0, c2: 6.0, c3: 6.0, c4: 6.0, feedback: "" };
+
+  const estimatedBand = useMemo(() => {
+    const avg = (safeDraft.c1 + safeDraft.c2 + safeDraft.c3 + safeDraft.c4) / 4;
+    return Math.round(avg * 2) / 2;
+  }, [safeDraft.c1, safeDraft.c2, safeDraft.c3, safeDraft.c4]);
+
+  if (!attempt || manualGradingItems.length === 0 || !manualGradingItem) {
     return null;
   }
 
-  const manualGradingItem = manualGradingItems[activeQuestionIndex];
-  if (!manualGradingItem) return null;
-
   const isSpeaking = manualGradingItem.type === "speaking";
-  const questionId = manualGradingItem.question._id;
-  const draft = gradesDraft[questionId] || { c1: 6.0, c2: 6.0, c3: 6.0, c4: 6.0, feedback: "" };
-
-  const estimatedBand = useMemo(() => {
-    const avg = (draft.c1 + draft.c2 + draft.c3 + draft.c4) / 4;
-    return Math.round(avg * 2) / 2;
-  }, [draft.c1, draft.c2, draft.c3, draft.c4]);
+  const isGraded = attempt.status === 'graded';
 
   const updateDraft = (key: string, value: any) => {
-    onUpdateDraft(questionId, { ...draft, [key]: value });
+    onUpdateDraft(questionId, { ...safeDraft, [key]: value });
   };
 
   const handleSubmitAll = async () => {
@@ -116,7 +117,8 @@ export default function AssessmentPanel({
         step="0.5"
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+        disabled={isGraded}
+        className={`w-full h-1.5 bg-gray-200 rounded-lg appearance-none accent-black ${isGraded ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
       />
     </div>
   );
@@ -131,17 +133,18 @@ export default function AssessmentPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
-        <Slider label={labels[0]} value={draft.c1} onChange={(v) => updateDraft("c1", v)} />
-        <Slider label={labels[1]} value={draft.c2} onChange={(v) => updateDraft("c2", v)} />
-        <Slider label={labels[2]} value={draft.c3} onChange={(v) => updateDraft("c3", v)} />
-        <Slider label={labels[3]} value={draft.c4} onChange={(v) => updateDraft("c4", v)} />
+        <Slider label={labels[0]} value={safeDraft.c1} onChange={(v) => updateDraft("c1", v)} />
+        <Slider label={labels[1]} value={safeDraft.c2} onChange={(v) => updateDraft("c2", v)} />
+        <Slider label={labels[2]} value={safeDraft.c3} onChange={(v) => updateDraft("c3", v)} />
+        <Slider label={labels[3]} value={safeDraft.c4} onChange={(v) => updateDraft("c4", v)} />
 
         <div className="mt-8">
           <label className="block text-sm font-bold text-gray-800 mb-2">Teacher Feedback</label>
           <textarea
-            value={draft.feedback}
+            value={safeDraft.feedback}
             onChange={(e) => updateDraft("feedback", e.target.value)}
-            className="w-full h-32 p-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:outline-none resize-none"
+            disabled={isGraded}
+            className={`w-full h-32 p-4 text-sm bg-gray-50 border border-gray-200 rounded-xl resize-none ${isGraded ? 'cursor-not-allowed opacity-60' : 'focus:ring-2 focus:ring-black focus:outline-none'}`}
             placeholder="Provide constructive criticism..."
           />
         </div>
@@ -152,22 +155,24 @@ export default function AssessmentPanel({
           <span className="text-sm font-bold text-gray-600 uppercase tracking-widest">Estimated Band</span>
           <span className="text-3xl font-black text-gray-900">{estimatedBand.toFixed(1)}</span>
         </div>
-        <button
-          onClick={handleSubmitAll}
-          disabled={isSubmitting}
-          className="w-full py-4 bg-black text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-gray-800 transition-transform active:scale-[0.98] disabled:opacity-70"
-        >
-          {isSubmitting ? (
-            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-          ) : (
-            <>
-              {manualGradingItems.length > 1 ? "Submit All Grades" : "Publish Grade"}
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </>
-          )}
-        </button>
+        {!isGraded && (
+          <button
+            onClick={handleSubmitAll}
+            disabled={isSubmitting}
+            className="w-full py-4 bg-black text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-gray-800 transition-transform active:scale-[0.98] disabled:opacity-70"
+          >
+            {isSubmitting ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+            ) : (
+              <>
+                {manualGradingItems.length > 1 ? "Submit All Grades" : "Publish Grade"}
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

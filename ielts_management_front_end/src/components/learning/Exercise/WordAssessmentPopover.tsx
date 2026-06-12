@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import { AiWordAssessment } from '@/services/learningService';
 
 interface WordAssessmentPopoverProps {
@@ -8,6 +8,28 @@ interface WordAssessmentPopoverProps {
 
 export default function WordAssessmentPopover({ word, children }: WordAssessmentPopoverProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (isHovered && popoverRef.current) {
+      popoverRef.current.style.transform = 'translateX(-50%)';
+      const rect = popoverRef.current.getBoundingClientRect();
+      const padding = 20;
+      let shift = 0;
+
+      // Assuming main content area might have a left sidebar. 
+      // If it's near the left edge, shift it right.
+      if (rect.left < padding) {
+        shift = padding - rect.left;
+      } else if (rect.right > window.innerWidth - padding) {
+        shift = (window.innerWidth - padding) - rect.right;
+      }
+
+      if (shift !== 0) {
+        popoverRef.current.style.transform = `translateX(calc(-50% + ${shift}px))`;
+      }
+    }
+  }, [isHovered]);
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-emerald-400";
@@ -30,7 +52,10 @@ export default function WordAssessmentPopover({ word, children }: WordAssessment
       {children}
       
       {isHovered && (
-        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-sm p-4 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div 
+          ref={popoverRef}
+          className="absolute z-[999] bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-sm p-4 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl animate-in fade-in zoom-in duration-200"
+        >
           <div className="flex justify-between items-center gap-4 mb-2 pb-2 border-b border-white/10">
             <span className="font-bold text-white text-lg">{word.word}</span>
             <span className={`text-sm font-bold px-2 py-1 rounded ${getScoreBgColor(word.accuracyScore)} ${getScoreColor(word.accuracyScore)}`}>

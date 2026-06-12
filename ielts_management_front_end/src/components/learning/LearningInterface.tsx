@@ -11,6 +11,8 @@ import { DicussionTab } from "./Tabs/DicussionTab";
 import { ResourcesTab } from "./Tabs/ResourcesTab";
 import { ExerciseInterface } from "./Exercise/ExerciseInterface";
 import { learningService, CourseLearningData, LearningVideo } from "@/services/learningService";
+import { CourseReviewModal } from "./CourseReviewModal";
+import { apiClient } from '@/utils/api';
 
 const PlayrWrapper = dynamic(
   () => import("./VideoPlyr").then((mod) => mod.PlayrWrapper),
@@ -46,6 +48,9 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(initialVideoId || null);
   const [currentExerciseId, setCurrentExerciseId] = useState<string | null>(null);
 
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+
   const handleSelectVideo = (videoId: string) => {
     setCurrentExerciseId(null);
     setCurrentVideoId(videoId);
@@ -77,6 +82,16 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
           if (!isCurrentAccessible && fetchedVideos.length > 0) {
             const nextVideo = fetchedVideos.find((v, idx) => !v.progress?.isCompleted && accessibleArray[idx]) || fetchedVideos[0];
             handleSelectVideo(nextVideo._id);
+          }
+
+          // Fetch review status
+          try {
+            const reviewRes = await apiClient.get<{ hasReviewed: boolean }>(`/api/comments/course/${response.data.course.id}/my-review`);
+            if (reviewRes.success && reviewRes.data?.hasReviewed) {
+              setHasReviewed(true);
+            }
+          } catch (e) {
+            console.error("Failed to fetch review status", e);
           }
         } else {
           setError("Failed to load course data");
@@ -274,9 +289,24 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
                         style={{ width: `${progressPercentage}%` }}
                       />
                     </div>
-                    <p className="text-[10px] font-bold tracking-widest uppercase text-white/50">
-                      {progressPercentage}% HOÀN THÀNH ({completedCount}/{videos.length} BÀI HỌC)
-                    </p>
+                    <div className="flex justify-between items-center mt-1">
+                      <p className="text-[10px] font-bold tracking-widest uppercase text-white/50">
+                        {progressPercentage}% HOÀN THÀNH ({completedCount}/{videos.length} BÀI HỌC)
+                      </p>
+                      {progressPercentage === 100 && !hasReviewed && (
+                        <button
+                          onClick={() => setIsReviewModalOpen(true)}
+                          className="px-3 py-1 bg-[#f4e900] text-black text-[10px] font-bold tracking-wider uppercase rounded-full hover:bg-yellow-400 transition-colors"
+                        >
+                          Đánh giá khóa học
+                        </button>
+                      )}
+                      {progressPercentage === 100 && hasReviewed && (
+                        <span className="px-3 py-1 bg-white/10 text-white/70 text-[10px] font-bold tracking-wider uppercase rounded-full">
+                          Đã đánh giá
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-col gap-4">
                     <CourseListItem
@@ -345,6 +375,15 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
           overflow: hidden;
         }
       `}} />
+
+      {courseData && (
+        <CourseReviewModal
+          courseId={courseData.id}
+          isOpen={isReviewModalOpen}
+          onClose={() => setIsReviewModalOpen(false)}
+          onSuccess={() => setHasReviewed(true)}
+        />
+      )}
     </div>
   );
 };

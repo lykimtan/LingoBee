@@ -4,6 +4,7 @@ const courseController = require('../controllers/courseController');
 const { authMiddleware, isAdmin, isTeacher } = require('../middleware/authMiddleware');
 const {
   inviteTeacherToCourse,
+  inviteAssistantToCourse,
   acceptCourseInvitation,
   rejectCourseInvitation,
   getMyCourseInvitations,
@@ -35,6 +36,14 @@ router.post(
   validateCourseInvitation,
   validate,
   inviteTeacherToCourse
+);
+router.post(
+  '/:id/assistants/invite',
+  authMiddleware,
+  isTeacher,
+  validateCourseInvitation,
+  validate,
+  inviteAssistantToCourse
 );
 router.get('/invitations', authMiddleware, isTeacher, getMyCourseInvitations);
 router.get('/my', authMiddleware, isTeacher, courseController.getMyTeachingCourses);

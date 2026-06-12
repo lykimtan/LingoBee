@@ -118,6 +118,7 @@ export type TeacherCourseItem = {
 export type TeacherInvitation = {
   _id: string;
   status: string;
+  role?: string;
   message?: string;
   course?: {
     _id: string;

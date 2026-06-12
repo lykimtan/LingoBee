@@ -41,7 +41,7 @@ export default function SpeakingAIFeedback({ assessment }: SpeakingAIFeedbackPro
   };
 
   return (
-    <div className="mt-6 bg-indigo-900/20 border border-indigo-500/20 rounded-2xl p-6 relative overflow-hidden">
+    <div className="mt-6 bg-indigo-900/20 border border-indigo-500/20 rounded-2xl p-6 relative">
       <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 rounded-l-2xl"></div>
 
       <div className="flex items-center gap-3 mb-6">

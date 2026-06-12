@@ -1,9 +1,9 @@
 "use client";
 
-import { BookOpen, Mail, Layers, ChevronLeft, ChevronRight } from "lucide-react";
+import { BookOpen, Mail, Layers, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import clsx from "clsx";
 
-export type TeacherCoursesTab = "my-courses" | "invitations";
+export type TeacherCoursesTab = "my-courses" | "invitations" | "assistant-invitations";
 
 interface TeacherCoursesSidebarProps {
   activeTab: TeacherCoursesTab;
@@ -15,6 +15,7 @@ interface TeacherCoursesSidebarProps {
 const navItems = [
   { id: "my-courses", label: "Khóa học của tôi", icon: BookOpen },
   { id: "invitations", label: "Lời mời từ admin", icon: Mail },
+  { id: "assistant-invitations", label: "Lời mời trợ giảng", icon: Users },
 ] as const;
 
 export function TeacherCoursesSidebar({

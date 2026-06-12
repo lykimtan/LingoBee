@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { MessageSquareText, Loader2, PlayCircle } from 'lucide-react';
 import { paymentService } from '@/services/paymentService';
 import { userService } from '@/services/userService';
+import { learningService } from '@/services/learningService';
 import { toast } from 'react-toastify';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
@@ -18,6 +19,7 @@ interface EnrollButtonProps {
 export function EnrollButton({ courseId, price, slug }: EnrollButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [checkingEnrollment, setCheckingEnrollment] = useState(true);
   const [discountCode, setDiscountCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
@@ -43,10 +45,26 @@ export function EnrollButton({ courseId, price, slug }: EnrollButtonProps) {
         if (user.role === 'student') {
           const res = await userService.getUserProfile();
           if (res.data?.student?.enrolledCourses) {
-            const enrolled = res.data.student.enrolledCourses.some(
+            const enrolledCourse = res.data.student.enrolledCourses.find(
               (c: any) => c.courseId === courseId || c.courseId?._id === courseId
             );
-            if (isMounted) setIsEnrolled(enrolled);
+            if (isMounted) {
+              setIsEnrolled(!!enrolledCourse);
+              if (enrolledCourse) {
+                // Fetch actual progress from learning data
+                try {
+                  const learningRes = await learningService.getCourseLearningData(slug);
+                  if (learningRes.success && learningRes.data) {
+                    const videos = learningRes.data.videos;
+                    const completedCount = videos.filter((v: any) => v.progress?.isCompleted).length;
+                    const actualProgress = videos.length > 0 ? Math.round((completedCount / videos.length) * 100) : 0;
+                    setProgress(actualProgress);
+                  }
+                } catch (e) {
+                  setProgress(enrolledCourse.progress || 0);
+                }
+              }
+            }
           }
         }
       } catch (error) {
@@ -121,18 +139,39 @@ export function EnrollButton({ courseId, price, slug }: EnrollButtonProps) {
     const learningUrl = `/course/${slug}/learn/getting-started`;
     
     return (
-      <Link
-        href={learningUrl}
-        className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-[#2563eb]/30 hover:shadow-xl hover:shadow-[#2563eb]/40 flex items-center justify-center gap-2 mb-6"
-      >
-        <PlayCircle className="w-5 h-5" />
-        Vào học tiếp
-      </Link>
+      <div className="w-full flex flex-col items-center">
+        <div className="w-full mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-white font-bold">Tiến độ học tập</span>
+            <span className="text-[#1c7c78] font-bold">{progress}%</span>
+          </div>
+          <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
+            <div className="bg-[#1c7c78] h-2.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+          </div>
+        </div>
+
+        <Link
+          href={learningUrl}
+          className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-[#2563eb]/30 hover:shadow-xl hover:shadow-[#2563eb]/40 flex items-center justify-center gap-2 mb-6"
+        >
+          <PlayCircle className="w-5 h-5" />
+          Vào học tiếp
+        </Link>
+      </div>
     );
   }
 
   return (
     <div className="w-full flex flex-col items-center">
+      
+      <div className="text-center mb-6">
+        <h3 className="text-2xl font-bold text-white mb-2">Đăng ký ngay hôm nay</h3>
+        <div className="flex items-center justify-center gap-3">
+          <span className="text-3xl font-extrabold text-[#1c7c78]">
+            {price.toLocaleString('vi-VN')}đ
+          </span>
+        </div>
+      </div>
       
       {!showDiscountInput && !appliedDiscount && (
         <button 

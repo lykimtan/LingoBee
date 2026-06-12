@@ -86,10 +86,16 @@ export default function TeacherCoursesPage() {
 	);
 
 	const tabContent = useMemo(() => {
-		if (activeTab === "invitations") {
+		if (activeTab === "invitations" || activeTab === "assistant-invitations") {
+			const filteredInvitations = invitations.filter((i) =>
+				activeTab === "assistant-invitations"
+					? i.role === "assistant"
+					: i.role !== "assistant"
+			);
+
 			return (
 				<TeacherInvitationsList
-					invitations={invitations}
+					invitations={filteredInvitations}
 					isLoading={invitationsLoading}
 					error={invitationsError}
 					onAccept={(id) => handleInvitationAction(id, "accept")}

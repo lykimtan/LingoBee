@@ -8,13 +8,14 @@ import {
   ExerciseAttemptAnswer,
   ExerciseQuestion
 } from "@/services/learningService";
-import { Loader2, Save, Send, ArrowLeft, ArrowRight, RotateCcw, FileText, Clock } from "lucide-react";
+import { Loader2, Save, Send, ArrowLeft, ArrowRight, RotateCcw, FileText, Clock, Sparkles } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal";
 import { WordCountIndicator } from '@/components/common/WordCountIndicator';
 import SpeakingAIFeedback from './SpeakingAIFeedback';
 import { toast } from "react-toastify";
 import ResultModal from "./ResultModal";
 import AudioRecorder from "./AudioRecorder";
+import AITutorPanel from "./AITutorPanel";
 
 interface ExerciseInterfaceProps {
   exerciseId: string;
@@ -31,8 +32,13 @@ export const ExerciseInterface = ({ exerciseId }: ExerciseInterfaceProps) => {
   const [isRetakeModalOpen, setIsRetakeModalOpen] = useState(false);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
   const [isAIGrading, setIsAIGrading] = useState(false);
+  const [showAITutor, setShowAITutor] = useState(false);
 
   useEffect(() => {
+    // Reset states when changing exercises
+    setShowAITutor(false);
+    setCurrentIndex(0);
+
     const fetchExercise = async () => {
       try {
         setLoading(true);
@@ -65,6 +71,20 @@ export const ExerciseInterface = ({ exerciseId }: ExerciseInterfaceProps) => {
 
     fetchExercise();
   }, [exerciseId]);
+
+  const handleNext = () => {
+    if (currentIndex < (data?.exercise.questions.length || 0) - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setShowAITutor(false);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+      setShowAITutor(false);
+    }
+  };
 
   const handleAnswerChange = (questionId: string, value: any, field: keyof ExerciseAttemptAnswer) => {
     setAnswers(prev => prev.map(ans =>
@@ -419,16 +439,53 @@ export const ExerciseInterface = ({ exerciseId }: ExerciseInterfaceProps) => {
 
               {/* Correct Answer Display */}
               {isSubmitted && currentQuestion.questionType === 'multipleChoice' && currentQuestion.correctOptionId && (
-                <div className="mt-6 p-4 bg-emerald-500/10 text-emerald-700 rounded-xl font-bold text-sm border border-emerald-500/20 flex gap-3 items-center">
-                  <span className="shrink-0">Đáp án đúng:</span>
-                  <span>{String.fromCharCode(65 + (currentQuestion.options?.findIndex((o) => o.id === currentQuestion.correctOptionId) || 0))} - {currentQuestion.options?.find((o) => o.id === currentQuestion.correctOptionId)?.text}</span>
+                <div className="mt-6">
+                  <div className="p-4 bg-emerald-500/10 text-emerald-700 rounded-xl font-bold text-sm border border-emerald-500/20 flex justify-between items-center gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="shrink-0">Đáp án đúng:</span>
+                      <span>{String.fromCharCode(65 + (currentQuestion.options?.findIndex((o) => o.id === currentQuestion.correctOptionId) || 0))} - {currentQuestion.options?.find((o) => o.id === currentQuestion.correctOptionId)?.text}</span>
+                    </div>
+                    {!showAITutor && (
+                      <button onClick={() => setShowAITutor(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-xs transition-colors shrink-0">
+                        <Image src="/inlectualBee.gif" alt="Bee thông thái" width={24} height={24} unoptimized className="text-blue-400" /> Hỏi Bee Thông Thái
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
               {isSubmitted && currentQuestion.questionType === 'fillBlank' && currentQuestion.correctAnswers && currentQuestion.correctAnswers.length > 0 && (
-                <div className="mt-6 p-4 bg-emerald-500/10 text-emerald-700 rounded-xl font-bold text-sm border border-emerald-500/20 flex gap-3 items-center">
-                  <span className="shrink-0">Đáp án đúng:</span>
-                  <span>{currentQuestion.correctAnswers.join(' hoặc ')}</span>
+                <div className="mt-6">
+                  <div className="p-4 bg-emerald-500/10 text-emerald-700 rounded-xl font-bold text-sm border border-emerald-500/20 flex justify-between items-center gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="shrink-0">Đáp án đúng:</span>
+                      <span>{currentQuestion.correctAnswers.join(' hoặc ')}</span>
+                    </div>
+                    {!showAITutor && (
+                      <button onClick={() => setShowAITutor(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-xs transition-colors shrink-0">
+                        <Image src="/inlectualBee.gif" alt="Bee thông thái" width={24} height={24} unoptimized className="text-blue-400" /> Hỏi AI Gia Sư
+                      </button>
+                    )}
+                  </div>
                 </div>
+              )}
+
+              {/* AI Tutor Panel */}
+              {isSubmitted && showAITutor && (
+                <AITutorPanel
+                  questionContext={{
+                    questionText: currentQuestion.questionText,
+                    studentAnswer: currentQuestion.questionType === 'multipleChoice'
+                      ? currentQuestion.options?.find(o => o.id === currentAnswer?.selectedOptionId)?.text || 'Trống'
+                      : currentAnswer?.blankAnswers?.join(', ') || 'Trống',
+                    correctAnswer: currentQuestion.questionType === 'multipleChoice'
+                      ? currentQuestion.options?.find(o => o.id === currentQuestion.correctOptionId)?.text || 'Trống'
+                      : currentQuestion.correctAnswers?.join(', ') || 'Trống',
+                    questionType: currentQuestion.questionType,
+                    explanation: currentQuestion.explanation,
+                    transcript: currentQuestion.transcript,
+                  }}
+                  onClose={() => setShowAITutor(false)}
+                />
               )}
 
               {/* Grading Result Feedback */}
@@ -514,7 +571,7 @@ export const ExerciseInterface = ({ exerciseId }: ExerciseInterfaceProps) => {
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
-                        <Image src="/learning/incorrected.gif" alt="Incorrect" width={24} height={24} className="object-contain " />
+                        <Image src="/learning/incorrected.gif" alt="Incorrect" unoptimized width={24} height={24} className="object-contain " />
                         Chưa chính xác
                       </span>
                     )}
@@ -595,11 +652,15 @@ export const ExerciseInterface = ({ exerciseId }: ExerciseInterfaceProps) => {
                       </button>
                       <button
                         onClick={handleAIGrading}
-                        disabled={saving || isAIGrading}
+                        disabled={saving || isAIGrading || (data?.attempt?.aiAssessmentCount ?? 0) >= 3}
                         className="px-6 py-3 rounded-full bg-indigo-500 text-white font-bold hover:bg-indigo-600 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-indigo-500/20 border border-indigo-400/30"
                       >
                         {isAIGrading && <Loader2 className="w-4 h-4 animate-spin" />}
-                        {isAIGrading ? "AI Đang chấm..." : "Chấm điểm phát âm bằng AI"}
+                        {isAIGrading
+                          ? "AI Đang chấm..."
+                          : (data?.attempt?.aiAssessmentCount ?? 0) >= 3
+                            ? "Đã hết lượt chấm AI"
+                            : `Chấm điểm phát âm bằng AI (Còn ${3 - (data?.attempt?.aiAssessmentCount ?? 0)} lượt)`}
                       </button>
                     </div>
                   ) : (

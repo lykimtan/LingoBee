@@ -7,6 +7,8 @@ type CourseUser = {
   email?: string;
   profilePicture?: string;
   bio?: string;
+  name?: string;
+  avatar?: string;
 };
 
 interface TeacherCourseInstructorCardProps {
@@ -23,9 +25,9 @@ export default function TeacherCourseInstructorCard({
       <h2 className="text-xl font-bold text-gray-900"></h2>
       <div className="mt-6 flex items-center gap-4">
         <div className="h-14 w-14 overflow-hidden rounded-full bg-gray-100">
-          {teacher?.profilePicture ? (
+          {teacher?.avatar || teacher?.profilePicture ? (
             <Image
-              src={teacher.profilePicture}
+              src={(teacher?.avatar || teacher?.profilePicture) as string}
               alt="Avatar"
               width={56}
               height={56}
@@ -33,7 +35,7 @@ export default function TeacherCourseInstructorCard({
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-slate-800 text-lg font-bold text-white">
-              {teacher?.firstName?.[0] || teacher?.email?.[0]?.toUpperCase() || "T"}
+              {teacher?.name?.[0] || teacher?.firstName?.[0] || teacher?.email?.[0]?.toUpperCase() || "T"}
             </div>
           )}
         </div>

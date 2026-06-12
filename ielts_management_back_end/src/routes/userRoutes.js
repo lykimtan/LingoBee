@@ -31,6 +31,9 @@ router.post('/:userId/unblock', authMiddleware, isAdmin, userController.unblockU
 // Search users (admin only)
 router.get('/search/query', authMiddleware, isAdmin, userController.searchUsers);
 
+// Search teachers (teacher only)
+router.get('/teachers/search', authMiddleware, authorize('teacher'), userController.searchTeachers);
+
 // Get user statistics (admin only)
 router.get('/stats/overview', authMiddleware, isAdmin, userController.getUserStatistics);
 

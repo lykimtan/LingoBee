@@ -446,6 +446,55 @@ const searchUsers = async (req, res) => {
 };
 
 // ============================================
+// SEARCH TEACHERS (TEACHER ONLY)
+// ============================================
+const searchTeachers = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query || query.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'Search query must be at least 2 characters',
+      });
+    }
+
+    const filter = {
+      role: 'teacher',
+      status: 'active',
+      _id: { $ne: req.user._id }, // Don't return the searcher themselves
+      $or: [
+        { email: { $regex: query, $options: 'i' } },
+        { name: { $regex: query, $options: 'i' } },
+      ],
+    };
+
+    const users = await User.find(filter)
+      .select('name email avatar role')
+      .limit(10)
+      .sort({ name: 1 });
+
+    logger.info(`Teacher searched for other teachers with query: ${query}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Search results retrieved',
+      data: {
+        results: users,
+        count: users.length,
+      },
+    });
+  } catch (error) {
+    logger.error(`Error searching teachers: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Error searching teachers',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
+// ============================================
 // GET USER PROFILE WITH RELATED DATA
 // ============================================
 const getUserProfile = async (req, res) => {
@@ -500,5 +549,6 @@ module.exports = {
   unblockUser,
   getUserStatistics,
   searchUsers,
+  searchTeachers,
   getUserProfile,
 };

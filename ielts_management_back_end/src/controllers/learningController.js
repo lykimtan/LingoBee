@@ -67,7 +67,7 @@ const getCourseLearningData = async (req, res, next) => {
       const progress = progressList.find(
         (p) => p.videoId.toString() === video._id.toString()
       );
-      
+
       return {
         ...video.toObject(),
         progress: progress || null,
@@ -164,17 +164,17 @@ const updateVideoProgress = async (req, res, next) => {
       progress.isCompleted = true;
       progress.completedAt = new Date();
     }
-    
+
     // Update progress percentage safely
     progress.progressPercentage = Math.min(
       100,
       Math.round((progress.currentTime / videoDuration) * 100)
     );
     progress.lastWatchedAt = new Date();
-    
+
     if (progress.isCompleted) {
-       progress.progressPercentage = 100;
-       progress.canAccessNextVideo = true;
+      progress.progressPercentage = 100;
+      progress.canAccessNextVideo = true;
     }
 
     await progress.save();
@@ -425,12 +425,12 @@ const submitExerciseAttempt = async (req, res, next) => {
         };
       });
     }
-    
+
     attempt.status = 'submitted';
-    
+
     // Auto-grade multipleChoice & fillBlank
     let needsManualGrading = false;
-    
+
     attempt.answers.forEach((ans) => {
       const q = exercise.questions.find((quest) => quest._id.toString() === ans.questionId.toString());
       if (q) {
@@ -439,7 +439,7 @@ const submitExerciseAttempt = async (req, res, next) => {
           ans.score = ans.isCorrect ? 10 : 0;
         } else if (q.questionType === 'fillBlank') {
           // Simplistic checking, case-insensitive
-          const isCorrect = ans.blankAnswers.some(userAns => 
+          const isCorrect = ans.blankAnswers.some(userAns =>
             q.correctAnswers.some(corr => corr.toLowerCase() === userAns.toLowerCase())
           );
           ans.isCorrect = isCorrect;
@@ -487,7 +487,7 @@ const submitExerciseAttempt = async (req, res, next) => {
     });
   } catch (error) {
     if (error.name === 'ValidationError') {
-       return res.status(400).json({ success: false, message: error.message });
+      return res.status(400).json({ success: false, message: error.message });
     }
     logger.error(`Error in submitExerciseAttempt: ${error.message}`);
     next(error);
@@ -511,6 +511,16 @@ const gradeExerciseAttempt = async (req, res, next) => {
 
     const attempt = await ExerciseAttempt.findById(attemptId).populate('exerciseId');
     if (!attempt) return res.status(404).json({ success: false, message: 'Exercise attempt not found' });
+
+    if (req.user.role !== 'admin') {
+      const course = await Course.findById(attempt.courseId);
+      if (!course) {
+        return res.status(404).json({ success: false, message: 'Course not found' });
+      }
+      if (course.teacher.toString() !== userId && !(course.teachingAssistants && course.teachingAssistants.includes(userId))) {
+        return res.status(403).json({ success: false, message: 'You are not authorized to grade this course' });
+      }
+    }
 
     if (attempt.status !== 'submitted') {
       return res.status(400).json({ success: false, message: 'Can only grade submitted attempts' });
@@ -582,14 +592,22 @@ const getGradingQueue = async (req, res, next) => {
     const courses = await Course.find({ teacher: userId }).select('_id');
     const courseIds = courses.map(c => c._id);
 
-    // Get all submitted attempts for these courses
+    // Find exercises that require manual grading
+    const manualExercises = await Exercise.find({
+      courseId: { $in: courseIds },
+      'questions.questionType': { $in: ['essay', 'speaking'] }
+    }).select('_id');
+    const manualExerciseIds = manualExercises.map(ex => ex._id);
+
+    // Get all submitted attempts for these exercises
     const attempts = await ExerciseAttempt.find({
       courseId: { $in: courseIds },
+      exerciseId: { $in: manualExerciseIds },
       status: 'submitted'
     })
-    .populate('exerciseId', 'title')
-    .populate('studentId')
-    .sort({ completedAt: 1, submittedAt: 1, createdAt: 1 }); // Sort by oldest first
+      .populate('exerciseId', 'title')
+      .populate('studentId')
+      .sort({ completedAt: 1, submittedAt: 1, createdAt: 1 }); // Sort by oldest first
 
     // We also want to populate the User fields of the Student for name and avatar
     await Student.populate(attempts, { path: 'studentId.userId', select: 'fullName email avatar' });
@@ -601,6 +619,58 @@ const getGradingQueue = async (req, res, next) => {
     });
   } catch (error) {
     logger.error(`Error in getGradingQueue: ${error.message}`);
+    next(error);
+  }
+};
+
+/**
+ * @desc    Get all submitted and graded attempts for a specific course
+ * @route   GET /api/learning/teacher/courses/:courseId/attempts
+ * @access  Private/Teacher
+ */
+const getCourseAttemptsForGrading = async (req, res, next) => {
+  try {
+    const { courseId } = req.params;
+    const userId = req.user.id;
+
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Only teachers can access course grading' });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ success: false, message: 'Course not found' });
+    }
+
+    if (course.teacher.toString() !== userId && !(course.teachingAssistants && course.teachingAssistants.includes(userId))) {
+      return res.status(403).json({ success: false, message: 'You are not authorized to grade this course' });
+    }
+
+    // Find exercises that require manual grading
+    const manualExercises = await Exercise.find({
+      courseId,
+      'questions.questionType': { $in: ['essay', 'speaking'] }
+    }).select('_id');
+    const manualExerciseIds = manualExercises.map(ex => ex._id);
+
+    const attempts = await ExerciseAttempt.find({
+      courseId,
+      exerciseId: { $in: manualExerciseIds },
+      status: { $in: ['submitted', 'graded'] }
+    })
+      .populate('exerciseId', 'title')
+      .populate('studentId')
+      .sort({ completedAt: -1, submittedAt: -1, createdAt: -1 });
+
+    await Student.populate(attempts, { path: 'studentId.userId', select: 'fullName email avatar' });
+
+    res.status(200).json({
+      success: true,
+      count: attempts.length,
+      data: attempts,
+    });
+  } catch (error) {
+    logger.error(`Error in getCourseAttemptsForGrading: ${error.message}`);
     next(error);
   }
 };
@@ -627,6 +697,16 @@ const getAttemptDetailForGrading = async (req, res, next) => {
 
     if (!attempt) {
       return res.status(404).json({ success: false, message: 'Attempt not found' });
+    }
+
+    if (req.user.role !== 'admin') {
+      const course = await Course.findById(attempt.courseId);
+      if (!course) {
+        return res.status(404).json({ success: false, message: 'Course not found' });
+      }
+      if (course.teacher.toString() !== req.user.id && !(course.teachingAssistants && course.teachingAssistants.includes(req.user.id))) {
+        return res.status(403).json({ success: false, message: 'You are not authorized to access attempts for this course' });
+      }
     }
 
     // Populate user info for student
@@ -669,20 +749,27 @@ const gradeSpeakingWithAI = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'No attempt found to grade' });
     }
 
+    // --- CHECK SPAM LIMIT ---
+    if (attempt.aiAssessmentCount >= 3) {
+      return res.status(403).json({ success: false, message: 'Bạn đã hết lượt chấm điểm AI cho bài tập này (Tối đa 3 lần).' });
+    }
+
     const azureSpeechService = require('../services/azureSpeechService');
-    
+
     // We will assess all speaking answers that have audio
     let assessedCount = 0;
     for (const ans of attempt.answers) {
-      if (ans.questionType === 'speaking' && ans.audioRecordUrl) {
+      // Chỉ chấm những câu chưa có aiAssessment hoặc học viên vừa thay đổi audio (aiAssessment bị làm rỗng) hoặc bị lỗi NaN
+      console.log(`Checking answer ${ans._id} - audioUrl: ${ans.audioRecordUrl}, aiAssessment:`, ans.aiAssessment);
+      if (ans.questionType === 'speaking' && ans.audioRecordUrl && (!ans.aiAssessment || ans.aiAssessment.pronunciationScore == null || isNaN(ans.aiAssessment.pronunciationScore))) {
         try {
           const aiResult = await azureSpeechService.assessPronunciation(ans.audioRecordUrl);
           ans.aiAssessment = aiResult;
-          
+
           // Optionally, assign a score based on pronunciation
           // Example: IELTS speaking is loosely mapped to HundredMark, let's just store it.
-          ans.isCorrect = aiResult.pronunciationScore > 60; 
-          
+          ans.isCorrect = aiResult.pronunciationScore > 60;
+
           assessedCount++;
         } catch (err) {
           logger.error(`AI grading failed for answer ${ans._id}: ${err.message}`);
@@ -692,6 +779,7 @@ const gradeSpeakingWithAI = async (req, res, next) => {
     }
 
     if (assessedCount > 0) {
+      attempt.aiAssessmentCount += 1;
       await attempt.save();
     }
 
@@ -707,6 +795,81 @@ const gradeSpeakingWithAI = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Explain question via AI Academic Tutor
+ * @route   POST /api/learning/explain
+ * @access  Private/Student
+ */
+const explainQuestionWithAI = async (req, res, next) => {
+  try {
+    const { messages, context } = req.body;
+
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: 'Messages are required and must be an array' });
+    }
+
+    const { createGoogleGenerativeAI } = require('@ai-sdk/google');
+    const { streamText, convertToModelMessages } = require('ai');
+
+    const googleProvider = createGoogleGenerativeAI({
+      apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY
+    });
+
+    const systemPrompt = `Bạn là một gia sư IELTS chuyên nghiệp và tận tâm (IELTS Academic Tutor), Tên của bạn là Bee Thông Thái. 
+          Bạn đang hỗ trợ một học viên giải đáp thắc mắc về một câu hỏi bài tập IELTS cụ thể.
+
+          Dưới đây là thông tin về câu hỏi mà học viên đang hỏi:
+          - Câu hỏi/Yêu cầu: ${context?.questionText || 'Không rõ'}
+          - Lựa chọn của học viên: ${context?.studentAnswer || 'Trống'}
+          - Đáp án đúng: ${context?.correctAnswer || 'Không cung cấp'}
+          - Loại câu hỏi: ${context?.questionType || 'Khác'}
+          ${context?.explanation ? `- Giải thích của hệ thống: ${context.explanation}` : ''}
+          ${context?.transcript ? `- Đoạn Transcript/Bài đọc liên quan: ${context.transcript}` : ''}
+
+          Nhiệm vụ của bạn:
+          1. Đọc và hiểu kỹ tại sao học viên lại chọn đáp án sai (nếu họ sai) hoặc giải thích tại sao đáp án đúng lại chính xác.
+          2. Trả lời một cách có tính sư phạm: Giải thích rõ ràng các từ vựng, cấu trúc ngữ pháp, hoặc đoạn văn liên quan trong bài đọc/nghe (nếu có).
+          3. KHÔNG đưa ngay đáp án nếu học viên hỏi bài chưa làm, nhưng vì ở đây là phần chữa bài, bạn hãy phân tích trực tiếp vào đáp án.
+          4. Luôn xưng  "mình" và gọi học viên là "bạn". Giọng điệu chuyên nghiệp, khuyến khích.
+          5. Không sử dụng các tool bán hàng hay tư vấn khóa học.`;
+
+    const safeMessages = messages.map(msg => {
+      if (!msg.parts && msg.content) {
+        return {
+          ...msg,
+          parts: [{ type: 'text', text: msg.content }]
+        };
+      }
+      return msg;
+    });
+
+    let modelMessages = [];
+    try {
+      modelMessages = await convertToModelMessages(safeMessages);
+    } catch (e) {
+      console.error('CONVERT ERROR:', e);
+      const filteredMessages = safeMessages.filter(m => m.role !== 'tool');
+      modelMessages = await convertToModelMessages(filteredMessages);
+    }
+
+    // console.log('\n================ DỮ LIỆU GÓI CHO AI (AITUTOR) ================');
+    // console.log('[System Prompt]:\n', systemPrompt);
+    // console.log('\n[Messages]:\n', JSON.stringify(modelMessages, null, 2));
+    // console.log('==============================================================\n');
+
+    const result = streamText({
+      model: googleProvider('gemini-flash-lite-latest'),
+      system: systemPrompt,
+      messages: modelMessages,
+    });
+
+    result.pipeUIMessageStreamToResponse(res);
+  } catch (error) {
+    logger.error(`Error in explainQuestionWithAI: ${error.message}`);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 module.exports = {
   getCourseLearningData,
   updateVideoProgress,
@@ -716,6 +879,8 @@ module.exports = {
   submitExerciseAttempt,
   gradeExerciseAttempt,
   getGradingQueue,
+  getCourseAttemptsForGrading,
   getAttemptDetailForGrading,
   gradeSpeakingWithAI,
+  explainQuestionWithAI,
 };

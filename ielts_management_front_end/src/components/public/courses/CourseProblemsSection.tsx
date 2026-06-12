@@ -53,10 +53,6 @@ export const CourseProblemsSection = () => {
               {/* Image Placeholder */}
               <div className="absolute inset-0 bg-[url('/CoursesPage/sadgirl.webp')] bg-cover bg-center opacity-60 mix-blend-overlay"></div>
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end justify-center pb-6">
-                <span className="text-white/60 text-sm font-medium italic">Hình ảnh học viên bế tắc (Placeholder)</span>
-              </div>
-
 
               <div className="absolute top-4 right-4 text-3xl animate-[bounce_3s_infinite] delay-100 opacity-0 transition-opacity duration-300 group-hover:opacity-100">😭</div>
               <div className="absolute top-12 left-4 text-3xl animate-[bounce_4s_infinite] delay-300 opacity-0 transition-opacity duration-300 group-hover:opacity-100">😵‍💫</div>

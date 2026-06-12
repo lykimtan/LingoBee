@@ -22,6 +22,11 @@ const courseInvitationSchema = new mongoose.Schema(
       enum: ['pending', 'accepted', 'rejected', 'cancelled'],
       default: 'pending',
     },
+    role: {
+      type: String,
+      enum: ['primary', 'assistant'],
+      default: 'primary',
+    },
     message: {
       type: String,
       default: '',

@@ -201,6 +201,7 @@ export default function ChatWidget() {
                               alt="LingoBee AI Support"
                               width={30}
                               height={30}
+                              unoptimized
                               className="object-contain"
                             />
                           )}

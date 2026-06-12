@@ -41,6 +41,23 @@ export interface GetCommentsResponse {
   pagination: PaginationData;
 }
 
+export interface CourseVideoMap {
+  [videoId: string]: {
+    _id: string;
+    title: string;
+    thumbnailUrl: string;
+    order: number;
+    videoUrl?: string;
+    description?: string;
+  };
+}
+
+export interface CourseVideoCommentsData {
+  comments: CommentModel[];
+  videos: CourseVideoMap;
+  pagination: PaginationData;
+}
+
 export interface CreateCommentData {
   targetType: 'Video' | 'Course' | 'User';
   targetId: string;
@@ -52,6 +69,10 @@ export interface CreateCommentData {
 class CommentService {
   async getComments(targetType: string, targetId: string, page = 1, limit = 10): Promise<GetCommentsResponse> {
     return apiClient.get<any>(`/api/comments/target/${targetType}/${targetId}?page=${page}&limit=${limit}`) as unknown as Promise<GetCommentsResponse>;
+  }
+
+  async getCourseVideoComments(courseId: string, page = 1, limit = 20): Promise<ApiResponse<CourseVideoCommentsData>> {
+    return apiClient.get<CourseVideoCommentsData>(`/api/comments/teacher/course/${courseId}?page=${page}&limit=${limit}`);
   }
 
   async getReplies(commentId: string): Promise<ApiResponse<CommentModel[]>> {

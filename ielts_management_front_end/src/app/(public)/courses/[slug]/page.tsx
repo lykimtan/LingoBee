@@ -9,6 +9,7 @@ import { CoursePreviewVideo } from "@/components/public/courses/CoursePreviewVid
 import { createSafeHtml } from '@/utils/utils';
 import { TeacherShowcase } from "@/components/TeacherShowcase";
 import { EnrollButton } from "@/components/public/courses/EnrollButton";
+import { CourseReviewsList } from "@/components/public/courses/CourseReviewsList";
 
 interface PageProps {
   params: Promise<{
@@ -125,6 +126,14 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
                     <span className="font-medium text-white">Giáo viên:</span>
                     <span className="font-bold text-[#1c7c78]">{teacherName}</span>
                   </div>
+                  {course.teachingAssistants && course.teachingAssistants.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-white">Trợ giảng:</span>
+                      <span className="font-bold text-[#1c7c78]">
+                        {course.teachingAssistants.map((ta: any) => ta.name).join(', ')}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4" />
                     <span>Cập nhật {new Date(course.updatedAt || Date.now()).toLocaleDateString('vi-VN')}</span>
@@ -159,6 +168,12 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
                 <CoursePreviewVideo previewVideoUrl={course.promoVideoUrl || course.videoUrl} />
               </div>
 
+              {/* Course Reviews */}
+              <div className="mb-12 relative z-10">
+                <h2 className="text-2xl font-bold text-white mb-6">Đánh giá từ học viên</h2>
+                <CourseReviewsList courseId={course._id} />
+              </div>
+
             </div>
 
             {/* RIGHT COLUMN - Sticky Sidebar */}
@@ -179,15 +194,6 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
 
                 {/* Pricing & CTA */}
                 <div className="p-6">
-                  <div className="text-center mb-6">
-                    <h3 className="text-2xl font-bold text-white mb-2">Đăng ký ngay hôm nay</h3>
-                    <div className="flex items-center justify-center gap-3">
-                      <span className="text-3xl font-extrabold text-[#1c7c78]">
-                        {originalPrice.toLocaleString('vi-VN')}đ
-                      </span>
-                    </div>
-                  </div>
-
                   <EnrollButton courseId={course._id} price={originalPrice} slug={slug} />
 
                   {/* Features List */}

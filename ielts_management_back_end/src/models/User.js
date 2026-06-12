@@ -64,6 +64,14 @@ const userSchema = new mongoose.Schema(
       enum: ['active', 'inactive', 'suspended'],
       default: 'active',
     },
+    averageRating: {
+      type: Number,
+      default: 0,
+    },
+    totalReviews: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

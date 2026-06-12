@@ -159,6 +159,12 @@ const exerciseAttemptSchema = new mongoose.Schema(
       default: 1,
     },
 
+    // limit AI speaking grading spam
+    aiAssessmentCount: {
+      type: Number,
+      default: 0,
+    },
+
     // mảng câu trả lời
     answers: {
       type: [answerSubSchema],
