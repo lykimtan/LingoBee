@@ -67,6 +67,10 @@ class CourseService {
     return apiClient.get<T>(`/api/courses/slug/${encoded}`);
   }
 
+  async getCourseStudents(courseId: string): Promise<ApiResponse<any[]>> {
+    const encoded = encodeURIComponent(courseId);
+    return apiClient.get<any[]>(`/api/courses/${encoded}/students`);
+  }
 }
 
 export const courseService = new CourseService();

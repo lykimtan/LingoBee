@@ -92,11 +92,13 @@ app.use('/api/exercises', require('./routes/exerciseRoutes'));
 app.use('/api/feedbacks', require('./routes/feedbackRoutes'));
 // app.use('/api/mockTests', require('./routes/mockTestRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/conversations', require('./routes/conversationRoutes'));
 // app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/learning', require('./routes/learningRoutes'));
 app.use('/api/notes', require('./routes/noteRoutes'));
 app.use('/api/comments', require('./routes/commentRoutes'));
+app.use('/api/flashcards', require('./routes/flashcardRoutes'));
 
 // ============================================
 // 404 HANDLER

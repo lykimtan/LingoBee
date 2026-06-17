@@ -40,6 +40,7 @@ import TeacherCourseInstructorCard from "@/components/teacher/courses/TeacherCou
 import RichTextEditor from "@/components/teacher/RichTextEditor";
 import { TeacherFeedbackWidget } from "@/components/teacher/courses/TeacherFeedbackWidget";
 import { CourseGradingTab } from "@/components/teacher/courses/CourseGradingTab";
+import CourseMessagingTab from "@/components/teacher/courses/chat/CourseMessagingTab";
 import CourseDetailSidebar from "@/components/teacher/courses/CourseDetailSidebar";
 import Uppy from '@uppy/core';
 import Dashboard from '@uppy/react/dashboard';
@@ -1184,10 +1185,8 @@ export default function TeacherCourseDetailPage() {
               <CourseGradingTab courseId={course._id} />
             )}
             {activeTab === 'messaging' && (
-              <div className="flex flex-col items-center justify-center p-12 bg-white/50 backdrop-blur-sm rounded-3xl border border-gray-100">
-                <Mail className="w-12 h-12 text-gray-300 mb-4" />
-                <h2 className="text-xl font-bold text-gray-900">Tin nhắn</h2>
-                <p className="text-sm text-gray-500 mt-2">Tính năng này đang được phát triển.</p>
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <CourseMessagingTab courseId={course._id} courseName={course.title} />
               </div>
             )}
             {activeTab === 'analytics' && (

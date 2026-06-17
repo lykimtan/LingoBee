@@ -188,3 +188,37 @@ export type NotificationItem = {
   isRead?: boolean;
   recipientUser?: string | null;
 };
+
+// Chat related types
+export interface ChatAttachment {
+  url: string;
+  fileType: string;
+  fileName: string;
+}
+
+export interface Message {
+  _id: string;
+  conversationId: string;
+  senderId: User | string;
+  senderRole: string;
+  message: string;
+  attachments?: ChatAttachment[];
+  replyToMessageId?: Message | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConversationParticipant {
+  userId: User | string;
+  role: string;
+  lastReadMessageId?: string | null;
+}
+
+export interface Conversation {
+  _id: string;
+  type: 'group' | 'private';
+  courseId: string;
+  participants: ConversationParticipant[];
+  lastMessage?: Message;
+  updatedAt: string;
+}

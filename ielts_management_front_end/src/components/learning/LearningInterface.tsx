@@ -13,6 +13,7 @@ import { ExerciseInterface } from "./Exercise/ExerciseInterface";
 import { learningService, CourseLearningData, LearningVideo } from "@/services/learningService";
 import { CourseReviewModal } from "./CourseReviewModal";
 import { apiClient } from '@/utils/api';
+import { LearningChatDrawer } from "./Layout/LearningChatDrawer";
 
 const PlayrWrapper = dynamic(
   () => import("./VideoPlyr").then((mod) => mod.PlayrWrapper),
@@ -50,6 +51,9 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
 
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
+  
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const handleSelectVideo = (videoId: string) => {
     setCurrentExerciseId(null);
@@ -360,7 +364,16 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
         </div>
       </div>
 
-      <FloatingAskButton />
+      <FloatingAskButton onClick={() => setIsChatOpen(true)} unreadCount={unreadCount} />
+
+      {courseData && (
+        <LearningChatDrawer 
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          courseId={courseData.id}
+          onUnreadCountChange={setUnreadCount}
+        />
+      )}
 
       <style dangerouslySetInnerHTML={{
         __html: `

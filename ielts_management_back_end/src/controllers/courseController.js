@@ -1,4 +1,4 @@
-const { Course, CourseInvitation, Notification, User, Exercise } = require('../models');
+const { Course, CourseInvitation, Notification, User, Exercise, Student } = require('../models');
 const { emitNotification } = require('../socket');
 const logger = require('../utils/logger');
 const { deleteCloudinaryAsset } = require('./uploadController');
@@ -562,6 +562,37 @@ const requestCoursePreview = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get enrolled students for a course
+ * @route   GET /api/courses/:id/students
+ * @access  Private/Teacher
+ */
+const getCourseStudents = async (req, res, next) => {
+  try {
+    const course = await Course.findById(req.params.id);
+    if (!course) {
+      return res.status(404).json({ success: false, message: 'Course not found' });
+    }
+
+    // Ensure teacher or assistant
+    if (course.teacher.toString() !== req.user.id && !course.teachingAssistants.map(a => a.toString()).includes(req.user.id) && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Permission denied' });
+    }
+
+    const students = await Student.find({ 'enrolledCourses.courseId': req.params.id })
+      .populate('userId', 'name avatar email role')
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: students.map(s => s.userId).filter(Boolean),
+    });
+  } catch (error) {
+    logger.error(`Error in getCourseStudents: ${error.message}`);
+    next(error);
+  }
+};
+
 module.exports = {
   createCourse,
   getAllCourses,
@@ -573,5 +604,6 @@ module.exports = {
   deleteCourse,
   getPublicCourses,
   getPublicCourseBySlug,
-  requestCoursePreview
+  requestCoursePreview,
+  getCourseStudents
 };

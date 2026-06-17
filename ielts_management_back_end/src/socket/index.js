@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const { Server } = require('socket.io');
 const { User } = require('../models');
 const logger = require('../utils/logger');
+const { setWithTTL, deleteKey } = require('../config/redis');
 
 let io;
 
@@ -37,14 +38,33 @@ const initSocket = (server) => {
 
       socket.data.userId = user.id;
       socket.join(`user:${user.id}`);
+
+      // Set user online status in Redis
+      const redisPrefix = process.env.REDIS_PREFIX || 'ielts:';
+      await setWithTTL(`${redisPrefix}user:online:${user.id}`, true, 86400);
+
+      // Chat Realtime: Join conversation room
+      socket.on('chat:joinRoom', (conversationId) => {
+        socket.join(`conversation:${conversationId}`);
+        logger.info(`User ${user.id} joined conversation ${conversationId}`);
+      });
+
+      socket.on('chat:leaveRoom', (conversationId) => {
+        socket.leave(`conversation:${conversationId}`);
+      });
+
     } catch (error) {
       logger.warn(`Socket auth failed: ${error.message}`);
       socket.disconnect(true);
       return;
     }
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
       logger.info(`Socket disconnected: ${socket.id}`);
+      if (socket.data.userId) {
+        const redisPrefix = process.env.REDIS_PREFIX || 'ielts:';
+        await deleteKey(`${redisPrefix}user:online:${socket.data.userId}`);
+      }
     });
   });
 

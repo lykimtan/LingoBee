@@ -16,6 +16,10 @@ const Notification = require('./Notification');
 const CourseInvitation = require('./CourseInvitation');
 const Feedback = require('./Feedback');
 const ExerciseAttempt = require('./AnswerSub');
+const Conversation = require('./Conversation');
+const FlashcardDeck = require('./FlashcardDeck');
+const Flashcard = require('./Flashcard');
+const FlashcardReview = require('./FlashcardReview');
 
 module.exports = {
   User,
@@ -34,4 +38,8 @@ module.exports = {
   CourseInvitation,
   Feedback,
   ExerciseAttempt,
+  Conversation,
+  FlashcardDeck,
+  Flashcard,
+  FlashcardReview
 };

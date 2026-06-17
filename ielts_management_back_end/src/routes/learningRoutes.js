@@ -13,6 +13,7 @@ const {
   getAttemptDetailForGrading,
   gradeSpeakingWithAI,
   explainQuestionWithAI,
+  getSpeechToken,
 } = require('../controllers/learningController');
 
 const router = express.Router();
@@ -64,5 +65,9 @@ router.post('/teacher/attempts/:attemptId/grade', authMiddleware, gradeExerciseA
 // Explain question via AI Tutor
 // Route: POST /api/learning/explain
 router.post('/explain', authMiddleware, explainQuestionWithAI);
+
+// Get Azure Speech Token
+// Route: GET /api/learning/azure-speech-token
+router.get('/azure-speech-token', authMiddleware, getSpeechToken);
 
 module.exports = router;

@@ -41,6 +41,36 @@ const downloadAudioToTempFile = async (audioUrl) => {
   });
 };
 
+const getAzureSpeechToken = async () => {
+  const speechKey = process.env.AZURE_SPEECH_KEY;
+  const speechRegion = process.env.AZURE_SPEECH_REGION;
+
+  if (!speechKey || !speechRegion) {
+    throw new Error("Azure Speech configuration is missing (Key or Region).");
+  }
+
+  try {
+    const response = await axios.post(
+      `https://${speechRegion}.api.cognitive.microsoft.com/sts/v1.0/issueToken`,
+      null,
+      {
+        headers: {
+          "Ocp-Apim-Subscription-Key": speechKey,
+          "Content-type": "application/x-www-form-urlencoded"
+        }
+      }
+    );
+
+    return {
+      token: response.data,
+      region: speechRegion
+    };
+  } catch (error) {
+    logger.error(`Error fetching Azure Speech token: ${error.message}`);
+    throw new Error("Failed to get Azure Speech token");
+  }
+};
+
 const assessPronunciation = async (audioUrl) => {
   const speechKey = process.env.AZURE_SPEECH_KEY;
   const speechRegion = process.env.AZURE_SPEECH_REGION;
@@ -193,4 +223,5 @@ const assessPronunciation = async (audioUrl) => {
 
 module.exports = {
   assessPronunciation,
+  getAzureSpeechToken,
 };

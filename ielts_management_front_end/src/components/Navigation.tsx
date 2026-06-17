@@ -219,6 +219,21 @@ export const Navigation = () => {
             <span>Khóa học</span>
           </Link>
           <Link
+            href="/vocabulary-tools"
+            className="inline-flex items-center gap-2 text-sm text-foreground transition-colors h-6"
+            aria-label="Đề thi tổng hợp"
+          >
+            <Image
+              src="/homepage/ielts_test.gif"
+              alt="Đề thi tổng hợp"
+              width={50}
+              height={50}
+              unoptimized
+              className="h-8 w-auto"
+            />
+            <span>Công cụ học tập</span>
+          </Link>
+          <Link
             href="/about"
             className="inline-flex items-center gap-2 text-sm text-foreground transition-colors h-6"
             aria-label="Về chúng tôi"
@@ -232,21 +247,6 @@ export const Navigation = () => {
               className="h-8 w-auto"
             />
             <span>Về chúng tôi</span>
-          </Link>
-          <Link
-            href="/ielts-mock-test"
-            className="inline-flex items-center gap-2 text-sm text-foreground transition-colors h-6"
-            aria-label="Đề thi tổng hợp"
-          >
-            <Image
-              src="/homepage/ielts_test.gif"
-              alt="Đề thi tổng hợp"
-              width={50}
-              height={50}
-              unoptimized
-              className="h-8 w-auto"
-            />
-            <span>Đề thi tổng hợp</span>
           </Link>
           <Link
             href="/contact"

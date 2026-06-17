@@ -3,7 +3,7 @@ import { ApiResponse, CloudinarySignatureResponse, CloudinaryUploadResult, Uploa
 
 export interface SignatureRequestPayload {
   resourceType: UploadResourceType;
-  folder?: 'avatars' | 'videos' | 'thumbnails' | 'audios' | 'materials';
+  folder?: 'avatars' | 'videos' | 'thumbnails' | 'audios' | 'materials' | 'flashcard';
 }
 
 class UploadService {

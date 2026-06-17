@@ -870,6 +870,26 @@ const explainQuestionWithAI = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get Azure Speech Token for frontend direct use
+ * @route   GET /api/learning/azure-speech-token
+ * @access  Private
+ */
+const getSpeechToken = async (req, res, next) => {
+  try {
+    const azureSpeechService = require('../services/azureSpeechService');
+    const tokenData = await azureSpeechService.getAzureSpeechToken();
+    
+    res.status(200).json({
+      success: true,
+      data: tokenData
+    });
+  } catch (error) {
+    logger.error(`Error in getSpeechToken: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Failed to generate speech token' });
+  }
+};
+
 module.exports = {
   getCourseLearningData,
   updateVideoProgress,
@@ -883,4 +903,5 @@ module.exports = {
   getAttemptDetailForGrading,
   gradeSpeakingWithAI,
   explainQuestionWithAI,
+  getSpeechToken,
 };

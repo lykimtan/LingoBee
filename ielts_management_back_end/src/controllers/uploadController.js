@@ -2,7 +2,7 @@ const cloudinary = require('../config/cloudinary');
 const logger = require('../utils/logger');
 
 const allowedResourceTypes = new Set(['image', 'video', 'raw']);
-const allowedFolders = new Set(['avatars', 'videos', 'thumbnails', 'audios', 'materials']);
+const allowedFolders = new Set(['avatars', 'videos', 'thumbnails', 'audios', 'materials', 'flashcard', 'flashcards']);
 
 const extractPublicIdFromUrl = (url) => {
   if (!url || typeof url !== 'string') {
