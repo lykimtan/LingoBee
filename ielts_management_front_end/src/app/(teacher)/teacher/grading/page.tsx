@@ -24,7 +24,7 @@ export default function TeacherGradingPage() {
     try {
       const res = await learningService.getGradingQueue();
       if (res.status === "success") {
-        setQueueItems(res.data);
+        setQueueItems(res.data || []);
       } else {
         toast.error("Không thể tải danh sách chờ chấm bài");
       }

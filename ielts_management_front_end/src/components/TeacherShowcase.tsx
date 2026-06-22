@@ -96,7 +96,7 @@ export const TeacherShowcase = () => {
           <div className="space-y-10">
             <div className="space-y-5">
               <p className="text-xs uppercase tracking-[0.4em] text-[#1c7c78] font-semibold">
-                Doi ngu chuyen mon
+                Đội ngũ chuyên môn
               </p>
               <h2
                 className="text-4xl sm:text-5xl md:text-6xl leading-tight font-normal"

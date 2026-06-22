@@ -35,11 +35,11 @@ export default function FlashcardDecksPage() {
         folder: 'flashcard',
         resourceType: 'image'
       });
-      
+
       if (!sigResponse || sigResponse.status === 'error' || !sigResponse.data) {
         throw new Error(sigResponse?.message || "Không thể lấy chữ ký tải ảnh");
       }
-      
+
       const uploadData = await uploadService.uploadToCloudinary(file, sigResponse.data);
 
       if (uploadData.secure_url) {
@@ -82,7 +82,7 @@ export default function FlashcardDecksPage() {
       toast.error("Vui lòng nhập tên bộ thẻ!");
       return;
     }
-    
+
     setIsCreating(true);
     try {
       const response = await flashcardService.createDeck({
@@ -91,7 +91,7 @@ export default function FlashcardDecksPage() {
         thumbnailUrl: newThumbnailUrl.trim(),
         isPublic: false
       });
-      
+
       if (response.success || response.status === 'success') {
         toast.success("Tạo bộ thẻ thành công!");
         setIsModalOpen(false);
@@ -110,8 +110,8 @@ export default function FlashcardDecksPage() {
     }
   };
 
-  const filteredDecks = decks.filter(deck => 
-    deck.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredDecks = decks.filter(deck =>
+    deck.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (deck.description && deck.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (deck.tags && deck.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
   );
@@ -144,7 +144,7 @@ export default function FlashcardDecksPage() {
               <p className="text-gray-400 mt-2">Khám phá và ôn tập các bộ từ vựng IELTS</p>
             </div>
 
-            <button 
+            <button
               onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95"
             >
@@ -208,13 +208,13 @@ export default function FlashcardDecksPage() {
               {filteredDecks.map(deck => (
                 <Link key={deck._id} href={`/vocabulary-tools/flashcards/${deck._id}`} className="group block h-full">
                   <div className="flex flex-col h-full bg-gradient-to-b from-gray-400 to-gray-700 rounded-[20px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.5)] transition-all duration-300 hover:-translate-y-1">
-                    
+
                     {/* Top Thumbnail Section */}
                     <div className="relative w-full h-[200px] bg-gray-900 overflow-hidden flex-shrink-0">
                       {deck.thumbnailUrl ? (
-                        <img 
-                          src={deck.thumbnailUrl} 
-                          alt={deck.title} 
+                        <img
+                          src={deck.thumbnailUrl}
+                          alt={deck.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                         />
                       ) : (
@@ -222,10 +222,10 @@ export default function FlashcardDecksPage() {
                           <BookOpen className="w-16 h-16 text-gray-700" />
                         </div>
                       )}
-                      
+
                       {/* Badge Floating */}
                       <span className="absolute top-4 right-4 bg-black/80 text-yellow-500 border border-yellow-600/30 font-bold px-3 py-1 rounded text-[11px] uppercase tracking-wider backdrop-blur-md shadow-lg">
-                        {deck.tags && deck.tags.length > 0 ? deck.tags[0] : (deck.isPublic ? 'Public' : 'Academic')}
+                        {deck.tags && deck.tags.length > 0 ? deck.tags[0] : (deck.isPublic ? 'Đã chia sẻ' : 'Riêng tư')}
                       </span>
                     </div>
 
@@ -245,8 +245,8 @@ export default function FlashcardDecksPage() {
                           <span>{deck.learnedCount || 0} Learned</span>
                         </div>
                         <div className="w-full h-[6px] bg-gray-800/60 rounded-full overflow-hidden shadow-inner">
-                          <div 
-                            className="h-full bg-[#A8B2E7] rounded-full transition-all duration-1000" 
+                          <div
+                            className="h-full bg-[#A8B2E7] rounded-full transition-all duration-1000"
                             style={{ width: `${deck.cardsCount ? ((deck.learnedCount || 0) / deck.cardsCount) * 100 : 0}%` }}
                           ></div>
                         </div>
@@ -270,12 +270,12 @@ export default function FlashcardDecksPage() {
           <div className="bg-[#111827] border border-white/10 rounded-3xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20">
             <h2 className="text-2xl font-bold text-white mb-2">Tạo bộ thẻ mới</h2>
             <p className="text-gray-400 text-sm mb-6">Tạo một bộ flashcard mới để bắt đầu ôn tập từ vựng.</p>
-            
+
             <form onSubmit={handleCreateDeck} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Tên bộ thẻ *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="VD: Từ vựng IELTS chủ đề Environment"
@@ -283,10 +283,10 @@ export default function FlashcardDecksPage() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Mô tả (Không bắt buộc)</label>
-                <textarea 
+                <textarea
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
                   placeholder="Ghi chú về bộ thẻ này..."
@@ -306,21 +306,21 @@ export default function FlashcardDecksPage() {
                   />
                   <label className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-500/30 rounded-xl px-3 flex items-center justify-center transition-colors cursor-pointer flex-shrink-0" title="Tải ảnh lên">
                     {isUploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
                       onChange={handleImageUpload}
                       disabled={isUploadingImage}
                     />
                   </label>
                   {newThumbnailUrl && (
                     <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/20 flex-shrink-0 bg-black/50">
-                      <img 
-                        src={newThumbnailUrl} 
-                        alt="Preview" 
-                        className="w-full h-full object-cover" 
-                        onError={(e) => e.currentTarget.style.display = 'none'} 
+                      <img
+                        src={newThumbnailUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => e.currentTarget.style.display = 'none'}
                       />
                     </div>
                   )}
@@ -328,14 +328,14 @@ export default function FlashcardDecksPage() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button 
+                <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="flex-1 py-3 px-4 rounded-xl font-medium text-gray-300 bg-white/5 hover:bg-white/10 transition-colors"
                 >
                   Hủy
                 </button>
-                <button 
+                <button
                   type="submit"
                   disabled={isCreating}
                   className="flex-1 py-3 px-4 rounded-xl font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"

@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { dictionaryService, DictionaryMeaning } from '@/services/dictionaryService';
 import { uploadService } from '@/services/uploadService';
 import { Flashcard } from '@/services/flashcardService';
+import { playAudio } from '@/utils/audioUtils';
 
 interface FlashcardModalProps {
   isOpen: boolean;
@@ -18,8 +19,8 @@ export default function FlashcardModal({ isOpen, onClose, mode, initialData, onS
   const [backText, setBackText] = useState('');
   const [partOfSpeech, setPartOfSpeech] = useState('');
   const [exampleSentence, setExampleSentence] = useState('');
+  const [synonymsInput, setSynonymsInput] = useState('');
   const [phonetic, setPhonetic] = useState('');
-  const [audioUrl, setAudioUrl] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,22 +32,22 @@ export default function FlashcardModal({ isOpen, onClose, mode, initialData, onS
 
   useEffect(() => {
     if (isOpen) {
-      if (mode === 'edit' && initialData) {
+      if (initialData) {
         setFrontText(initialData.frontText || '');
         setBackText(initialData.backText || '');
         setPartOfSpeech(initialData.partOfSpeech || '');
         setExampleSentence(initialData.exampleSentence || '');
         setPhonetic(initialData.phonetic || '');
-        setAudioUrl(initialData.audioUrl || '');
         setImageUrl(initialData.imageUrl || '');
+        setSynonymsInput(initialData.synonyms?.join(', ') || '');
       } else {
         setFrontText('');
         setBackText('');
         setPartOfSpeech('');
         setExampleSentence('');
         setPhonetic('');
-        setAudioUrl('');
         setImageUrl('');
+        setSynonymsInput('');
       }
       setIsMeaningModalOpen(false);
     }
@@ -97,7 +98,6 @@ export default function FlashcardModal({ isOpen, onClose, mode, initialData, onS
       const data = await dictionaryService.fetchWordData(frontText);
 
       setPhonetic(data.phonetic || '');
-      setAudioUrl(data.audioUrl || '');
 
       if (data.meanings && data.meanings.length > 0) {
         setDictionaryMeanings(data.meanings);
@@ -116,6 +116,7 @@ export default function FlashcardModal({ isOpen, onClose, mode, initialData, onS
     setPartOfSpeech(meaning.partOfSpeech);
     setBackText(meaning.definition);
     setExampleSentence(meaning.example);
+    setSynonymsInput(meaning.synonyms?.join(', ') || '');
     setIsMeaningModalOpen(false);
     toast.success("Đã áp dụng định nghĩa!");
   };
@@ -135,8 +136,8 @@ export default function FlashcardModal({ isOpen, onClose, mode, initialData, onS
         partOfSpeech: partOfSpeech.trim(),
         exampleSentence: exampleSentence.trim(),
         phonetic: phonetic.trim(),
-        audioUrl: audioUrl.trim(),
-        imageUrl: imageUrl.trim()
+        imageUrl: imageUrl.trim(),
+        synonyms: synonymsInput.split(',').map(s => s.trim()).filter(Boolean)
       });
     } finally {
       setIsSubmitting(false);
@@ -203,26 +204,23 @@ export default function FlashcardModal({ isOpen, onClose, mode, initialData, onS
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Phiên âm IPA</label>
                 <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={phonetic}
-                    onChange={(e) => setPhonetic(e.target.value)}
-                    placeholder="VD: /prəˈkræstɪneɪt/"
-                    className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                  />
-                  {audioUrl && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const audio = new Audio(audioUrl);
-                        audio.play().catch(console.error);
-                      }}
-                      className="bg-green-600/20 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl px-3 flex items-center justify-center transition-colors flex-shrink-0"
-                      title="Nghe phát âm gốc"
-                    >
-                      <Volume2 className="w-5 h-5" />
-                    </button>
-                  )}
+                    <input
+                      type="text"
+                      value={phonetic}
+                      onChange={(e) => setPhonetic(e.target.value)}
+                      placeholder="VD: /prəˈkræstɪneɪt/"
+                      className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    />
+                    {frontText && (
+                      <button
+                        type="button"
+                        onClick={() => playAudio(frontText)}
+                        className="bg-green-600/20 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl px-3 flex items-center justify-center transition-colors flex-shrink-0"
+                        title="Nghe phát âm"
+                      >
+                        <Volume2 className="w-5 h-5" />
+                      </button>
+                    )}
                 </div>
               </div>
             </div>
@@ -234,6 +232,17 @@ export default function FlashcardModal({ isOpen, onClose, mode, initialData, onS
                 onChange={(e) => setExampleSentence(e.target.value)}
                 placeholder="VD: He reinforced the handle..."
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 h-16 resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Từ đồng nghĩa</label>
+              <input
+                type="text"
+                value={synonymsInput}
+                onChange={(e) => setSynonymsInput(e.target.value)}
+                placeholder="VD: serendipitous, lucky (cách nhau bằng dấu phẩy)"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
               />
             </div>
 

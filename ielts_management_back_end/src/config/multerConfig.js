@@ -41,10 +41,13 @@ const storage = multer.diskStorage({
 const fileFilter = (req, file, cb) => {
   // Define allowed MIME types
   const allowedMimes = {
-    avatar: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+    avatar: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'],
     attachment: [
       'image/jpeg',
+      'image/avif',
       'image/png',
+      'image/webp',
+      'image/gif',
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -55,7 +58,7 @@ const fileFilter = (req, file, cb) => {
   };
 
   let allowed = allowedMimes.attachment;
-  if (file.fieldname === 'avatar') {
+  if (file.fieldname === 'avatar' || file.fieldname === 'image') {
     allowed = allowedMimes.avatar;
   }
 

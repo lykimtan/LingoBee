@@ -3,6 +3,7 @@ import { AiAssessment } from '@/services/learningService';
 import Image from 'next/image';
 import { Bot, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
 import WordAssessmentPopover from './WordAssessmentPopover';
+import { playAudio } from '@/utils/audioUtils';
 
 interface SpeakingAIFeedbackProps {
   assessment: AiAssessment;
@@ -84,7 +85,8 @@ export default function SpeakingAIFeedback({ assessment }: SpeakingAIFeedbackPro
               {assessment.words.map((w, idx) => (
                 <WordAssessmentPopover key={idx} word={w as any}>
                   <span
-                    className={`font-medium transition-colors hover:bg-white/10 px-1 rounded ${getWordColor(w.accuracyScore)}`}
+                    onClick={() => playAudio(w.word)}
+                    className={`font-medium cursor-pointer transition-colors hover:bg-white/10 px-1 rounded ${getWordColor(w.accuracyScore)}`}
                   >
                     {w.word}
                   </span>

@@ -31,10 +31,14 @@ export default function FlashcardDeckManagePage() {
   // Add Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Delete Confirm Modal State
+  // Delete Confirm Modal State (for Card)
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Delete Deck State
+  const [isDeleteDeckModalOpen, setIsDeleteDeckModalOpen] = useState(false);
+  const [isDeletingDeck, setIsDeletingDeck] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -145,6 +149,24 @@ export default function FlashcardDeckManagePage() {
     }
   };
 
+  const executeDeleteDeck = async () => {
+    setIsDeletingDeck(true);
+    try {
+      const response = await flashcardService.deleteDeck(deckId);
+      if (response.success) {
+        toast.success("Đã xóa bộ thẻ thành công");
+        router.push('/vocabulary-tools/flashcards');
+      } else {
+        toast.error(response.message || "Xóa bộ thẻ thất bại");
+      }
+    } catch (error) {
+      toast.error("Không thể xóa bộ thẻ");
+    } finally {
+      setIsDeletingDeck(false);
+      setIsDeleteDeckModalOpen(false);
+    }
+  };
+
   const filteredCards = cards.filter(card =>
     card.frontText.toLowerCase().includes(searchQuery.toLowerCase()) ||
     card.backText.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -213,7 +235,7 @@ export default function FlashcardDeckManagePage() {
                   }`}
               >
                 {isPublishing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : (deck.isPublic ? <Globe className="w-4 h-4 mr-2" /> : <Lock className="w-4 h-4 mr-2" />)}
-                {deck.isPublic ? 'Public' : 'Private'}
+                {deck.isPublic ? 'Đã chia sẻ' : 'Riêng tư'}
               </button>
             )}
             {isOwner && (
@@ -224,12 +246,37 @@ export default function FlashcardDeckManagePage() {
                 <Plus className="w-4 h-4 mr-2" /> Thêm thẻ
               </button>
             )}
+            {isOwner && (
+              <button
+                onClick={() => setIsDeleteDeckModalOpen(true)}
+                className="px-4 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 rounded-xl text-sm font-semibold flex items-center justify-center transition-colors"
+                title="Xóa bộ thẻ này"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
             <Link
               href={`/vocabulary-tools/flashcards/${deck._id}/study`}
               className="flex-1 md:flex-none px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold flex items-center justify-center transition-colors shadow-lg shadow-blue-600/20"
             >
               <Play className="w-4 h-4 mr-2 fill-current" /> Học ngay
             </Link>
+          </div>
+        </div>
+
+        {/* Statistics Section */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 flex flex-col items-center justify-center text-center">
+            <span className="text-gray-400 text-sm font-medium mb-1">Tổng số từ</span>
+            <span className="text-2xl sm:text-3xl font-bold text-white">{deck?.cardsCount || cards.length}</span>
+          </div>
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 sm:p-6 flex flex-col items-center justify-center text-center">
+            <span className="text-blue-400 text-sm font-medium mb-1">Cần học hôm nay</span>
+            <span className="text-2xl sm:text-3xl font-bold text-blue-500">{deck?.dueCount || 0}</span>
+          </div>
+          <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 sm:p-6 flex flex-col items-center justify-center text-center">
+            <span className="text-green-400 text-sm font-medium mb-1">Đã nhớ</span>
+            <span className="text-2xl sm:text-3xl font-bold text-green-500">{deck?.memorizedCount || 0}</span>
           </div>
         </div>
 
@@ -321,14 +368,14 @@ export default function FlashcardDeckManagePage() {
         {filteredCards.length > 0 && (
           <div className="flex flex-col sm:flex-row items-center justify-between text-sm text-gray-400 mt-6 pt-6 border-t border-white/5">
             <div className="mb-4 sm:mb-0">
-              Showing 1 to {filteredCards.length} of {cards.length} cards
+              Hiển thị từ 1 đến {filteredCards.length} trong tổng số {cards.length} thẻ
             </div>
             <div className="flex gap-2">
               <button className="px-4 py-2 bg-[#1A1D24] hover:bg-white/5 border border-white/5 rounded-lg transition-colors disabled:opacity-50" disabled>
-                Previous
+                Trang trước đó
               </button>
               <button className="px-4 py-2 bg-[#1A1D24] hover:bg-white/5 border border-white/5 rounded-lg transition-colors disabled:opacity-50" disabled>
-                Next
+                Trang tiếp theo
               </button>
             </div>
           </div>
@@ -353,16 +400,28 @@ export default function FlashcardDeckManagePage() {
         onSubmit={handleAddCard}
       />
 
+      {/* Delete Card Modal */}
       <ConfirmModal
         isOpen={isConfirmModalOpen}
         onClose={() => setIsConfirmModalOpen(false)}
         onConfirm={executeDeleteCard}
-        title="Xóa thẻ flashcard"
+        title="Xóa thẻ từ vựng"
         message="Bạn có chắc chắn muốn xóa thẻ này? Hành động này không thể hoàn tác."
-        confirmText="Xóa thẻ"
+        confirmText={isDeleting ? "Đang xóa..." : "Xóa thẻ"}
         cancelText="Hủy"
         isDestructive={true}
-        isLoading={isDeleting}
+      />
+
+      {/* Delete Deck Modal */}
+      <ConfirmModal
+        isOpen={isDeleteDeckModalOpen}
+        onClose={() => setIsDeleteDeckModalOpen(false)}
+        onConfirm={executeDeleteDeck}
+        title="Xóa bộ thẻ"
+        message={`Bạn có chắc chắn muốn xóa bộ thẻ "${deck?.title}" không? Hành động này sẽ xóa toàn bộ thẻ và tiến độ học bên trong bộ bài.`}
+        confirmText={isDeletingDeck ? "Đang xóa..." : "Xóa bộ thẻ"}
+        cancelText="Hủy"
+        isDestructive={true}
       />
     </div>
   );

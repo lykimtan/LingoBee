@@ -51,16 +51,33 @@ exports.getDecks = async (req, res) => {
     const decks = await Promise.all(
       rawDecks.map(async (deck) => {
         const cardsCount = await Flashcard.countDocuments({ deckId: deck._id });
-        const learnedCount = await FlashcardReview.countDocuments({ 
-          deckId: deck._id, 
+        const memorizedCount = await FlashcardReview.countDocuments({
+          deckId: deck._id,
           studentId: req.user.id,
-          status: { $ne: 'new' } 
+          status: 'graduated'
         });
+
+        const reviewedCardsCount = await FlashcardReview.countDocuments({
+          deckId: deck._id,
+          studentId: req.user.id
+        });
+        const newCardsCount = Math.max(0, cardsCount - reviewedCardsCount);
+
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        const dueReviewCount = await FlashcardReview.countDocuments({
+          deckId: deck._id,
+          studentId: req.user.id,
+          nextReviewDate: { $lte: today }
+        });
+
+        const dueCount = newCardsCount + dueReviewCount;
 
         return {
           ...deck,
           cardsCount,
-          learnedCount
+          memorizedCount,
+          dueCount
         };
       })
     );
@@ -79,25 +96,42 @@ exports.getDeckById = async (req, res) => {
   try {
     const { deckId } = req.params;
     const deck = await FlashcardDeck.findById(deckId).lean();
-    
+
     if (!deck) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy bộ thẻ' });
     }
 
     // Tính toán thêm cardsCount
     const cardsCount = await Flashcard.countDocuments({ deckId: deck._id });
-    const learnedCount = await FlashcardReview.countDocuments({ 
-      deckId: deck._id, 
+    const memorizedCount = await FlashcardReview.countDocuments({
+      deckId: deck._id,
       studentId: req.user.id,
-      status: { $ne: 'new' } 
+      status: 'graduated'
     });
+
+    const reviewedCardsCount = await FlashcardReview.countDocuments({
+      deckId: deck._id,
+      studentId: req.user.id
+    });
+    const newCardsCount = Math.max(0, cardsCount - reviewedCardsCount);
+
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const dueReviewCount = await FlashcardReview.countDocuments({
+      deckId: deck._id,
+      studentId: req.user.id,
+      nextReviewDate: { $lte: today }
+    });
+
+    const dueCount = newCardsCount + dueReviewCount;
 
     res.status(200).json({
       success: true,
       data: {
         ...deck,
         cardsCount,
-        learnedCount
+        memorizedCount,
+        dueCount
       }
     });
   } catch (error) {
@@ -109,7 +143,7 @@ exports.getDeckById = async (req, res) => {
 exports.createCard = async (req, res) => {
   try {
     const { deckId } = req.params;
-    const { frontText, backText, partOfSpeech, exampleSentence, imageUrl, audioUrl, phonetic } = req.body;
+    const { frontText, backText, partOfSpeech, exampleSentence, imageUrl, audioUrl, phonetic, synonyms } = req.body;
 
     const deck = await FlashcardDeck.findById(deckId);
     if (!deck) {
@@ -129,7 +163,8 @@ exports.createCard = async (req, res) => {
       exampleSentence,
       imageUrl,
       audioUrl,
-      phonetic
+      phonetic,
+      synonyms: Array.isArray(synonyms) ? synonyms : []
     });
 
     await card.save();
@@ -293,7 +328,7 @@ exports.updateDeck = async (req, res) => {
   try {
     const { deckId } = req.params;
     const updates = req.body;
-    
+
     // Đảm bảo chỉ người tạo mới được update
     const deck = await FlashcardDeck.findOneAndUpdate(
       { _id: deckId, creatorId: req.user.id },
@@ -312,12 +347,35 @@ exports.updateDeck = async (req, res) => {
   }
 };
 
+exports.deleteDeck = async (req, res) => {
+  try {
+    const { deckId } = req.params;
+
+    // Tìm và xóa bộ thẻ nếu người dùng là chủ
+    const deck = await FlashcardDeck.findOneAndDelete({ _id: deckId, creatorId: req.user.id });
+
+    if (!deck) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy bộ thẻ hoặc bạn không có quyền xóa' });
+    }
+
+    // Xóa tất cả các thẻ trong bộ thẻ này
+    await Flashcard.deleteMany({ deckId });
+
+    // Xóa tất cả review liên quan
+    await FlashcardReview.deleteMany({ deckId });
+
+    res.status(200).json({ success: true, message: 'Đã xóa bộ thẻ thành công' });
+  } catch (error) {
+    logger.error(`deleteDeck error: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Lỗi server khi xóa bộ thẻ' });
+  }
+};
+
 exports.updateCard = async (req, res) => {
   try {
     const { cardId } = req.params;
     const updates = req.body;
 
-    // TODO: Nên kiểm tra xem user có phải chủ sở hữu deck chứa card này không
     const card = await Flashcard.findByIdAndUpdate(cardId, { $set: updates }, { new: true });
 
     if (!card) {

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { motion, useMotionValue, useTransform, PanInfo } from "motion/react";
+import { useState, useEffect } from "react";
+import { motion, useMotionValue, useTransform, PanInfo, animate } from "motion/react";
 import { Flashcard } from "@/services/flashcardService";
 import { Volume2, RotateCw } from "lucide-react";
 import PronunciationMic from "./PronunciationMic";
+import { playAudio } from "@/utils/audioUtils";
 
 const highlightWord = (sentence: string, word: string) => {
   if (!sentence || !word) return sentence;
@@ -46,6 +47,30 @@ export default function TinderCard({ card, active, onSwipe, index }: TinderCardP
   const backgroundRed = useTransform(x, [-100, 0], [0.3, 0]);
   const backgroundGreen = useTransform(x, [0, 100], [0, 0.3]);
 
+  // Keyboard events
+  useEffect(() => {
+    if (!active) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Bỏ qua event nếu đang focus vào input/textarea
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        setFlipped(prev => !prev);
+      } else if (e.code === 'ArrowLeft') {
+        e.preventDefault();
+        animate(x, -500, { duration: 1 }).then(() => onSwipe('left'));
+      } else if (e.code === 'ArrowRight') {
+        e.preventDefault();
+        animate(x, 500, { duration: 1 }).then(() => onSwipe('right'));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [active, onSwipe, x]);
+
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.x > 100) {
       onSwipe('right');
@@ -54,12 +79,9 @@ export default function TinderCard({ card, active, onSwipe, index }: TinderCardP
     }
   };
 
-  const playAudio = (e: React.MouseEvent) => {
+  const handlePlayAudio = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (card.audioUrl) {
-      const audio = new Audio(card.audioUrl);
-      audio.play().catch(console.error);
-    }
+    playAudio(card.frontText);
   };
 
   return (
@@ -110,14 +132,12 @@ export default function TinderCard({ card, active, onSwipe, index }: TinderCardP
           <p className="text-xl text-gray-500 font-mono mb-8">{card.phonetic}</p>
         )}
 
-        {card.audioUrl && (
-          <button
-            onClick={playAudio}
-            className="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center hover:bg-blue-100 transition-colors shadow-sm"
-          >
-            <Volume2 className="w-7 h-7" />
-          </button>
-        )}
+        <button
+          onClick={handlePlayAudio}
+          className="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center hover:bg-blue-100 transition-colors shadow-sm"
+        >
+          <Volume2 className="w-7 h-7" />
+        </button>
       </motion.div>
 
       {/* Back of Card */}
@@ -133,7 +153,7 @@ export default function TinderCard({ card, active, onSwipe, index }: TinderCardP
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-start w-full overflow-y-auto hide-scrollbar pb-8 pt-10">
-          
+
           <div className="flex items-center gap-3 mb-4 mt-auto flex-shrink-0">
             <h3 className="text-3xl font-bold text-gray-900">{card.frontText}</h3>
             {card.partOfSpeech && (
@@ -152,6 +172,17 @@ export default function TinderCard({ card, active, onSwipe, index }: TinderCardP
           {card.exampleSentence && (
             <div className="bg-white/60 p-5 rounded-2xl mb-6 w-full text-left text-gray-700 border border-white shadow-sm text-lg flex-shrink-0">
               "{highlightWord(card.exampleSentence, card.frontText)}"
+            </div>
+          )}
+
+          {card.synonyms && card.synonyms.length > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-6 w-full flex-shrink-0">
+              <span className="text-sm font-semibold text-gray-500 uppercase tracking-wide mr-1">Đồng nghĩa:</span>
+              {card.synonyms.map((syn, idx) => (
+                <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg border border-blue-200">
+                  {syn}
+                </span>
+              ))}
             </div>
           )}
 

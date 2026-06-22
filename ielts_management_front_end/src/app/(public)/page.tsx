@@ -4,6 +4,7 @@ import { HeroSection } from "@/components/HeroSection";
 import { ProgramStats } from "@/components/ProgramStats";
 import { TeacherShowcase } from "@/components/TeacherShowcase";
 import { PromoSection } from "@/components/PromoSection";
+import { MissionSection } from "@/components/MissionSection";
 import { Footer } from "@/components/Footer";
 
 export default async function Home() {
@@ -36,8 +37,14 @@ export default async function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-[color:var(--background)] to-[#efece6] blur-2xl opacity-80" />
       </div>
 
+
+
       {/* Teacher Showcase Section */}
       <TeacherShowcase />
+
+
+      {/* Mission Section */}
+      <MissionSection />
 
       {/* Promo Section for new users */}
       <PromoSection />

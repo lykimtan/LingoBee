@@ -13,7 +13,8 @@ router.route('/decks')
 
 router.route('/decks/:deckId')
   .get(flashcardController.getDeckById)
-  .put(flashcardController.updateDeck);
+  .put(flashcardController.updateDeck)
+  .delete(flashcardController.deleteDeck);
 
 // --- FLASHCARD ROUTES ---
 router.route('/decks/:deckId/cards')

@@ -11,10 +11,12 @@ export interface FlashcardDeck {
   creatorId: string;
   isPublic: boolean;
   tags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
   cardsCount?: number;
   learnedCount?: number;
-  createdAt: string;
-  updatedAt: string;
+  dueCount?: number;
+  memorizedCount?: number;
 }
 
 export interface Flashcard {
@@ -27,6 +29,7 @@ export interface Flashcard {
   imageUrl?: string;
   audioUrl?: string;
   phonetic?: string;
+  synonyms?: string[];
   order: number;
 }
 
@@ -64,6 +67,10 @@ const flashcardService = {
 
   createDeck: async (deckData: Partial<FlashcardDeck>): Promise<ApiResponse<FlashcardDeck>> => {
     return apiClient.post<FlashcardDeck>('/api/flashcards/decks', deckData);
+  },
+
+  deleteDeck: async (deckId: string): Promise<ApiResponse<void>> => {
+    return apiClient.delete<void>(`/api/flashcards/decks/${deckId}`);
   },
 
   // --- Flashcard API ---

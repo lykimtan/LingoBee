@@ -2,6 +2,7 @@ export interface DictionaryMeaning {
   partOfSpeech: string;
   definition: string;
   example: string;
+  synonyms?: string[];
 }
 
 export interface DictionaryResult {
@@ -49,7 +50,8 @@ export const dictionaryService = {
             meanings.push({
               partOfSpeech,
               definition: d.definition || '',
-              example: d.example || ''
+              example: d.example || '',
+              synonyms: d.synonyms && d.synonyms.length > 0 ? d.synonyms : m.synonyms || []
             });
           }
         }

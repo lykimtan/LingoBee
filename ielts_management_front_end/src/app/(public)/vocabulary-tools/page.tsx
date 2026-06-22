@@ -54,21 +54,26 @@ export default function VocabularyToolsHub() {
               </div>
             </Link>
 
-            {/* Tool 2: Visual Vocab (Coming Soon) */}
-            <div className="relative h-full bg-black/20 backdrop-blur-sm border border-white/5 rounded-3xl p-8 overflow-hidden opacity-80 cursor-not-allowed">
-              <div className="absolute top-4 right-4 bg-white/10 text-gray-300 text-xs font-bold px-3 py-1 rounded-full">
-                Sắp ra mắt
-              </div>
+            {/* Tool 2: Visual Vocab */}
+            <Link href="/vocabulary-tools/visual-vocab" className="block h-full group">
+              <div className="h-full bg-black/20 backdrop-blur-sm border border-white/5 group-hover:border-purple-500/30 rounded-3xl p-8 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10">
+                <div className="w-14 h-14 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <ImageIcon className="w-7 h-7 text-purple-400" />
+                </div>
 
-              <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center mb-6">
-                <ImageIcon className="w-7 h-7 text-gray-500" />
-              </div>
+                <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-purple-400 transition-colors">Visual Vocabulary</h2>
+                <p className="text-gray-400 leading-relaxed mb-6">
+                  Học từ vựng trực quan. Sử dụng trí tuệ nhân tạo (YOLOv10) để phân tích hình ảnh và tự động bóc tách từ vựng tiếng Anh.
+                </p>
 
-              <h2 className="text-2xl font-bold text-gray-400 mb-3">Visual Vocabulary</h2>
-              <p className="text-gray-500 leading-relaxed">
-                Học từ vựng thông qua hình ảnh tương tác và câu chuyện. Công cụ trực quan giúp kích thích bán cầu não phải.
-              </p>
-            </div>
+                <div className="inline-flex items-center text-purple-400 font-semibold group-hover:translate-x-1 transition-transform">
+                  Trải nghiệm ngay
+                  <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+            </Link>
 
           </div>
         </main>

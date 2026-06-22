@@ -142,14 +142,19 @@ class ApiClient {
     sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
   }
 
-  private buildHeaders(tokenOverride?: string | null): HeadersInit {
+  private buildHeaders(tokenOverride?: string | null, isFormData: boolean = false): HeadersInit {
     const { accessToken } = this.getStoredTokens();
     const token = tokenOverride ?? accessToken;
     
-    return {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-    };
+    const headers: Record<string, string> = {};
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return headers;
   }
 
   private async refreshAccessToken(): Promise<string | null> {
@@ -197,9 +202,11 @@ class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
+      const isFormData = options.body instanceof FormData;
+      
       const response = await fetch(url, {
         ...options,
-        headers: this.buildHeaders(),
+        headers: this.buildHeaders(undefined, isFormData),
         credentials: 'include',
         signal: controller.signal,
       });
@@ -223,7 +230,7 @@ class ApiClient {
               endpoint,
               {
                 ...options,
-                headers: this.buildHeaders(refreshedToken),
+                headers: this.buildHeaders(refreshedToken, isFormData),
               },
               true
             );

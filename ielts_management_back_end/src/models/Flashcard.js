@@ -27,6 +27,10 @@ const flashcardSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    synonyms: {
+      type: [String],
+      default: [],
+    },
     imageUrl: {
       type: String,
       default: '',

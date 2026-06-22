@@ -99,6 +99,7 @@ app.use('/api/learning', require('./routes/learningRoutes'));
 app.use('/api/notes', require('./routes/noteRoutes'));
 app.use('/api/comments', require('./routes/commentRoutes'));
 app.use('/api/flashcards', require('./routes/flashcardRoutes'));
+app.use('/api/visual-vocab', require('./routes/visualVocabRoutes'));
 
 // ============================================
 // 404 HANDLER
