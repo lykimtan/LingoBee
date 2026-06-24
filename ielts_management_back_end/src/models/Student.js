@@ -90,6 +90,11 @@ const studentSchema = new mongoose.Schema(
         },
       },
     ],
+    flashcardStreak: {
+      current: { type: Number, default: 0 },
+      longest: { type: Number, default: 0 },
+      lastStudyDate: { type: Date, default: null }
+    },
   },
   { timestamps: true }
 );

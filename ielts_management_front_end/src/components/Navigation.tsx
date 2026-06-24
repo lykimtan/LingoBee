@@ -234,6 +234,21 @@ export const Navigation = () => {
             <span>Công cụ học tập</span>
           </Link>
           <Link
+            href="/placement-test"
+            className="inline-flex items-center gap-2 text-sm text-foreground transition-colors h-6"
+            aria-label="Kiểm tra đầu vào"
+          >
+            <Image
+              src="/homepage/placementTest.gif"
+              alt="Bài test đầu vào"
+              width={50}
+              height={50}
+              unoptimized
+              className="h-8 w-auto"
+            />
+            <span>Bài test đầu vào</span>
+          </Link>
+          <Link
             href="/about"
             className="inline-flex items-center gap-2 text-sm text-foreground transition-colors h-6"
             aria-label="Về chúng tôi"
@@ -247,21 +262,6 @@ export const Navigation = () => {
               className="h-8 w-auto"
             />
             <span>Về chúng tôi</span>
-          </Link>
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-2 text-sm text-foreground transition-colors h-6"
-            aria-label="Liên hệ"
-          >
-            <Image
-              src="/homepage/contact.gif"
-              alt="Liên hệ"
-              width={50}
-              height={50}
-              unoptimized
-              className="h-8 w-auto"
-            />
-            <span>Liên hệ</span>
           </Link>
         </div>
 

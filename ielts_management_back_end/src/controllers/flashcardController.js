@@ -1,4 +1,4 @@
-const { FlashcardDeck, Flashcard, FlashcardReview } = require('../models');
+const { FlashcardDeck, Flashcard, FlashcardReview, Student } = require('../models');
 const logger = require('../utils/logger');
 
 // --- DECK MANAGEMENT ---
@@ -82,9 +82,27 @@ exports.getDecks = async (req, res) => {
       })
     );
 
+    const student = await Student.findOne({ userId: req.user.id });
+    
+    let displayStreak = student?.flashcardStreak ? { ...student.flashcardStreak.toObject() } : { current: 0, longest: 0, lastStudyDate: null };
+    
+    // Nếu quá 1 ngày không học thì hiển thị 0
+    if (displayStreak.lastStudyDate && displayStreak.current > 0) {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const lastDate = new Date(displayStreak.lastStudyDate.getFullYear(), displayStreak.lastStudyDate.getMonth(), displayStreak.lastStudyDate.getDate());
+      const diffTime = today.getTime() - lastDate.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays > 1) {
+        displayStreak.current = 0; // Đứt chuỗi, hiển thị 0
+      }
+    }
+
     res.status(200).json({
       success: true,
-      data: decks
+      data: decks,
+      streak: displayStreak
     });
   } catch (error) {
     logger.error(`getDecks error: ${error.message}`);
@@ -314,9 +332,51 @@ exports.submitReview = async (req, res) => {
 
     await review.save();
 
+    // --- STREAK LOGIC START ---
+    let currentStreak = null;
+    const student = await Student.findOne({ userId: studentId });
+    if (student) {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      if (!student.flashcardStreak) {
+        student.flashcardStreak = { current: 0, longest: 0, lastStudyDate: null };
+      }
+      
+      let { current, longest, lastStudyDate } = student.flashcardStreak;
+      
+      if (!lastStudyDate) {
+        current = 1;
+        longest = 1;
+      } else {
+        const lastDate = new Date(lastStudyDate.getFullYear(), lastStudyDate.getMonth(), lastStudyDate.getDate());
+        const diffTime = Math.abs(today - lastDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 1) {
+          // Ngày hôm qua -> chuỗi liên tiếp
+          current += 1;
+          if (current > longest) longest = current;
+        } else if (diffDays > 1) {
+          // Đứt chuỗi
+          current = 1;
+        }
+        // Nếu diffDays === 0: đã cộng rồi, giữ nguyên
+      }
+      
+      student.flashcardStreak.current = current;
+      student.flashcardStreak.longest = longest;
+      student.flashcardStreak.lastStudyDate = now;
+      
+      await student.save();
+      currentStreak = student.flashcardStreak;
+    }
+    // --- STREAK LOGIC END ---
+
     res.status(200).json({
       success: true,
-      data: review
+      data: review,
+      streak: currentStreak
     });
   } catch (error) {
     logger.error(`submitReview error: ${error.message}`);

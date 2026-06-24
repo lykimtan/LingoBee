@@ -255,6 +255,7 @@ class ApiClient {
 
         if (typeof responsePayload.status === 'string') {
           return {
+            ...responsePayload,
             status: responsePayload.status,
             data: responsePayload.data,
             message: responsePayload.message || '',
@@ -266,6 +267,7 @@ class ApiClient {
 
         if (typeof responsePayload.success === 'boolean') {
           return {
+            ...responsePayload,
             status: responsePayload.success ? 'success' : 'error',
             data: responsePayload.data,
             message:

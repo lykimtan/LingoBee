@@ -20,6 +20,8 @@ const Conversation = require('./Conversation');
 const FlashcardDeck = require('./FlashcardDeck');
 const Flashcard = require('./Flashcard');
 const FlashcardReview = require('./FlashcardReview');
+const PlacementQuestion = require('./PlacementQuestion');
+const PlacementTest = require('./PlacementTest');
 
 module.exports = {
   User,
@@ -41,5 +43,7 @@ module.exports = {
   Conversation,
   FlashcardDeck,
   Flashcard,
-  FlashcardReview
+  FlashcardReview,
+  PlacementQuestion,
+  PlacementTest
 };

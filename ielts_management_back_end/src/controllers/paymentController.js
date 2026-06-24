@@ -45,7 +45,7 @@ const checkDiscountCode = async (codeStr, courseId, studentId, basePrice) => {
       const studentProfile = await Student.findById(studentId);
       if (studentProfile && studentProfile.createdAt) {
         const diffTime = Math.abs(now - studentProfile.createdAt);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         if (diffDays > 14) {
           return { isValid: false, message: 'Mã chỉ dành cho tài khoản mới trong 14 ngày đầu' };
         }
@@ -161,7 +161,7 @@ exports.createPaymentUrl = async (req, res) => {
       }
       finalAmount = amount - discountResult.discountAmount;
       if (finalAmount < 0) finalAmount = 0;
-      
+
       discountInfo = {
         code: discountCode,
         discountAmount: discountResult.discountAmount,
@@ -216,6 +216,65 @@ exports.createPaymentUrl = async (req, res) => {
 };
 
 /**
+ * Hàm hỗ trợ: Cập nhật DB khi thanh toán thành công
+ */
+const processSuccessfulPayment = async (payment, reqQuery) => {
+  if (payment.paymentStatus === 'completed' || payment.paymentStatus === 'failed') {
+    return false;
+  }
+
+  payment.paymentStatus = 'completed';
+  payment.paymentDate = new Date();
+  payment.enrollmentDate = new Date();
+
+  // Ghi danh học viên vào khóa học
+  const student = await Student.findById(payment.studentId);
+  if (student) {
+    const isEnrolled = student.enrolledCourses.some(
+      (ec) => ec.courseId.toString() === payment.courseId.toString()
+    );
+    if (!isEnrolled) {
+      student.enrolledCourses.push({
+        courseId: payment.courseId,
+        enrollmentDate: new Date(),
+        status: 'active',
+      });
+      await student.save();
+
+      // Cập nhật totalStudents trong Course
+      await Course.findByIdAndUpdate(payment.courseId, { $inc: { totalStudents: 1 } });
+    }
+  }
+
+  // Cập nhật Discount Code (nếu có)
+  if (payment.discountCode && payment.discountCode.codeId) {
+    const discountDoc = await DiscountCode.findById(payment.discountCode.codeId);
+    if (discountDoc) {
+      discountDoc.usageCount += 1;
+
+      const studentUsageIndex = discountDoc.usedBy.findIndex(u => u.studentId.toString() === payment.studentId.toString());
+      if (studentUsageIndex >= 0) {
+        discountDoc.usedBy[studentUsageIndex].usageCount += 1;
+        discountDoc.usedBy[studentUsageIndex].usedAt = new Date();
+      } else {
+        discountDoc.usedBy.push({
+          studentId: payment.studentId,
+          usedAt: new Date(),
+          usageCount: 1
+        });
+      }
+      await discountDoc.save();
+    }
+  }
+
+  if (reqQuery) {
+    payment.vnpayData = reqQuery;
+  }
+  await payment.save();
+  return true;
+};
+
+/**
  * Xử lý Return URL (Dành cho Frontend chuyển hướng)
  */
 exports.vnpayReturn = async (req, res) => {
@@ -227,7 +286,17 @@ exports.vnpayReturn = async (req, res) => {
     }
 
     if (verify.isSuccess) {
-      // Thành công, điều hướng về trang thành công (IPN sẽ lo việc update DB)
+      // Vì Sandbox không đổi được IPN URL, update DB luôn ở đây
+      const { vnp_TxnRef, vnp_Amount } = req.query;
+      const payment = await Payment.findOne({ txnRef: vnp_TxnRef });
+
+      if (payment && payment.paymentStatus === 'pending') {
+        const vnpAmountValue = Number(vnp_Amount) / 100;
+        if (vnpAmountValue === payment.finalAmount) {
+          await processSuccessfulPayment(payment, req.query);
+        }
+      }
+
       return res.redirect(`${process.env.FRONTEND_URL}/payment/success`);
     } else {
       // User hủy hoặc lỗi thanh toán
@@ -276,56 +345,12 @@ exports.vnpayIpn = async (req, res) => {
 
     // Cập nhật trạng thái
     if (vnp_ResponseCode === '00') {
-      payment.paymentStatus = 'completed';
-      payment.paymentDate = new Date();
-      payment.enrollmentDate = new Date();
-
-      // Ghi danh học viên vào khóa học
-      const student = await Student.findById(payment.studentId);
-      if (student) {
-        const isEnrolled = student.enrolledCourses.some(
-          (ec) => ec.courseId.toString() === payment.courseId.toString()
-        );
-        if (!isEnrolled) {
-          student.enrolledCourses.push({
-            courseId: payment.courseId,
-            enrollmentDate: new Date(),
-            status: 'active',
-          });
-          await student.save();
-
-          // Cập nhật totalStudents trong Course
-          await Course.findByIdAndUpdate(payment.courseId, { $inc: { totalStudents: 1 } });
-        }
-      }
-
-      // Cập nhật Discount Code (nếu có)
-      if (payment.discountCode && payment.discountCode.codeId) {
-        const discountDoc = await DiscountCode.findById(payment.discountCode.codeId);
-        if (discountDoc) {
-          discountDoc.usageCount += 1;
-          
-          const studentUsageIndex = discountDoc.usedBy.findIndex(u => u.studentId.toString() === payment.studentId.toString());
-          if (studentUsageIndex >= 0) {
-            discountDoc.usedBy[studentUsageIndex].usageCount += 1;
-            discountDoc.usedBy[studentUsageIndex].usedAt = new Date();
-          } else {
-            discountDoc.usedBy.push({
-              studentId: payment.studentId,
-              usedAt: new Date(),
-              usageCount: 1
-            });
-          }
-          await discountDoc.save();
-        }
-      }
+      await processSuccessfulPayment(payment, req.query);
     } else {
       payment.paymentStatus = 'failed';
+      payment.vnpayData = req.query;
+      await payment.save();
     }
-
-    // Lưu data từ VNPay để đối soát
-    payment.vnpayData = req.query;
-    await payment.save();
 
     return res.json({ RspCode: '00', Message: 'Confirm Success' });
   } catch (error) {

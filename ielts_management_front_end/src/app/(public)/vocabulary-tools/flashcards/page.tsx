@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import Link from "next/link";
-import { BookOpen, Layers, Plus, Search, Loader2, Upload } from "lucide-react";
-import flashcardService, { FlashcardDeck } from "@/services/flashcardService";
+import { BookOpen, Layers, Plus, Search, Loader2, Upload, Flame } from "lucide-react";
+import Image from "next/image";
+import flashcardService, { FlashcardDeck, FlashcardStreak } from "@/services/flashcardService";
 import { uploadService } from "@/services/uploadService";
 import { useAuthContext } from "@/context/AuthContext";
 import { toast } from "react-toastify";
@@ -13,6 +14,7 @@ import { toast } from "react-toastify";
 export default function FlashcardDecksPage() {
   const { user } = useAuthContext();
   const [decks, setDecks] = useState<FlashcardDeck[]>([]);
+  const [streak, setStreak] = useState<FlashcardStreak | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'my_decks' | 'public_decks'>('my_decks');
   const [searchQuery, setSearchQuery] = useState('');
@@ -68,6 +70,9 @@ export default function FlashcardDecksPage() {
       const response = await flashcardService.getDecks({ isPublic });
       if (response.success || response.status === 'success') {
         setDecks(response.data || []);
+        if (response.streak) {
+          setStreak(response.streak);
+        }
       }
     } catch (error) {
       toast.error("Không thể tải danh sách bộ thẻ");
@@ -141,7 +146,15 @@ export default function FlashcardDecksPage() {
                 <Layers className="w-8 h-8 text-blue-500" />
                 Smart Flashcards
               </h1>
-              <p className="text-gray-400 mt-2">Khám phá và ôn tập các bộ từ vựng IELTS</p>
+              <div className="flex items-center gap-4 mt-2">
+                <p className="text-gray-400">Khám phá và ôn tập các bộ từ vựng IELTS</p>
+                {streak && streak.current > 0 && (
+                  <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/30 px-3 py-1 rounded-full text-orange-400 font-bold text-sm shadow-[0_0_15px_rgba(249,115,22,0.2)] animate-fade-in-up">
+                    <Image src="/flame.gif" alt="Flame" width={20} height={20} />
+                    <span>{streak.current} ngày liên tiếp!</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <button

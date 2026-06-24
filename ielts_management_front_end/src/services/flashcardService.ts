@@ -46,9 +46,25 @@ export interface ReviewSubmitResponse {
   lastReviewedAt: string;
 }
 
+export interface FlashcardStreak {
+  current: number;
+  longest: number;
+  lastStudyDate: string | null;
+}
+
+export interface GetDecksResponse {
+  data: FlashcardDeck[];
+  streak: FlashcardStreak;
+}
+
+export interface SubmitReviewResponse {
+  data: ReviewSubmitResponse;
+  streak: FlashcardStreak;
+}
+
 const flashcardService = {
   // --- Deck API ---
-  getDecks: async (params?: { courseId?: string; videoId?: string; isPublic?: boolean }): Promise<ApiResponse<FlashcardDeck[]>> => {
+  getDecks: async (params?: { courseId?: string; videoId?: string; isPublic?: boolean }): Promise<ApiResponse<FlashcardDeck[]> & { streak?: FlashcardStreak }> => {
     let url = '/api/flashcards/decks';
     if (params) {
       const query = new URLSearchParams();
@@ -58,7 +74,7 @@ const flashcardService = {
       const queryString = query.toString();
       if (queryString) url += `?${queryString}`;
     }
-    return apiClient.get<FlashcardDeck[]>(url);
+    return apiClient.get<FlashcardDeck[] & { streak?: FlashcardStreak }>(url);
   },
 
   getDeckById: async (deckId: string): Promise<ApiResponse<FlashcardDeck>> => {
@@ -99,8 +115,8 @@ const flashcardService = {
     return apiClient.get<Flashcard[]>(`/api/flashcards/decks/${deckId}/study`);
   },
 
-  submitReview: async (flashcardId: string, quality: 0 | 1 | 2): Promise<ApiResponse<ReviewSubmitResponse>> => {
-    return apiClient.post<ReviewSubmitResponse>(`/api/flashcards/cards/${flashcardId}/review`, { quality });
+  submitReview: async (flashcardId: string, quality: 0 | 1 | 2): Promise<ApiResponse<ReviewSubmitResponse> & { streak?: FlashcardStreak }> => {
+    return apiClient.post<ReviewSubmitResponse & { streak?: FlashcardStreak }>(`/api/flashcards/cards/${flashcardId}/review`, { quality });
   }
 };
 

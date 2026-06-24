@@ -222,3 +222,5 @@ export interface Conversation {
   lastMessage?: Message;
   updatedAt: string;
 }
+
+export * from './placement';

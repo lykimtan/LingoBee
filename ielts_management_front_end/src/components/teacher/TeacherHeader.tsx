@@ -38,7 +38,7 @@ export function TeacherHeader() {
     { label: "Dashboard", href: "/teacher" },
     { label: "Khóa học", href: "/teacher/courses" },
     { label: "Học viên", href: "/teacher/students" },
-    { label: "Lịch giảng dạy", href: "/teacher/schedule" },
+    { label: "Đề thi ĐGNL", href: "/teacher/placement-questions" },
     { label: "Cài đặt", href: "/teacher/settings" },
   ];
 
@@ -102,7 +102,7 @@ export function TeacherHeader() {
       typeof window === "undefined"
         ? null
         : localStorage.getItem(STORAGE_KEYS.USER_TOKEN) ||
-          sessionStorage.getItem(STORAGE_KEYS.USER_TOKEN);
+        sessionStorage.getItem(STORAGE_KEYS.USER_TOKEN);
 
     if (!storedToken || !user?.id) {
       return;

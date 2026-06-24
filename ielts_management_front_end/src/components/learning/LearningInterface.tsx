@@ -14,6 +14,9 @@ import { learningService, CourseLearningData, LearningVideo } from "@/services/l
 import { CourseReviewModal } from "./CourseReviewModal";
 import { apiClient } from '@/utils/api';
 import { LearningChatDrawer } from "./Layout/LearningChatDrawer";
+import { GeneratePathModal } from "./GeneratePathModal";
+import { LearningPathSidebar } from "./LearningPathSidebar";
+import { learningPathService, LearningPathData } from "@/services/learningPathService";
 
 const PlayrWrapper = dynamic(
   () => import("./VideoPlyr").then((mod) => mod.PlayrWrapper),
@@ -37,7 +40,9 @@ interface LearningInterfaceProps {
 
 export const LearningInterface = ({ slug, initialVideoId }: LearningInterfaceProps) => {
   const [activeTab, setActiveTab] = useState("Tổng quan");
-  const [sidebarTab, setSidebarTab] = useState<"content" | "notes">("content");
+  const [sidebarTab, setSidebarTab] = useState<"content" | "notes" | "path">("content");
+  const [learningPath, setLearningPath] = useState<LearningPathData | null>(null);
+  const [isPathModalOpen, setIsPathModalOpen] = useState(false);
   const [noteTime, setNoteTime] = useState(0);
   const videoRef = useRef<any>(null);
 
@@ -51,7 +56,7 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
 
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
-  
+
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -97,6 +102,16 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
           } catch (e) {
             console.error("Failed to fetch review status", e);
           }
+
+          // Fetch Learning Path
+          try {
+            const pathRes = await learningPathService.getPath(response.data.course.id);
+            if (pathRes.success && pathRes.data) {
+              setLearningPath(pathRes.data);
+            }
+          } catch (e) {
+            console.log("No learning path found");
+          }
         } else {
           setError("Failed to load course data");
         }
@@ -109,6 +124,18 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
 
     fetchData();
   }, [slug]);
+
+  const fetchLearningPath = async () => {
+    if (!courseData) return;
+    try {
+      const pathRes = await learningPathService.getPath(courseData.id);
+      if (pathRes.success && pathRes.data) {
+        setLearningPath(pathRes.data);
+      }
+    } catch (e) {
+      console.log("No learning path found");
+    }
+  };
 
   // Sync URL when video changes
   useEffect(() => {
@@ -145,9 +172,9 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
       case "Tổng quan": return <OverviewTab description={currentVideo?.description} />;
       case "Tài liệu": return currentVideoId ? <ResourcesTab videoId={currentVideoId} onSelectExercise={setCurrentExerciseId} /> : null;
       case "Thảo luận": return currentVideoId ? (
-        <DicussionTab 
-          targetId={currentVideoId} 
-          targetType="Video" 
+        <DicussionTab
+          targetId={currentVideoId}
+          targetType="Video"
           onSeekTo={(time) => {
             if (videoRef.current) {
               videoRef.current.seekTo(time);
@@ -281,6 +308,12 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
                 >
                   Ghi chú
                 </button>
+                <button
+                  onClick={() => setSidebarTab("path")}
+                  className={`text-sm font-bold uppercase tracking-wide transition-colors ${sidebarTab === "path" ? "text-white border-b-2 border-[#f4e900] pb-2 -mb-2.5" : "text-white/40 hover:text-white/70"}`}
+                >
+                  Lộ trình khóa học
+                </button>
               </div>
 
               {sidebarTab === "content" ? (
@@ -321,7 +354,7 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
                     />
                   </div>
                 </div>
-              ) : (
+              ) : sidebarTab === "notes" ? (
                 <div className="flex-1 overflow-hidden flex flex-col">
                   {currentVideoId ? (
                     <NotesTab
@@ -342,6 +375,32 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
                     />
                   ) : (
                     <div className="text-white/50 text-sm">Vui lòng chọn bài học để ghi chú.</div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col overflow-y-auto custom-scrollbar pr-2 pb-4 h-full">
+                  {learningPath ? (
+                    <LearningPathSidebar
+                      learningPath={learningPath}
+                      currentVideoId={currentVideoId}
+                      onSelectVideo={handleSelectVideo}
+                      onSelectExercise={setCurrentExerciseId}
+                      onRegenerate={() => setIsPathModalOpen(true)}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-center py-10 h-full">
+                      <div className="w-16 h-16 bg-[#f4e900]/10 rounded-full flex items-center justify-center mb-4">
+                        <span className="text-3xl">🤖</span>
+                      </div>
+                      <h3 className="text-lg font-bold text-white mb-2">Chưa có lộ trình AI</h3>
+                      <p className="text-sm text-white/60 mb-6">Hãy để AI thiết kế cho bạn một lịch học hoàn hảo dựa trên thời gian rảnh của bạn.</p>
+                      <button
+                        onClick={() => setIsPathModalOpen(true)}
+                        className="px-6 py-3 bg-[#f4e900] text-black font-bold rounded-xl hover:bg-yellow-400 transition-colors"
+                      >
+                        Bắt đầu tạo Lộ Trình
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
@@ -367,7 +426,7 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
       <FloatingAskButton onClick={() => setIsChatOpen(true)} unreadCount={unreadCount} />
 
       {courseData && (
-        <LearningChatDrawer 
+        <LearningChatDrawer
           isOpen={isChatOpen}
           onClose={() => setIsChatOpen(false)}
           courseId={courseData.id}
@@ -395,6 +454,15 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
           isOpen={isReviewModalOpen}
           onClose={() => setIsReviewModalOpen(false)}
           onSuccess={() => setHasReviewed(true)}
+        />
+      )}
+
+      {courseData && (
+        <GeneratePathModal
+          courseId={courseData.id}
+          isOpen={isPathModalOpen}
+          onClose={() => setIsPathModalOpen(false)}
+          onSuccess={fetchLearningPath}
         />
       )}
     </div>

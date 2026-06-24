@@ -12,6 +12,11 @@ const learningPathSchema = new mongoose.Schema(
       ref: 'Student',
       required: true,
     },
+    preferences: {
+      targetDate: { type: Date }, // AI target finish date
+      availableDays: [{ type: Number }], // e.g., 2,4,6 for Mon, Wed, Fri
+      hoursPerDay: { type: Number, default: 2 },
+    },
     dailySchedule: [
       {
         day: {
@@ -48,31 +53,21 @@ const learningPathSchema = new mongoose.Schema(
             },
             exercises: [
               {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'Exercise',
+                exerciseId: {
+                  type: mongoose.Schema.Types.ObjectId,
+                  ref: 'Exercise',
+                  required: true,
+                },
+                isCompleted: {
+                  type: Boolean,
+                  default: false,
+                },
+                score: {
+                  type: Number,
+                  default: 0,
+                },
               },
             ],
-          },
-        ],
-        notifications: [
-          {
-            type: {
-              type: String,
-              enum: ['warning', 'overdue', 'completed'],
-              required: true,
-            },
-            message: {
-              type: String,
-              required: true,
-            },
-            isRead: {
-              type: Boolean,
-              default: false,
-            },
-            createdAt: {
-              type: Date,
-              default: Date.now,
-            },
           },
         ],
         isCompleted: {
@@ -94,5 +89,8 @@ const learningPathSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Add unique compound index for studentId and courseId
+learningPathSchema.index({ studentId: 1, courseId: 1 }, { unique: true });
 
 module.exports = mongoose.model('LearningPath', learningPathSchema);

@@ -10,6 +10,7 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const placementTestRoutes = require('./routes/placementTestRoutes');
 
 const app = express();
 
@@ -96,10 +97,13 @@ app.use('/api/conversations', require('./routes/conversationRoutes'));
 // app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/learning', require('./routes/learningRoutes'));
+app.use('/api/learning-paths', require('./routes/learningPathRoutes'));
 app.use('/api/notes', require('./routes/noteRoutes'));
 app.use('/api/comments', require('./routes/commentRoutes'));
 app.use('/api/flashcards', require('./routes/flashcardRoutes'));
 app.use('/api/visual-vocab', require('./routes/visualVocabRoutes'));
+app.use('/api/placement-questions', require('./routes/placementQuestionRoutes'));
+app.use('/api/placement-tests', placementTestRoutes);
 
 // ============================================
 // 404 HANDLER

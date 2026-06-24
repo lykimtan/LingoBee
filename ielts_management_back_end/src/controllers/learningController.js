@@ -179,6 +179,50 @@ const updateVideoProgress = async (req, res, next) => {
 
     await progress.save();
 
+    // Sync with LearningPath if completed
+    if (progress.isCompleted) {
+      try {
+        const LearningPath = require('../models/LearningPath');
+        const learningPath = await LearningPath.findOne({
+          studentId: student._id,
+          courseId: video.courseId
+        });
+
+        if (learningPath) {
+          let pathUpdated = false;
+          
+          for (const day of learningPath.dailySchedule) {
+            const lesson = day.lessons.find(l => l.videoId.toString() === video._id.toString());
+            if (lesson && !lesson.isCompleted) {
+              lesson.isCompleted = true;
+              pathUpdated = true;
+              
+              // Check if all lessons in this day are completed
+              const allLessonsCompleted = day.lessons.every(l => l.isCompleted);
+              if (allLessonsCompleted && !day.isCompleted) {
+                day.isCompleted = true;
+                day.completedAt = new Date();
+              }
+            }
+          }
+
+          if (pathUpdated) {
+            let totalLessons = 0;
+            let completedLessons = 0;
+            for (const day of learningPath.dailySchedule) {
+              totalLessons += day.lessons.length;
+              completedLessons += day.lessons.filter(l => l.isCompleted).length;
+            }
+            learningPath.overallProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+            
+            await learningPath.save();
+          }
+        }
+      } catch (syncError) {
+        logger.error(`Error syncing progress to LearningPath: ${syncError.message}`);
+      }
+    }
+
     res.status(200).json({
       success: true,
       data: progress,

@@ -188,6 +188,32 @@ Complete Mongoose schema implementations for IELTS Management System with 13 col
 - **Indexes**: studentId+isRead, studentId+courseId+createdAt
 - **Notes**: Auto-created by cron jobs
 
+### 14. **PlacementQuestion** - Ngân hàng câu hỏi thi thử đầu vào
+
+- **Path**: `src/models/PlacementQuestion.js`
+- **Purpose**: Lưu trữ ngân hàng câu hỏi dùng chung cho bài kiểm tra thi thử đầu vào
+- **Key Fields**:
+  - `questionText`: nội dung câu hỏi
+  - `difficulty`: easy, medium, hard
+  - `questionType`: multipleChoice, listeningChoice, speaking
+  - Các discriminator field đặc thù (options, correctOptionIds, audioUrl, audioPromptUrl, timeLimitSeconds)
+- **Indexes**: questionType
+- **Notes**: Độc lập hoàn toàn với `Exercise` của khóa học
+
+### 15. **PlacementTest** - Đợt làm bài thi thử của học viên
+
+- **Path**: `src/models/PlacementTest.js`
+- **Purpose**: Lưu phiên bản bài kiểm tra đầu vào được sinh ngẫu nhiên từ PlacementQuestion và kết quả làm bài của học viên
+- **Key Fields**:
+  - `studentId`: người làm bài
+  - `questions`: mảng 15 câu hỏi bốc ngẫu nhiên từ PlacementQuestion
+  - `answers`: mảng các câu trả lời
+  - `status`: in_progress, completed, graded
+  - `timeLimitMinutes`: thời gian giới hạn làm bài
+  - `totalScore`: tổng điểm đánh giá
+- **Indexes**: studentId+status, startedAt
+- **Notes**: AI có thể cập nhật `answers.aiFeedback` và `answers.score`
+
 ---
 
 ## Key Relationships
