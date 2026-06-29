@@ -7,6 +7,7 @@ import { placementTestService } from "@/services/placementTestService";
 import { PlacementTest, PlacementAnswer } from "@/types";
 import { toast } from "react-toastify";
 import { AudioRecorder } from "@/components/AudioRecorder";
+import ConfirmModal from "@/components/ConfirmModal";
 
 export default function TakePlacementTestPage({ params }: { params: Promise<{ testId: string }> }) {
   const { testId } = use(params);
@@ -14,6 +15,18 @@ export default function TakePlacementTestPage({ params }: { params: Promise<{ te
   const [test, setTest] = useState<PlacementTest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => { },
+  });
 
   // State for pagination
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -104,9 +117,8 @@ export default function TakePlacementTestPage({ params }: { params: Promise<{ te
 
       const res = await placementTestService.submitTest(testId, formattedAnswers);
       if (res.success) {
-        toast.dismiss(); // Dismiss any previous warnings
-        
-        // Check if there are any speaking questions with audio
+        toast.dismiss();
+
         const hasSpeaking = formattedAnswers.some(a => a.audioSubmissionUrl);
         if (hasSpeaking) {
           toast.update(toastId, { render: "Đang phân tích và chấm điểm Speaking bằng AI...", type: "info", isLoading: true });
@@ -156,9 +168,15 @@ export default function TakePlacementTestPage({ params }: { params: Promise<{ te
       setCurrentIndex(prev => prev + 1);
     } else {
       // Last question -> Submit
-      if (window.confirm("Bạn đã hoàn thành câu hỏi cuối. Xác nhận nộp bài?")) {
-        submitTest();
-      }
+      setConfirmModal({
+        isOpen: true,
+        title: "Xác nhận nộp bài",
+        message: "Bạn đã hoàn thành câu hỏi cuối. Xác nhận nộp bài?",
+        onConfirm: () => {
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          submitTest();
+        }
+      });
     }
   };
 
@@ -189,9 +207,15 @@ export default function TakePlacementTestPage({ params }: { params: Promise<{ te
       <header className="bg-[#F8F9FA] px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <button
           onClick={() => {
-            if (window.confirm("Bạn có chắc muốn thoát? Kết quả có thể không được lưu lại.")) {
-              router.push("/placement-test");
-            }
+            setConfirmModal({
+              isOpen: true,
+              title: "Xác nhận thoát bài thi",
+              message: "Bạn có chắc chắn muốn thoát? Toàn bộ câu trả lời hiện tại sẽ bị hủy bỏ và bạn sẽ phải làm lại từ câu đầu tiên vào lần sau.",
+              onConfirm: () => {
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                router.push("/placement-test");
+              }
+            });
           }}
           className="flex items-center gap-2 px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition-colors"
         >
@@ -269,13 +293,13 @@ export default function TakePlacementTestPage({ params }: { params: Promise<{ te
                       key={option.id || option._id}
                       onClick={() => handleOptionSelect(option.id || option._id || "")}
                       className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center gap-4 group ${isSelected
-                          ? "border-blue-500 bg-blue-50/50 shadow-sm"
-                          : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+                        ? "border-blue-500 bg-blue-50/50 shadow-sm"
+                        : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
                         }`}
                     >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 transition-colors ${isSelected
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-100 text-gray-600 group-hover:bg-gray-200"
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-100 text-gray-600 group-hover:bg-gray-200"
                         }`}>
                         {letter}
                       </div>
@@ -291,6 +315,14 @@ export default function TakePlacementTestPage({ params }: { params: Promise<{ te
         </div>
       </main>
 
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+      />
+
       {/* Sticky Footer */}
       <footer className="bg-white border-t border-gray-100 py-4 px-6 fixed bottom-0 left-0 right-0 z-50 flex items-center justify-center gap-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <button
@@ -303,7 +335,7 @@ export default function TakePlacementTestPage({ params }: { params: Promise<{ te
         <button
           onClick={handleNext}
           disabled={isSubmitting}
-          className="bg-[#9E9E9E] hover:bg-gray-500 text-white font-bold rounded-full px-8 py-3 flex items-center gap-2 transition-colors disabled:opacity-50"
+          className={`${(currentAnswer?.selectedOptionIds?.length > 0 || currentAnswer?.audioSubmissionUrl) ? 'bg-blue-600 hover:bg-blue-700' : 'bg-[#9E9E9E] hover:bg-gray-500'} text-white font-bold rounded-full px-8 py-3 flex items-center gap-2 transition-colors disabled:opacity-50`}
         >
           {isLastQuestion ? "Nộp bài" : "Câu sau"} <ArrowRight className="w-5 h-5" />
         </button>

@@ -151,7 +151,65 @@ const getPath = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get recent activities from student's learning paths
+ * @route   GET /api/learning-paths/activities/recent
+ * @access  Private/Student
+ */
+const getRecentActivities = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const student = await Student.findOne({ userId });
+    
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    const learningPaths = await LearningPath.find({ studentId: student._id })
+      .populate({
+        path: 'dailySchedule.lessons.videoId',
+        select: 'title description skills',
+      })
+      .populate('courseId', 'title');
+
+    let allActivities = [];
+
+    learningPaths.forEach((path) => {
+      path.dailySchedule.forEach((day) => {
+        day.lessons.forEach((lesson) => {
+          if (lesson.videoId) {
+            allActivities.push({
+              id: lesson._id.toString(),
+              title: lesson.videoId.title,
+              description: `Khóa học: ${path.courseId?.title || 'IELTS'}`,
+              status: lesson.isCompleted ? 'completed' : 'in_progress',
+              type: lesson.videoId.skills && lesson.videoId.skills.length > 0 ? lesson.videoId.skills[0] : 'listening',
+              date: lesson.completedAt ? lesson.completedAt : day.deadline,
+              courseId: path.courseId?._id,
+            });
+          }
+        });
+      });
+    });
+
+    // Sort by date descending
+    allActivities.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Take top 5
+    const recentActivities = allActivities.slice(0, 5);
+
+    res.status(200).json({
+      success: true,
+      data: recentActivities
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   generatePath,
-  getPath
+  getPath,
+  getRecentActivities
 };

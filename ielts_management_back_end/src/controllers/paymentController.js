@@ -358,3 +358,134 @@ exports.vnpayIpn = async (req, res) => {
     return res.json({ RspCode: '99', Message: 'Unknown error' });
   }
 };
+
+/**
+ * @desc    Get all payment transactions for Admin
+ * @route   GET /api/payments/admin/all
+ * @access  Private (Admin)
+ */
+exports.getAdminPayments = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, status, courseId, search } = req.query;
+    const query = {};
+
+    if (status) query.paymentStatus = status;
+    if (courseId) query.courseId = courseId;
+    if (search) {
+      query.$or = [
+        { txnRef: { $regex: search.trim(), $options: 'i' } },
+        { 'discountCode.code': { $regex: search.trim(), $options: 'i' } }
+      ];
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await Payment.countDocuments(query);
+    const payments = await Payment.find(query)
+      .populate({
+        path: 'studentId',
+        populate: { path: 'userId', select: 'name email avatar' }
+      })
+      .populate('courseId', 'title slug')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    res.status(200).json({
+      success: true,
+      data: payments,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    logger.error(`Error in getAdminPayments: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Lỗi server khi lấy lịch sử thanh toán' });
+  }
+};
+
+/**
+ * @desc    Get detailed revenue statistics for Admin
+ * @route   GET /api/payments/admin/revenue-stats
+ * @access  Private (Admin)
+ */
+exports.getAdminRevenueStats = async (req, res) => {
+  try {
+    const completedPayments = await Payment.find({ paymentStatus: 'completed' })
+      .populate('courseId', 'title slug');
+
+    const totalRevenue = completedPayments.reduce((acc, curr) => acc + (curr.finalAmount || curr.totalAmount || 0), 0);
+    const totalTransactions = completedPayments.length;
+    const averageOrderValue = totalTransactions > 0 ? Math.round(totalRevenue / totalTransactions) : 0;
+
+    // Revenue by course breakdown
+    const courseRevenueMap = {};
+    completedPayments.forEach(pm => {
+      const c = pm.courseId;
+      const cName = c ? c.title : 'Khóa học đã xóa';
+      const amt = pm.finalAmount || pm.totalAmount || 0;
+      if (!courseRevenueMap[cName]) {
+        courseRevenueMap[cName] = { name: cName, revenue: 0, transactions: 0 };
+      }
+      courseRevenueMap[cName].revenue += amt;
+      courseRevenueMap[cName].transactions += 1;
+    });
+    const revenueByCourse = Object.values(courseRevenueMap).sort((a, b) => b.revenue - a.revenue);
+
+    // Revenue chart 30 days
+    const revenue30DaysMap = {};
+    const revenue7DaysMap = {};
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+      revenue30DaysMap[key] = 0;
+      if (i <= 6) revenue7DaysMap[key] = 0;
+    }
+
+    let revenue30DaysTotal = 0;
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+    completedPayments.forEach(pm => {
+      const d = pm.paymentDate ? new Date(pm.paymentDate) : new Date(pm.createdAt);
+      if (d >= thirtyDaysAgo) {
+        const amt = pm.finalAmount || pm.totalAmount || 0;
+        revenue30DaysTotal += amt;
+        const key = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+        if (revenue30DaysMap[key] !== undefined) revenue30DaysMap[key] += amt;
+        if (revenue7DaysMap[key] !== undefined) revenue7DaysMap[key] += amt;
+      }
+    });
+
+    const revenue30DaysChart = Object.keys(revenue30DaysMap).map(date => ({
+      date,
+      amount: revenue30DaysMap[date]
+    }));
+
+    const revenueWeeklyChart = Object.keys(revenue7DaysMap).map(date => ({
+      date,
+      amount: revenue7DaysMap[date]
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalRevenue,
+        totalTransactions,
+        averageOrderValue,
+        revenue30DaysTotal,
+        revenue30DaysChart,
+        revenueWeeklyChart,
+        revenueByCourse
+      }
+    });
+  } catch (error) {
+    logger.error(`Error in getAdminRevenueStats: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Lỗi server khi lấy thống kê doanh thu' });
+  }
+};
+

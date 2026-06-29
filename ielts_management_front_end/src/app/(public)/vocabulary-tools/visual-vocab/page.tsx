@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Image as ImageIcon, Loader2, Sparkles, Volume2, ArrowLeft, Check, Trash2 } from 'lucide-react';
+import { Upload, Image as ImageIcon, Loader2, Volume2, ArrowLeft, Check, Trash2 } from 'lucide-react';
 import { visualVocabService, VisualVocabResult } from '@/services/visualVocabService';
 import { playAudio } from '@/utils/audioUtils';
 import VisualVocabHistory from '@/components/learning/VisualVocab/VisualVocabHistory';
@@ -41,7 +41,7 @@ export default function VisualVocabPage() {
     onConfirm: () => { },
   });
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
-  
+
   // Flashcard states
   const [addingVocabItem, setAddingVocabItem] = useState<VocabItem | null>(null);
   const [isDeckSelectionOpen, setIsDeckSelectionOpen] = useState(false);
@@ -220,7 +220,7 @@ export default function VisualVocabPage() {
   };
 
   return (
-    <div className="relative w-full min-h-screen bg-[#0A0A0A] text-white font-sans flex flex-col overflow-hidden">
+    <div className="relative w-full min-h-screen  text-white font-sans flex flex-col overflow-hidden">
       <Navigation />
 
       {/* Spacer to push content down below fixed navigation */}
@@ -238,7 +238,7 @@ export default function VisualVocabPage() {
         </Link>
 
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-6xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">
+          <h1 className="text-4xl md:text-6xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-yellow-500 to-red-500">
             Visual Vocabulary
           </h1>
           <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto">
@@ -401,7 +401,6 @@ export default function VisualVocabPage() {
 
             {!isLoading && !result && (
               <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-gray-800/20 rounded-3xl border border-gray-700/50 border-dashed p-8 text-center opacity-50">
-                <Sparkles className="w-12 h-12 text-gray-500 mb-4" />
                 <h3 className="text-xl font-semibold mb-2 text-gray-400">Kết quả sẽ hiển thị ở đây</h3>
                 <p className="text-gray-600 max-w-sm">Hãy upload một bức ảnh và bấm phân tích để bắt đầu học nhé.</p>
               </div>

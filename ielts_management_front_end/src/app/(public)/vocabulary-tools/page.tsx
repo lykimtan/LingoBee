@@ -57,8 +57,8 @@ export default function VocabularyToolsHub() {
             {/* Tool 2: Visual Vocab */}
             <Link href="/vocabulary-tools/visual-vocab" className="block h-full group">
               <div className="h-full bg-black/20 backdrop-blur-sm border border-white/5 group-hover:border-purple-500/30 rounded-3xl p-8 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10">
-                <div className="w-14 h-14 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <ImageIcon className="w-7 h-7 text-purple-400" />
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-500/20 to-green-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <ImageIcon className="w-7 h-7 text-blue-300" />
                 </div>
 
                 <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-purple-400 transition-colors">Visual Vocabulary</h2>
@@ -66,7 +66,7 @@ export default function VocabularyToolsHub() {
                   Học từ vựng trực quan. Sử dụng trí tuệ nhân tạo (YOLOv10) để phân tích hình ảnh và tự động bóc tách từ vựng tiếng Anh.
                 </p>
 
-                <div className="inline-flex items-center text-purple-400 font-semibold group-hover:translate-x-1 transition-transform">
+                <div className="inline-flex items-center text-blue-400 font-semibold group-hover:translate-x-1 transition-transform">
                   Trải nghiệm ngay
                   <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

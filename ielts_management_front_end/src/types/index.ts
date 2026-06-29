@@ -7,6 +7,7 @@
 export interface User {
   id: string;
   googleId?: string | null;
+  hasPassword?: boolean;
   email: string;
   name: string;
   role: 'guest' | 'student' | 'teacher' | 'staff' | 'admin';
@@ -28,6 +29,7 @@ export interface ApiResponse<T> {
   code: number;
   errors?: ApiErrorItem[];
   success?: boolean;
+  pagination?: any;
 }
 
 // Pagination types
@@ -161,6 +163,9 @@ export type AdminCourseItem = {
   level?: string;
   status?: string;
   totalStudents?: number;
+  averageRating?: number;
+  totalReviews?: number;
+  totalVideos?: number;
   slug?: string;
   teacher?: CourseUser | null;
   publicInfo?: {

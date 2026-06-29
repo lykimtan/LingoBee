@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useChat } from '@ai-sdk/react';
 
-import { Bot, Send, User, Sparkles, X, Loader2 } from 'lucide-react';
+import { Bot, Send, User, X, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import Image from 'next/image';
 

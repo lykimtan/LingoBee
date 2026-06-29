@@ -593,6 +593,99 @@ const getCourseStudents = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get detailed course statistics for admin (students, completion rate, reviews, revenue)
+ * @route   GET /api/courses/:id/admin-stats
+ * @access  Private/Admin
+ */
+const getCourseAdminStats = async (req, res, next) => {
+  try {
+    const courseId = req.params.id;
+    const Comment = require('../models/Comment');
+    const Payment = require('../models/Payment');
+
+    const course = await Course.findById(courseId)
+      .populate('teacher', 'name avatar email')
+      .populate('teachingAssistants', 'name avatar email');
+
+    if (!course) {
+      return res.status(404).json({ success: false, message: 'Khóa học không tồn tại' });
+    }
+
+    // 1. Tổng số học viên & Tỷ lệ hoàn thành
+    const Video = require('../models/Video');
+    const VideoProgress = require('../models/VideoProgress');
+
+    const enrolledStudents = await Student.find({ 'enrolledCourses.courseId': courseId })
+      .populate('userId', 'name email avatar')
+      .populate('enrolledCourses.learningPath', 'overallProgress isCompleted');
+      
+    const totalVideos = await Video.countDocuments({ courseId, isPublished: true });
+    const totalStudents = enrolledStudents.length;
+    let completedStudents = 0;
+
+    const studentList = await Promise.all(enrolledStudents.map(async (s) => {
+      const enrollment = s.enrolledCourses?.find(c => (c.courseId?._id || c.courseId).toString() === courseId.toString());
+      
+      // Tính số video đã xem xong thực tế trong VideoProgress
+      const completedVideosCount = await VideoProgress.countDocuments({ studentId: s._id, courseId, isCompleted: true });
+      const videoProgressPct = totalVideos > 0 ? Math.round((completedVideosCount / totalVideos) * 100) : 0;
+      
+      const lpProgress = enrollment?.learningPath?.overallProgress || 0;
+      const baseProgress = enrollment?.progress || 0;
+      
+      // Lấy tiến độ cao nhất và chính xác nhất
+      const progress = Math.min(100, Math.max(baseProgress, lpProgress, videoProgressPct));
+      const status = (progress >= 100 || enrollment?.status === 'completed' || enrollment?.learningPath?.isCompleted) ? 'completed' : (enrollment?.status || 'active');
+      
+      if (status === 'completed' || progress >= 100) {
+        completedStudents++;
+      }
+      return {
+        _id: s._id,
+        user: s.userId,
+        progress,
+        status,
+        enrollmentDate: enrollment?.enrollmentDate || s.createdAt
+      };
+    }));
+
+    const completionRate = totalStudents > 0 ? Math.round((completedStudents / totalStudents) * 100) : 0;
+
+    // 2. Các bình luận đánh giá của khóa học
+    const reviews = await Comment.find({ targetType: 'Course', targetId: courseId, status: { $ne: 'deleted' } })
+      .populate('author', 'name avatar email')
+      .sort({ createdAt: -1 });
+
+    // 3. Doanh thu của khóa học mang lại
+    const payments = await Payment.find({ courseId: courseId, paymentStatus: 'completed' })
+      .populate({
+        path: 'studentId',
+        populate: { path: 'userId', select: 'name email avatar' }
+      })
+      .sort({ paymentDate: -1, createdAt: -1 });
+
+    const totalRevenue = payments.reduce((acc, curr) => acc + (curr.finalAmount || curr.totalAmount || 0), 0);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        course,
+        totalStudents,
+        completedStudents,
+        completionRate,
+        studentList,
+        reviews,
+        totalRevenue,
+        payments
+      }
+    });
+  } catch (error) {
+    logger.error(`Error in getCourseAdminStats: ${error.message}`);
+    next(error);
+  }
+};
+
 module.exports = {
   createCourse,
   getAllCourses,
@@ -605,5 +698,6 @@ module.exports = {
   getPublicCourses,
   getPublicCourseBySlug,
   requestCoursePreview,
-  getCourseStudents
+  getCourseStudents,
+  getCourseAdminStats
 };

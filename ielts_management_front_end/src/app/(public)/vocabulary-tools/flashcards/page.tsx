@@ -150,7 +150,7 @@ export default function FlashcardDecksPage() {
                 <p className="text-gray-400">Khám phá và ôn tập các bộ từ vựng IELTS</p>
                 {streak && streak.current > 0 && (
                   <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/30 px-3 py-1 rounded-full text-orange-400 font-bold text-sm shadow-[0_0_15px_rgba(249,115,22,0.2)] animate-fade-in-up">
-                    <Image src="/flame.gif" alt="Flame" width={20} height={20} />
+                    <Image src="/profile/streak.gif" alt="Flame" width={30} height={30} unoptimized />
                     <span>{streak.current} ngày liên tiếp!</span>
                   </div>
                 )}

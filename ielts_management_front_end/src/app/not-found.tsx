@@ -1,8 +1,24 @@
 // app/not-found.tsx
+"use client";
+
 import Link from 'next/link';
 import Image from "next/image";
+import { useAuthContext } from "@/context/AuthContext";
 
 export default function NotFound() {
+  const { user } = useAuthContext();
+  
+  let homeUrl = "/";
+  let homeText = "Trở về Trang chủ";
+  
+  if (user?.role === "admin") {
+    homeUrl = "/admin";
+    homeText = "Trở về Trang Admin";
+  } else if (user?.role === "teacher") {
+    homeUrl = "/teacher";
+    homeText = "Trở về Trang Giảng viên";
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-6 relative overflow-hidden">
       {/* Background decorative elements */}
@@ -14,15 +30,15 @@ export default function NotFound() {
         <h1 className="text-9xl font-black tracking-tighter text-slate-800 drop-shadow-sm">
           404
         </h1>
-         <Image
-                      src={"/notFoundGif.gif"}
-                      alt="Not Found"
-                      width={200}
-                      height={200}
-                      unoptimized
-                      sizes="200px"
-                      className="object-contain rounded-md"
-                    />
+        <Image
+          src={"/notFoundGif.gif"}
+          alt="Not Found"
+          width={200}
+          height={200}
+          unoptimized
+          sizes="200px"
+          className="object-contain rounded-md"
+        />
         
         <div className="mt-4 flex flex-col gap-2">
           <h2 className="text-2xl font-bold text-slate-700">
@@ -34,10 +50,10 @@ export default function NotFound() {
         </div>
 
         <Link 
-          href="/" 
+          href={homeUrl} 
           className="mt-8 rounded-full bg-slate-800 px-8 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-1"
         >
-          Trở về Trang chủ
+          {homeText}
         </Link>
       </div>
     </div>

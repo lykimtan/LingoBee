@@ -11,6 +11,7 @@ import FeaturesSection from "@/components/PlacementTest/FeaturesSection"
 
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
+import ChatWidget from "@/components/ChatWidget";
 
 export default function PlacementTestLandingPage() {
   const router = useRouter();
@@ -45,6 +46,7 @@ export default function PlacementTestLandingPage() {
       <FeaturesSection />
 
       <Footer />
+      <ChatWidget />
     </div>
   );
 }

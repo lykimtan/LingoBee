@@ -41,7 +41,7 @@ export interface UpdateProfilePayload {
 }
 
 export interface ChangePasswordPayload {
-  currentPassword: string;
+  currentPassword?: string;
   newPassword: string;
 }
 
@@ -93,6 +93,13 @@ class AuthService {
    */
   async changePassword(payload: ChangePasswordPayload): Promise<ApiResponse<null>> {
     return apiClient.post<null>('/api/auth/change-password', payload);
+  }
+
+  /**
+   * Verify password for sensitive actions
+   */
+  async verifyPassword(payload: { password: string }): Promise<ApiResponse<any>> {
+    return apiClient.post('/api/auth/verify-password', payload);
   }
 
   /**

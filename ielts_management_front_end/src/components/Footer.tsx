@@ -34,7 +34,7 @@ export const Footer = () => {
 
 					<div className="space-y-12">
 						<div className="space-y-4">
-							<p className="text-xs uppercase tracking-[0.4em] text-white/60">Nhan thong tin</p>
+							<p className="text-xs uppercase tracking-[0.4em] text-white/60">Nhận thông tin</p>
 							<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
 								<input
 									type="email"
@@ -49,17 +49,17 @@ export const Footer = () => {
 
 						<div className="grid grid-cols-2 gap-10 text-sm">
 							<div className="space-y-3">
-								<p className="text-xs uppercase tracking-[0.3em] text-white/60">Ho tro</p>
+								<p className="text-xs uppercase tracking-[0.3em] text-white/60">Hỗ trợ</p>
 								<p className="text-white/70">support@lingobee.vn</p>
 								<p className="text-white/70">Mo - Sau, 9:00 - 18:00</p>
 							</div>
 							<div className="space-y-3">
-								<p className="text-xs uppercase tracking-[0.3em] text-white/60">Thong tin</p>
+								<p className="text-xs uppercase tracking-[0.3em] text-white/60">Thông tin</p>
 								<Link href="#" className="block text-white/70 hover:text-white">
 									About Us
 								</Link>
 								<Link href="#" className="block text-white/70 hover:text-white">
-									Tin tuc
+									Tin tức
 								</Link>
 							</div>
 							<div className="space-y-3">
@@ -72,7 +72,7 @@ export const Footer = () => {
 								</Link>
 							</div>
 							<div className="space-y-3">
-								<p className="text-xs uppercase tracking-[0.3em] text-white/60">Dieu khoan</p>
+								<p className="text-xs uppercase tracking-[0.3em] text-white/60">Điều khoản</p>
 								<Link href="#" className="block text-white/70 hover:text-white">
 									Terms & Conditions
 								</Link>

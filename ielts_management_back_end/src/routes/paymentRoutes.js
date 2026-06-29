@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const paymentController = require('../controllers/paymentController');
-const { authMiddleware, isStudent } = require('../middleware/authMiddleware');
+const { authMiddleware, isStudent, isAdmin } = require('../middleware/authMiddleware');
 
 // Route 1: Khởi tạo URL thanh toán VNPay (Cần đăng nhập và là học viên)
 router.post('/create-payment-url', authMiddleware, isStudent, paymentController.createPaymentUrl);
@@ -14,5 +14,9 @@ router.get('/vnpay-ipn', paymentController.vnpayIpn);
 
 // Route 4: Kiểm tra mã giảm giá
 router.post('/verify-discount', authMiddleware, isStudent, paymentController.verifyDiscount);
+
+// Admin Routes: Thống kê & Quản lý thanh toán
+router.get('/admin/all', authMiddleware, isAdmin, paymentController.getAdminPayments);
+router.get('/admin/revenue-stats', authMiddleware, isAdmin, paymentController.getAdminRevenueStats);
 
 module.exports = router;

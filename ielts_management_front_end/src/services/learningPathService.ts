@@ -53,5 +53,10 @@ export const learningPathService = {
   getPath: async (courseId: string) => {
     const response = await apiClient.get<LearningPathData>(`/api/learning-paths/${courseId}`);
     return response;
+  },
+
+  getRecentActivities: async () => {
+    const response = await apiClient.get<any>('/api/learning-paths/activities/recent');
+    return response;
   }
 };

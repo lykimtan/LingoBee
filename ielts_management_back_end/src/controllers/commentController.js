@@ -403,3 +403,31 @@ exports.submitCourseAndTeacherReview = async (req, res, next) => {
     next(error);
   }
 };
+
+// Toggle Hide/Unhide comment for Admin/Teacher
+exports.toggleHideComment = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userRole = req.user.role;
+
+    if (userRole !== 'admin' && userRole !== 'teacher') {
+      return res.status(403).json({ success: false, message: 'Bạn không có quyền ẩn/hiện bình luận này' });
+    }
+
+    const comment = await Comment.findById(id);
+    if (!comment) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy bình luận' });
+    }
+
+    comment.status = comment.status === 'hidden' ? 'active' : 'hidden';
+    await comment.save();
+
+    res.status(200).json({
+      success: true,
+      data: comment,
+      message: comment.status === 'hidden' ? 'Đã ẩn bình luận thành công' : 'Đã hiện lại bình luận thành công'
+    });
+  } catch (error) {
+    next(error);
+  }
+};

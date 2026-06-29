@@ -94,6 +94,10 @@ class CommentService {
   async toggleLike(id: string): Promise<ApiResponse<{ isLiked: boolean; likeCount: number }>> {
     return apiClient.post<{ isLiked: boolean; likeCount: number }>(`/api/comments/${id}/like`);
   }
+
+  async toggleHideComment(id: string): Promise<ApiResponse<any>> {
+    return apiClient.patch<any>(`/api/comments/${id}/toggle-hide`);
+  }
 }
 
 export const commentService = new CommentService();

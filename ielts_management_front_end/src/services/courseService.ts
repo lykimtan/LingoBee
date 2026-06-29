@@ -71,6 +71,11 @@ class CourseService {
     const encoded = encodeURIComponent(courseId);
     return apiClient.get<any[]>(`/api/courses/${encoded}/students`);
   }
+
+  async getCourseAdminStats(courseId: string): Promise<ApiResponse<any>> {
+    const encoded = encodeURIComponent(courseId);
+    return apiClient.get<any>(`/api/courses/${encoded}/admin-stats`);
+  }
 }
 
 export const courseService = new CourseService();

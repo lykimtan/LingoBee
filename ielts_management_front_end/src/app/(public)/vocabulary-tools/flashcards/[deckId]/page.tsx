@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import Link from "next/link";
-import { Search, ChevronDown, Edit, Trash2, ArrowLeft, Play, Lock, Globe, Loader2, Image as ImageIcon, Plus } from "lucide-react";
+import { Search, ChevronDown, Edit, Trash2, ArrowLeft, Play, Lock, Globe, Loader2, Image as ImageIcon, Plus, Upload } from "lucide-react";
 import flashcardService, { FlashcardDeck, Flashcard } from "@/services/flashcardService";
+import { uploadService } from "@/services/uploadService";
 import { useAuthContext } from "@/context/AuthContext";
 import { toast } from "react-toastify";
 import { useParams, useRouter } from "next/navigation";
@@ -39,6 +40,14 @@ export default function FlashcardDeckManagePage() {
   // Delete Deck State
   const [isDeleteDeckModalOpen, setIsDeleteDeckModalOpen] = useState(false);
   const [isDeletingDeck, setIsDeletingDeck] = useState(false);
+
+  // Edit Deck State
+  const [isEditDeckModalOpen, setIsEditDeckModalOpen] = useState(false);
+  const [editDeckTitle, setEditDeckTitle] = useState('');
+  const [editDeckDesc, setEditDeckDesc] = useState('');
+  const [editDeckThumbnailUrl, setEditDeckThumbnailUrl] = useState('');
+  const [isUpdatingDeck, setIsUpdatingDeck] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -167,6 +176,76 @@ export default function FlashcardDeckManagePage() {
     }
   };
 
+  const openEditDeckModal = () => {
+    if (!deck) return;
+    setEditDeckTitle(deck.title || '');
+    setEditDeckDesc(deck.description || '');
+    setEditDeckThumbnailUrl(deck.thumbnailUrl || '');
+    setIsEditDeckModalOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    try {
+      const sigResponse = await uploadService.requestSignature({
+        folder: 'flashcard',
+        resourceType: 'image'
+      });
+
+      if (!sigResponse || sigResponse.status === 'error' || !sigResponse.data) {
+        throw new Error(sigResponse?.message || "Không thể lấy chữ ký tải ảnh");
+      }
+
+      const uploadData = await uploadService.uploadToCloudinary(file, sigResponse.data);
+
+      if (uploadData.secure_url) {
+        setEditDeckThumbnailUrl(uploadData.secure_url);
+        toast.success("Upload ảnh bìa thành công!");
+      } else {
+        throw new Error("Không nhận được URL");
+      }
+    } catch (error: any) {
+      console.error("Lỗi upload ảnh:", error);
+      toast.error(error.message || "Tải ảnh thất bại, vui lòng thử lại.");
+    } finally {
+      setIsUploadingImage(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleUpdateDeck = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editDeckTitle.trim()) {
+      toast.error("Vui lòng nhập tên bộ thẻ");
+      return;
+    }
+
+    setIsUpdatingDeck(true);
+    try {
+      const res = await flashcardService.updateDeck(deckId, {
+        title: editDeckTitle.trim(),
+        description: editDeckDesc.trim(),
+        thumbnailUrl: editDeckThumbnailUrl.trim()
+      });
+
+      if (res.success && res.data) {
+        setDeck(res.data);
+        toast.success("Cập nhật bộ thẻ thành công!");
+        setIsEditDeckModalOpen(false);
+      } else {
+        toast.error(res.message || "Cập nhật bộ thẻ thất bại");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Đã xảy ra lỗi khi cập nhật bộ thẻ");
+    } finally {
+      setIsUpdatingDeck(false);
+    }
+  };
+
   const filteredCards = cards.filter(card =>
     card.frontText.toLowerCase().includes(searchQuery.toLowerCase()) ||
     card.backText.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -213,18 +292,25 @@ export default function FlashcardDeckManagePage() {
 
       <main className="flex-1 w-full  max-w-5xl mx-auto px-4 py-8 sm:py-12">
         {/* Header section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8 pb-6 border-b border-white/10 pt-20">
-          <div>
-            <Link href="/vocabulary-tools/flashcards" className="inline-flex items-center text-gray-400 hover:text-white transition-colors text-sm mb-4">
-              <ArrowLeft className="w-4 h-4 mr-2" /> Trở về Thư viện
-            </Link>
-            <h1 className="text-3xl font-bold text-white mb-2">{deck.title}</h1>
-            <p className="text-gray-400 max-w-2xl">{deck.description || "Chưa có mô tả"}</p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 pb-6 border-b border-white/10 pt-20">
+          <div className="flex items-start gap-5">
+            {deck.thumbnailUrl && (
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-white/10 bg-black/30 flex-shrink-0 shadow-lg mt-2">
+                <img src={deck.thumbnailUrl} alt={deck.title} className="w-full h-full object-cover" />
+              </div>
+            )}
+            <div>
+              <Link href="/vocabulary-tools/flashcards" className="inline-flex items-center text-gray-400 hover:text-white transition-colors text-sm mb-4">
+                <ArrowLeft className="w-4 h-4 mr-2" /> Trở về Thư viện
+              </Link>
+              <h1 className="text-3xl font-bold text-white mb-2">{deck.title}</h1>
+              <p className="text-gray-400 max-w-2xl">{deck.description || "Chưa có mô tả"}</p>
+            </div>
           </div>
 
 
 
-          <div className="flex gap-3 w-full md:w-auto">
+          <div className="flex flex-wrap gap-3 w-full md:w-auto">
             {isOwner && (
               <button
                 onClick={handleTogglePublish}
@@ -236,6 +322,15 @@ export default function FlashcardDeckManagePage() {
               >
                 {isPublishing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : (deck.isPublic ? <Globe className="w-4 h-4 mr-2" /> : <Lock className="w-4 h-4 mr-2" />)}
                 {deck.isPublic ? 'Đã chia sẻ' : 'Riêng tư'}
+              </button>
+            )}
+            {isOwner && (
+              <button
+                onClick={openEditDeckModal}
+                className="px-4 py-2 bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 border border-purple-500/30 rounded-xl text-sm font-semibold flex items-center justify-center transition-colors cursor-pointer"
+                title="Chỉnh sửa thông tin bộ thẻ"
+              >
+                <Edit className="w-4 h-4 mr-2" /> Sửa bộ thẻ
               </button>
             )}
             {isOwner && (
@@ -423,6 +518,90 @@ export default function FlashcardDeckManagePage() {
         cancelText="Hủy"
         isDestructive={true}
       />
+
+      {/* Edit Deck Modal */}
+      {isEditDeckModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#111827] border border-white/10 rounded-3xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20">
+            <h2 className="text-2xl font-bold text-white mb-2">Chỉnh sửa bộ thẻ</h2>
+            <p className="text-gray-400 text-sm mb-6">Cập nhật tên, mô tả và ảnh bìa cho bộ flashcard của bạn.</p>
+
+            <form onSubmit={handleUpdateDeck} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Tên bộ thẻ *</label>
+                <input
+                  type="text"
+                  value={editDeckTitle}
+                  onChange={(e) => setEditDeckTitle(e.target.value)}
+                  placeholder="VD: Từ vựng IELTS chủ đề Environment"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Mô tả</label>
+                <textarea
+                  value={editDeckDesc}
+                  onChange={(e) => setEditDeckDesc(e.target.value)}
+                  placeholder="Ghi chú về bộ thẻ này..."
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 h-24 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Ảnh bìa (Link / URL)</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={editDeckThumbnailUrl}
+                    onChange={(e) => setEditDeckThumbnailUrl(e.target.value)}
+                    placeholder="VD: https://example.com/cover.jpg"
+                    className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  />
+                  <label className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-500/30 rounded-xl px-3 flex items-center justify-center transition-colors cursor-pointer flex-shrink-0" title="Tải ảnh lên">
+                    {isUploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                      disabled={isUploadingImage}
+                    />
+                  </label>
+                  {editDeckThumbnailUrl && (
+                    <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/20 flex-shrink-0 bg-black/50">
+                      <img
+                        src={editDeckThumbnailUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => e.currentTarget.style.display = 'none'}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsEditDeckModalOpen(false)}
+                  className="flex-1 py-3 px-4 rounded-xl font-medium text-gray-300 bg-white/5 hover:bg-white/10 transition-colors"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdatingDeck || isUploadingImage}
+                  className="flex-1 py-3 px-4 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-colors shadow-lg shadow-blue-600/20 flex items-center justify-center"
+                >
+                  {isUpdatingDeck ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Lưu thay đổi'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

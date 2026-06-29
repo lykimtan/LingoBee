@@ -10,6 +10,8 @@ import { CourseShellSidebar } from "@/components/admin/courses/create/CourseShel
 import { AdminCourseItem } from "@/types";
 import { courseService } from "@/services/courseService";
 import Link from "next/link";
+import { CourseStatistics } from "./CourseStatistics";
+import { CourseDetailDrawer } from "./CourseDetailDrawer";
 
 
 
@@ -25,6 +27,7 @@ export function CoursesManager() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [courses, setCourses] = useState<AdminCourseItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,18 +36,19 @@ export function CoursesManager() {
   const activeTab = useMemo<CourseTab>(() => {
     const tabParam = searchParams.get("tab");
     if (
+      tabParam === "statistical" ||
       tabParam === "list" ||
       tabParam === "create" ||
       tabParam === "status" ||
       tabParam === "settings"
     ) {
-      return tabParam;
+      return tabParam as CourseTab;
     }
     return "list";
   }, [searchParams]);
 
   useEffect(() => {
-    if (activeTab !== "list") {
+    if (activeTab !== "list" && activeTab !== "statistical") {
       return;
     }
 
@@ -115,6 +119,10 @@ export function CoursesManager() {
             transition={{ duration: 0.3 }}
             className="h-full"
           >
+            {activeTab === "statistical" && (
+              <CourseStatistics courses={courses} isLoading={isLoading} onSelectCourse={(id) => setSelectedCourseId(id)} />
+            )}
+
             {activeTab === "list" && (
               <div className="flex h-full flex-col gap-6">
                 <div className="flex flex-col gap-6 mb-2">
@@ -199,10 +207,10 @@ export function CoursesManager() {
                           };
 
                       return (
-                        <Link
-                          href={`/admin/courses/${course.slug}/preview`}
+                        <div
+                          onClick={() => course._id && setSelectedCourseId(course._id)}
                           key={course._id}
-                          className="group relative flex aspect-[3/4] flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-white/5 text-white/90 shadow-sm"
+                          className="group relative flex aspect-[3/4] flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-white/5 text-white/90 shadow-sm cursor-pointer"
                           style={backgroundStyle}
                         >
                           <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={backgroundStyle} />
@@ -235,7 +243,7 @@ export function CoursesManager() {
                               {course.slug && <p>Slug: {course.slug}</p>}
                             </div>
                           </div>
-                        </Link>
+                        </div>
                       );
                     })}
                   </div>
@@ -274,6 +282,11 @@ export function CoursesManager() {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      <CourseDetailDrawer
+        courseId={selectedCourseId}
+        onClose={() => setSelectedCourseId(null)}
+      />
     </div>
   );
 }

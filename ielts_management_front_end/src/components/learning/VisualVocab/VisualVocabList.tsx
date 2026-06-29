@@ -95,7 +95,7 @@ export default function VisualVocabList({
             </div>
             {vocab.synonyms && vocab.synonyms.length > 0 && (
               <div className="flex flex-wrap gap-2 items-center">
-                <span className="text-xs text-purple-400 font-semibold uppercase tracking-wider">Từ đồng nghĩa (IELTS 7.0+):</span>
+                <span className="text-xs text-purple-400 font-semibold uppercase tracking-wider">Từ đồng nghĩa ở level cao hơn:</span>
                 {vocab.synonyms.map((synonym, sIdx) => (
                   <span key={sIdx} className="px-2 py-1 text-xs font-medium bg-gradient-to-r from-purple-500/10 to-pink-500/10 text-pink-300 border border-purple-500/30 rounded-md">
                     {synonym}

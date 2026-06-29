@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, PlusCircle, Activity, Settings, ChevronLeft, ChevronRight } from "lucide-react";
+import { BookOpen, PlusCircle, Activity, Settings, ChevronLeft, ChevronRight, ChartPie } from "lucide-react";
 import clsx from "clsx";
 
-export type CourseTab = "list" | "create" | "status" | "settings";
+export type CourseTab = "statistical" | "list" | "create" | "status" | "settings";
 
 interface CourseSideNavProps {
   activeTab: CourseTab;
@@ -15,10 +15,10 @@ interface CourseSideNavProps {
 }
 
 const navItems = [
+  { id: "statistical", label: "Thống kê", icon: ChartPie, href: undefined },
   { id: "list", label: "Danh sách khóa học", icon: BookOpen, href: "/admin/courses" },
   { id: "create", label: "Tạo khóa học mới", icon: PlusCircle, href: undefined },
   { id: "status", label: "Quản lý trạng thái", icon: Activity, href: undefined },
-  { id: "settings", label: "Cài đặt chung", icon: Settings, href: undefined },
 ] as const;
 
 export function CourseSideNav({

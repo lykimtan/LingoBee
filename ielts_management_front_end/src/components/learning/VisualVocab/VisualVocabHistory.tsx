@@ -144,7 +144,7 @@ export default function VisualVocabHistory({ onSelectHistory, refreshTrigger = 0
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
-                Load More
+                Tải thêm
                 <ChevronDown className="w-4 h-4" />
               </>
             )}

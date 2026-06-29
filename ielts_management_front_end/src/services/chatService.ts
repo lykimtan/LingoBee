@@ -2,8 +2,10 @@ import { DefaultChatTransport } from 'ai';
 import { API_BASE_URL } from '@/constants';
 
 export const getChatTransport = () => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.USER_TOKEN) : null;
   return new DefaultChatTransport({
-    api: `${API_BASE_URL}/api/chat`
+    api: `${API_BASE_URL}/api/chat`,
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
 };
 

@@ -21,6 +21,7 @@ const {
   getCurrentUser,
   updateProfile,
   changePassword,
+  verifyPassword,
 } = require('../controllers/authController');
 
 const router = express.Router();
@@ -103,5 +104,11 @@ router.post('/change-password', authMiddleware, changePassword);
  * Logout user and clear cookies
  */
 router.post('/logout', authMiddleware, logout);
+
+/**
+ * POST /api/auth/verify-password
+ * Verify admin/user password for sensitive actions
+ */
+router.post('/verify-password', authMiddleware, verifyPassword);
 
 module.exports = router;

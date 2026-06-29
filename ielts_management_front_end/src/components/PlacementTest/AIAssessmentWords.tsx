@@ -23,7 +23,7 @@ export function AIAssessmentWords({ words }: AIAssessmentWordsProps) {
             <span 
               key={wIdx} 
               className={`px-2 py-1 rounded text-xs border ${colorClass}`} 
-              title={`Độ chính xác: ${wordObj.accuracyScore || 0}%${wordObj.errorType && wordObj.errorType !== 'None' ? ` - Lỗi: ${wordObj.errorType}` : ''}`}
+              title={`Độ chính xác: ${Math.round(wordObj.accuracyScore || 0)}%${wordObj.errorType && wordObj.errorType !== 'None' ? ` - Lỗi: ${wordObj.errorType}` : ''}`}
             >
               {wordObj.word}
             </span>

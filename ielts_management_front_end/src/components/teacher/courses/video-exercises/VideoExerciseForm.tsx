@@ -564,7 +564,7 @@ function SpeakingEditor({
             disabled={disabled}
             className="inline-flex items-center justify-center rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Tai len
+            Tải lên
           </button>
         </div>
       </div>

@@ -50,6 +50,7 @@ router.get('/my', authMiddleware, isTeacher, courseController.getMyTeachingCours
 router.get('/my/:slug', authMiddleware, isTeacher, courseController.getMyTeachingCourseBySlug);
 router.get('/', authMiddleware, isAdmin, courseController.getAllCourses);
 router.get('/slug/:slug', authMiddleware, isAdmin, courseController.getAdminCourseBySlug);
+router.get('/:id/admin-stats', authMiddleware, isAdmin, courseController.getCourseAdminStats);
 router.get('/:id', authMiddleware, isAdmin, courseController.getCourseById);
 router.get('/:id/students', authMiddleware, isTeacher, courseController.getCourseStudents);
 router.put(

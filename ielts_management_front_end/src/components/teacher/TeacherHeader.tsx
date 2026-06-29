@@ -167,8 +167,8 @@ export function TeacherHeader() {
       className={`sticky top-0 z-30 flex w-full items-center justify-between px-6 py-4 shadow-sm backdrop-blur-md transition-transform duration-300 ${isHeaderVisible ? "translate-y-0" : "-translate-y-full"}`}
     >
       {/* Logo */}
-      <div className="flex items-center">
-        <div className="flex h-12 items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-6 shadow-sm">
+      <div className="flex items-center cursor-pointer" onClick={() => router.push("/teacher")}>
+        <div className="flex h-12 items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-6 shadow-sm hover:border-[#ffb800]/50 transition-colors">
           <Image src="/Bee.gif" alt="LingoBee logo" width={28} height={28} className="object-contain" />
           <span className="text-xl font-medium tracking-tight text-gray-900">
             Lingo<span className="font-bold text-[#ffb800]">Bee</span>

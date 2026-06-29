@@ -74,7 +74,7 @@ export default function ChatWidget() {
   }, [messages]);
 
   // Kiểm tra xem trang hiện tại có được phép hiển thị ChatWidget không
-  const isAllowedPage = pathname === '/' || pathname?.startsWith('/courses');
+  const isAllowedPage = pathname === '/' || pathname?.startsWith('/courses') || pathname?.startsWith('/placement-test');
 
   if (!isAllowedPage) {
     return null;

@@ -224,7 +224,7 @@ export function PlacementQuestionModal({
                   value={questionType}
                   onChange={(e) => setQuestionType(e.target.value as PlacementQuestionType)}
                   disabled={!!initialData} // Cannot change type after creation
-                  className="w-full rounded-xl border border-gray-200 px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white disabled:bg-gray-50"
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white disabled:bg-gray-50"
                 >
                   <option value="multipleChoice">Trắc nghiệm nhiều lựa chọn</option>
                   <option value="listeningChoice">Listening (Nghe & Chọn)</option>
@@ -237,7 +237,7 @@ export function PlacementQuestionModal({
                 <select
                   value={difficulty}
                   onChange={(e) => setDifficulty(e.target.value as PlacementDifficulty)}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
                 >
                   <option value="easy">Dễ</option>
                   <option value="medium">Trung bình</option>
@@ -252,7 +252,7 @@ export function PlacementQuestionModal({
                 value={questionText}
                 onChange={(e) => setQuestionText(e.target.value)}
                 rows={3}
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white resize-none"
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white resize-none"
                 placeholder="Nhập nội dung câu hỏi..."
               />
             </div>
@@ -293,7 +293,7 @@ export function PlacementQuestionModal({
                         value={option.text}
                         onChange={(e) => handleUpdateOption(option.id, e.target.value)}
                         placeholder={`Lựa chọn ${index + 1}`}
-                        className="flex-1 bg-transparent text-sm focus:outline-none"
+                        className="flex-1 bg-transparent text-sm text-gray-900 focus:outline-none"
                       />
                       <button
                         type="button"

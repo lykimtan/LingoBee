@@ -28,7 +28,7 @@ export function ActivityChartWidget() {
         </div>
 
         <div className="mt-8 flex h-32 items-end justify-between px-2 relative">
-           {/* Center dashed line */}
+          {/* Center dashed line */}
           <div className="absolute top-1/2 left-0 right-0 border-t border-dashed border-gray-200"></div>
 
           {chartData.map((d, i) => (
@@ -40,9 +40,8 @@ export function ActivityChartWidget() {
                   </div>
                 )}
                 <div
-                  className={`w-2 rounded-full ${
-                    d.active ? "bg-[#ffb800]" : "bg-gray-800"
-                  }`}
+                  className={`w-2 rounded-full ${d.active ? "bg-[#ffb800]" : "bg-gray-800"
+                    }`}
                   style={{ height: `${d.value}%` }}
                 />
               </div>
@@ -55,14 +54,14 @@ export function ActivityChartWidget() {
       {/* Active Sessions */}
       <div className="flex flex-col items-center justify-center rounded-[2rem] bg-white p-6 shadow-sm border border-gray-100">
         <div className="w-full flex items-start justify-between">
-           <h3 className="text-lg font-medium text-gray-900">Active Sessions</h3>
-           <button className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50">
+          <h3 className="text-lg font-medium text-gray-900">Tổng khóa học đã xuất bản</h3>
+          <button className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50">
             <ArrowUpRight className="h-4 w-4 text-gray-600" />
           </button>
         </div>
-        
+
         <div className="relative mt-4 flex h-40 w-40 items-center justify-center">
-           {/* Circular dashed border */}
+          {/* Circular dashed border */}
           <svg className="absolute inset-0 h-full w-full rotate-[-90deg]">
             <circle
               cx="80"

@@ -8,8 +8,9 @@ const {
   deleteComment,
   toggleLike,
   getCommentsByCourseVideos,
-  getMyReviewStatus,
-  submitCourseAndTeacherReview
+  submitCourseAndTeacherReview,
+  toggleHideComment,
+  getMyReviewStatus
 } = require('../controllers/commentController');
 
 const router = express.Router();
@@ -43,5 +44,8 @@ router.delete('/:id', authMiddleware, deleteComment);
 
 // Thả tim / Bỏ thả tim bình luận
 router.post('/:id/like', authMiddleware, toggleLike);
+
+// Ẩn / Hiện bình luận (Admin / Teacher)
+router.patch('/:id/toggle-hide', authMiddleware, toggleHideComment);
 
 module.exports = router;

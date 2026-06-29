@@ -173,6 +173,25 @@ const buildEmailContent = (template, variables = {}) => {
         `,
       };
     }
+    case 'teacher_upgrade': {
+      const name = variables.name || 'bạn';
+      const actionUrl = variables.actionUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/teacher`;
+      return {
+        text: `Chúc mừng ${name}, tài khoản của bạn đã được nâng cấp thành Giảng viên chính thức tại Trung tâm! Vui lòng truy cập Teacher Dashboard: ${actionUrl}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9f9f9;">
+            <h2 style="color: #1c7c78;">🎓 Chúc mừng bạn đã trở thành Giảng viên!</h2>
+            <p>Xin chào <strong>${name}</strong>,</p>
+            <p>Ban quản trị hệ thống vừa chính thức thăng cấp tài khoản học viên của bạn thành <strong>Giảng viên (Teacher)</strong>.</p>
+            <p>Từ bây giờ, bạn có quyền truy cập vào Cổng Giảng viên để tạo khóa học mới, biên soạn bài giảng và quản lý ngân hàng đề thi kiểm tra năng lực.</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${actionUrl}" style="display:inline-block;padding:12px 24px;background-color:#1c7c78;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;font-size:16px;">Truy cập Cổng Giảng viên</a>
+            </div>
+            <p style="color: #666; font-size: 13px;">Trân trọng,<br>Trung tâm Anh ngữ IELTS LingoBee</p>
+          </div>
+        `,
+      };
+    }
     case 'course_invitation': {
       const name = variables.name || 'bạn';
       const courseName = variables.courseName || 'Khóa học';
@@ -189,6 +208,39 @@ const buildEmailContent = (template, variables = {}) => {
         `,
       };
     }
+    case 'discount_promo': {
+      const name = variables.name || 'Học viên';
+      const code = variables.code || 'CODE';
+      const discountText = variables.discountText || 'Ưu đãi học phí';
+      const description = variables.description || 'Ưu đãi đặc biệt dành riêng cho bạn.';
+      const validTo = variables.validTo || '';
+      const actionUrl = variables.actionUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/courses`;
+      return {
+        text: `Xin chào ${name}, tặng bạn mã ưu đãi ${code} (${discountText}). ${description}. Hạn dùng: ${validTo}. Truy cập ngay: ${actionUrl}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h2 style="color: #0f766e; margin: 0; font-size: 24px;">🎁 Quà Tặng Ưu Đãi Đặc Biệt!</h2>
+            </div>
+            <p style="color: #334155; font-size: 15px;">Xin chào <strong>${name}</strong>,</p>
+            <p style="color: #475569; font-size: 14px; line-height: 1.6;">Trung tâm xin gửi tặng riêng bạn mã khuyến mãi học phí để đồng hành cùng bạn trên chặng đường chinh phục IELTS:</p>
+            <div style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); padding: 24px; text-align: center; border-radius: 12px; margin: 24px 0; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+              <p style="margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Mã khuyến mãi của bạn</p>
+              <h1 style="margin: 10px 0; font-size: 32px; font-family: monospace; letter-spacing: 3px; color: #facc15; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">${code}</h1>
+              <div style="display: inline-block; background-color: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-top: 4px;">
+                ${discountText}
+              </div>
+              ${description ? `<p style="margin: 12px 0 0 0; font-size: 13px; opacity: 0.9;">${description}</p>` : ''}
+              ${validTo ? `<p style="margin: 8px 0 0 0; font-size: 12px; color: #fef08a;">⏰ Hạn sử dụng: <strong>${validTo}</strong></p>` : ''}
+            </div>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${actionUrl}" style="display:inline-block;padding:14px 28px;background-color:#0f766e;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:bold;font-size:16px;box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.3);">Chọn Khóa Học Ngay</a>
+            </div>
+            <p style="color: #64748b; font-size: 13px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 24px;">Trân trọng,<br><strong>Hệ thống Đào tạo IELTS LingoBee</strong></p>
+          </div>
+        `
+      };
+    }
     default:
       return {
         text: variables.message || 'Bạn có một thông báo mới.',
@@ -197,47 +249,56 @@ const buildEmailContent = (template, variables = {}) => {
   }
 };
 
-// Send Email via SendGrid API
+// Send Email via Email Service (Resend or SendGrid)
 const sendEmail = async (email, subject, template, variables) => {
   try {
-    const senderEmail = process.env.SENDER_EMAIL || 'noreply@example.com';
+    const senderEmail = process.env.SENDER_EMAIL || 'LingoBee IELTS <onboarding@resend.dev>';
     const emailServiceUrl =
-      process.env.EMAIL_SERVICE_URL || 'https://api.sendgrid.com/v3/mail/send';
+      process.env.EMAIL_SERVICE_URL || 'https://api.resend.com/emails';
     const { text, html } = buildEmailContent(template, variables);
 
-    const response = await apiClient.post(
-      emailServiceUrl,
-      {
-        personalizations: [
-          {
-            to: [{ email }],
-            subject,
+    const apiKey = process.env.EMAIL_SERVICE_KEY || '';
+    const isResend = emailServiceUrl.includes('resend') || apiKey.startsWith('re_');
+
+    const payload = isResend
+      ? {
+          from: senderEmail,
+          to: [email],
+          subject: subject,
+          html: html,
+          text: text,
+        }
+      : {
+          personalizations: [
+            {
+              to: [{ email }],
+              subject,
+            },
+          ],
+          from: {
+            email: senderEmail,
           },
-        ],
-        from: {
-          email: senderEmail,
-        },
-        content: [
-          {
-            type: 'text/plain',
-            value: text,
-          },
-          {
-            type: 'text/html',
-            value: html,
-          },
-        ],
+          content: [
+            {
+              type: 'text/plain',
+              value: text,
+            },
+            {
+              type: 'text/html',
+              value: html,
+            },
+          ],
+        };
+
+    const response = await apiClient.post(emailServiceUrl, payload, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
       },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.EMAIL_SERVICE_KEY}`,
-        },
-      }
-    );
+    });
     return response.data || { status: response.status };
   } catch (error) {
-    const sendGridErrors = error.response?.data?.errors;
-    console.error('Failed to send email:', error.message, sendGridErrors || '');
+    const errorDetails = error.response?.data || error.message;
+    console.error('Failed to send email:', errorDetails);
     throw error;
   }
 };

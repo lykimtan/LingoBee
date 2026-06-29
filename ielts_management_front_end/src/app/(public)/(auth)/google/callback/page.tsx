@@ -46,7 +46,7 @@ const GoogleCallbackPage = () => {
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-black px-6 text-white">
       <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl">
-        <h1 className="text-2xl font-semibold">Signing you in...</h1>
+        <h1 className="text-2xl font-semibold">Bạn đang đăng nhập ....</h1>
         <p className="mt-2 text-sm text-gray-400">
           Please wait while we complete your Google login.
         </p>

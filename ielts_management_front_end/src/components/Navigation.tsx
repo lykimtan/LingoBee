@@ -9,7 +9,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useAuthContext } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { API_BASE_URL, STORAGE_KEYS } from "@/constants";
 import { notificationService } from "@/services/notificationService";
@@ -28,7 +28,17 @@ type NotificationItem = {
 
 export const Navigation = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, logout, isLoading } = useAuthContext();
+  const homeUrl = user?.role === 'admin' ? '/admin' : user?.role === 'teacher' ? '/teacher' : '/';
+
+  useEffect(() => {
+    if (pathname === "/" && user?.role === "admin") {
+      router.replace("/admin");
+    } else if (pathname === "/" && user?.role === "teacher") {
+      router.replace("/teacher");
+    }
+  }, [pathname, user?.role, router]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -171,7 +181,7 @@ export const Navigation = () => {
       }`}>
       <div className="flex flex-row justify-between items-center px-8 py-6 max-w-7xl mx-auto w-full">
         {/* Logo */}
-        <div onClick={() => router.push("/")} className="flex items-center gap-3 cursor-pointer">
+        <div onClick={() => router.push(homeUrl)} className="flex items-center gap-3 cursor-pointer">
           <Image
             src="/Bee.gif"
             alt="LingoBee"
@@ -189,7 +199,7 @@ export const Navigation = () => {
         {/* Nav Links - Hidden on mobile */}
         <div className="hidden md:flex flex-row gap-12 items-center">
           <Link
-            href="/"
+            href={homeUrl}
             className="inline-flex items-center gap-2 text-sm text-foreground transition-colors h-6"
             aria-label="Trang chủ"
           >

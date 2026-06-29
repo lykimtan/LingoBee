@@ -216,6 +216,16 @@ const updateVideoProgress = async (req, res, next) => {
             learningPath.overallProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
             
             await learningPath.save();
+
+            // Sync lại vào Student.enrolledCourses
+            const enrollmentIndex = student.enrolledCourses?.findIndex(c => c.courseId.toString() === video.courseId.toString());
+            if (enrollmentIndex !== -1 && enrollmentIndex !== undefined) {
+              student.enrolledCourses[enrollmentIndex].progress = learningPath.overallProgress;
+              if (learningPath.overallProgress >= 100) {
+                student.enrolledCourses[enrollmentIndex].status = 'completed';
+              }
+              await student.save();
+            }
           }
         }
       } catch (syncError) {

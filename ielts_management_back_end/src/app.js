@@ -93,6 +93,7 @@ app.use('/api/exercises', require('./routes/exerciseRoutes'));
 app.use('/api/feedbacks', require('./routes/feedbackRoutes'));
 // app.use('/api/mockTests', require('./routes/mockTestRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/discounts', require('./routes/discountRoutes'));
 app.use('/api/conversations', require('./routes/conversationRoutes'));
 // app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));

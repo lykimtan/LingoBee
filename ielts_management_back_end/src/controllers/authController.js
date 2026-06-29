@@ -211,7 +211,7 @@ const login = async (req, res) => {
     if (user.status !== 'active') {
       return res.status(403).json({
         success: false,
-        message: 'Your account is not active',
+        message: 'Tài khoản của bạn đã bị khóa',
       });
     }
 
@@ -390,7 +390,7 @@ const googleLogin = async (req, res) => {
     if (user.status !== 'active') {
       return res.status(403).json({
         success: false,
-        message: 'Your account is not active',
+        message: 'Tài khoản của bạn đã bị khóa',
       });
     }
 
@@ -670,7 +670,7 @@ const getCurrentUser = async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id;
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select('+password');
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -683,6 +683,7 @@ const getCurrentUser = async (req, res) => {
       data: {
         id: user._id,
         googleId: user.googleId,
+        hasPassword: !!user.password,
         email: user.email,
         name: user.name,
         role: user.role,
@@ -781,13 +782,21 @@ const changePassword = async (req, res) => {
       });
     }
 
-    // Verify current password
-    const isPasswordValid = await user.comparePassword(currentPassword);
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: 'Current password is incorrect',
-      });
+    // Verify current password if user already has a password
+    if (user.password) {
+      if (!currentPassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vui lòng nhập mật khẩu hiện tại',
+        });
+      }
+      const isPasswordValid = await user.comparePassword(currentPassword);
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          message: 'Mật khẩu hiện tại không chính xác',
+        });
+      }
     }
 
     // Update password
@@ -815,6 +824,57 @@ const changePassword = async (req, res) => {
   }
 };
 
+// ============================================
+// VERIFY PASSWORD (SENSITIVE ACTION)
+// ============================================
+const verifyPassword = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng nhập mật khẩu xác thực',
+      });
+    }
+
+    const user = await User.findById(userId).select('+password');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tài khoản của bạn chưa thiết lập mật khẩu. Vui lòng vào mục "Tài khoản của tôi" để tạo mật khẩu trước.',
+      });
+    }
+
+    const isValid = await user.comparePassword(password);
+    if (!isValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Mật khẩu xác thực không chính xác',
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Xác thực mật khẩu thành công',
+    });
+  } catch (error) {
+    logger.error(`Verify password error: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi xác thực mật khẩu',
+    });
+  }
+};
+
 module.exports = {
   register,
   verifyEmail,
@@ -827,5 +887,6 @@ module.exports = {
   getCurrentUser,
   updateProfile,
   changePassword,
+  verifyPassword,
   generateTokens,
 };

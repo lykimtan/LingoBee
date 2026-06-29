@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Volume2, Upload, Loader2 } from 'lucide-react';
+import { X, Volume2, Upload, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { dictionaryService, DictionaryMeaning } from '@/services/dictionaryService';
 import { uploadService } from '@/services/uploadService';
@@ -22,7 +22,7 @@ export default function FlashcardModal({ isOpen, onClose, mode, initialData, onS
   const [synonymsInput, setSynonymsInput] = useState('');
   const [phonetic, setPhonetic] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAutoFilling, setIsAutoFilling] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -204,23 +204,23 @@ export default function FlashcardModal({ isOpen, onClose, mode, initialData, onS
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Phiên âm IPA</label>
                 <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={phonetic}
-                      onChange={(e) => setPhonetic(e.target.value)}
-                      placeholder="VD: /prəˈkræstɪneɪt/"
-                      className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                    />
-                    {frontText && (
-                      <button
-                        type="button"
-                        onClick={() => playAudio(frontText)}
-                        className="bg-green-600/20 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl px-3 flex items-center justify-center transition-colors flex-shrink-0"
-                        title="Nghe phát âm"
-                      >
-                        <Volume2 className="w-5 h-5" />
-                      </button>
-                    )}
+                  <input
+                    type="text"
+                    value={phonetic}
+                    onChange={(e) => setPhonetic(e.target.value)}
+                    placeholder="VD: /prəˈkræstɪneɪt/"
+                    className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  />
+                  {frontText && (
+                    <button
+                      type="button"
+                      onClick={() => playAudio(frontText)}
+                      className="bg-green-600/20 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl px-3 flex items-center justify-center transition-colors flex-shrink-0"
+                      title="Nghe phát âm"
+                    >
+                      <Volume2 className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -301,26 +301,26 @@ export default function FlashcardModal({ isOpen, onClose, mode, initialData, onS
 
       {/* Dictionary Meaning Selection Modal */}
       {isMeaningModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 bg-black/70 backdrop-blur-md animate-fade-in">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 bg-blue/70 backdrop-blur-md animate-fade-in">
           <div className="bg-[#1A1D24] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl shadow-blue-900/20">
             <div className="p-6 border-b border-white/10 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-blue-400" /> Chọn nghĩa phù hợp
+                  Chọn nghĩa phù hợp
                 </h2>
                 <p className="text-gray-400 text-sm mt-1">Từ này có nhiều nghĩa, hãy chọn nghĩa đúng với ngữ cảnh của bạn nhất.</p>
               </div>
-              <button 
+              <button
                 onClick={() => setIsMeaningModalOpen(false)}
                 className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-white/5 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
               {dictionaryMeanings.map((meaning, index) => (
-                <div 
+                <div
                   key={index}
                   onClick={() => handleSelectMeaning(meaning)}
                   className="group bg-white/[0.03] hover:bg-blue-600/10 border border-white/5 hover:border-blue-500/30 rounded-xl p-4 cursor-pointer transition-all duration-200"
@@ -348,7 +348,7 @@ export default function FlashcardModal({ isOpen, onClose, mode, initialData, onS
                 </div>
               ))}
             </div>
-            
+
             <div className="p-4 border-t border-white/10 bg-white/[0.02]">
               <button
                 type="button"

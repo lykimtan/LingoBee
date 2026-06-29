@@ -26,22 +26,22 @@ export function AdminHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthContext();
-  
+
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notificationsError, setNotificationsError] = useState<string | null>(null);
-  
+
   const menuRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
   const navItems = [
     { label: "Dashboard", href: "/admin" },
-    { label: "Khóa học", href: "/admin/courses" },
+    { label: "Khóa học", href: "/admin/courses?tab=statistical" },
     { label: "Học viên", href: "/admin/students" },
     { label: "Giáo viên", href: "/admin/teachers" },
     { label: "Thanh toán", href: "/admin/payments" },
-    { label: "Lịch trình", href: "/admin/schedule" },
+    { label: "Tài khoản của tôi", href: "/admin/myAccount" },
   ];
 
   const isActive = (href: string) => {
@@ -78,7 +78,7 @@ export function AdminHeader() {
       typeof window === "undefined"
         ? null
         : localStorage.getItem(STORAGE_KEYS.USER_TOKEN) ||
-          sessionStorage.getItem(STORAGE_KEYS.USER_TOKEN);
+        sessionStorage.getItem(STORAGE_KEYS.USER_TOKEN);
 
     if (!storedToken || !user?.id) {
       return;
@@ -141,8 +141,8 @@ export function AdminHeader() {
   return (
     <header className="flex w-full items-center justify-between px-6 py-4">
       {/* Logo */}
-      <div className="flex items-center">
-        <div className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/10 bg-[#0a1a1c] px-6 shadow-sm">
+      <div className="flex items-center cursor-pointer" onClick={() => router.push("/admin")}>
+        <div className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/10 bg-[#0a1a1c] px-6 shadow-sm hover:border-[#ffb800]/50 transition-colors">
           <Image src="/Bee.gif" alt="LingoBee logo" width={28} height={28} className="object-contain" />
           <span className="text-xl font-medium tracking-tight text-white">
             Lingo<span className="font-bold text-[#ffb800]">Bee</span>
@@ -168,11 +168,6 @@ export function AdminHeader() {
 
       {/* Right Actions */}
       <div className="flex items-center gap-3">
-        <button className="flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium text-white/70 hover:bg-white/5">
-          <Settings className="h-4 w-4" />
-          Setting
-        </button>
-        
         <div className="relative z-50" ref={menuRef}>
           <button
             className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 shadow-sm hover:bg-white/10"
@@ -257,10 +252,10 @@ export function AdminHeader() {
           )}
         </div>
 
-        <button
+        <Link
+          href="/admin/myAccount"
           className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/5 shadow-sm hover:bg-white/10"
           aria-label="User profile"
-          type="button"
         >
           {user?.avatar ? (
             <Image
@@ -268,12 +263,12 @@ export function AdminHeader() {
               alt={user.name || "User avatar"}
               width={40}
               height={40}
-              className="h-full w-full object-cover"
+              className=" object-cover"
             />
           ) : (
             <User className="h-4 w-4 text-white/70" />
           )}
-        </button>
+        </Link>
         <button
           className="flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium text-white/70 hover:bg-white/5"
           onClick={handleLogout}

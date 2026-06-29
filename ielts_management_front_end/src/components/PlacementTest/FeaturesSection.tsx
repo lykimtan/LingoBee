@@ -16,7 +16,7 @@ export default function FeaturesSection() {
             title: 'Tích hợp AI chấm Speaking',
             description: 'Đánh giá phát âm, ngữ điệu và độ trôi chảy ngay lập tức mà không cần đợi giáo viên chấm.',
             // Thay đổi đường dẫn src thành đường dẫn ảnh thực tế của bạn
-            icon: <Image src="/placementTest/AI.gif" alt="AI Speaking" width={40} height={40} className="object-contain" />,
+            icon: <Image src="/placementTest/AI.gif" alt="AI Speaking" width={40} height={40} unoptimized className="object-contain" />,
         },
         {
             id: 3,
@@ -31,10 +31,8 @@ export default function FeaturesSection() {
         <section className="flex justify-center font-sans">
             <div className="w-full bg-[#EBF4FF]/70 backdrop-blur-md border border-white/60 shadow-sm  p-6 md:p-10 flex flex-col md:flex-row gap-8">
 
-                {/* Cột trái: Khu vực Hình ảnh minh họa */}
-                <Image src="/FeatureSection.webp" alt="Placement Test Features" width={500} height={500} />
+                <Image src="/FeatureSection.webp" alt="Placement Test Features" width={500} height={500} loading="eager" />
 
-                {/* Cột phải: Card danh sách tính năng */}
                 <div className="md:w-1/2 bg-white rounded-3xl p-6 md:p-10 shadow-sm">
                     <div className="flex flex-col h-full justify-between space-y-6">
 

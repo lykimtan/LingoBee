@@ -1,14 +1,32 @@
+"use client";
+
+import React from "react";
 import { ArrowUpRight, Play, Pause, Clock } from "lucide-react";
 
-export function ActivityChartWidget() {
-  const chartData = [
-    { day: "M", value: 30 },
-    { day: "T", value: 45 },
-    { day: "W", value: 20 },
-    { day: "T", value: 60 },
-    { day: "F", value: 80, active: true },
-    { day: "S", value: 10 },
-  ];
+interface ActivityChartWidgetProps {
+  stats?: {
+    activityChart: { day: string; value: number; count: number; active?: boolean }[];
+    totalEnrollmentsThisWeek: number;
+    activeSessions: number;
+  };
+}
+
+export function ActivityChartWidget({ stats: propStats }: ActivityChartWidgetProps) {
+  const defaultStats: NonNullable<ActivityChartWidgetProps["stats"]> = {
+    activityChart: [
+      { day: "M", value: 8, count: 0 },
+      { day: "T", value: 8, count: 0 },
+      { day: "W", value: 8, count: 0 },
+      { day: "T", value: 8, count: 0 },
+      { day: "F", value: 8, count: 0 },
+      { day: "S", value: 8, count: 0 },
+      { day: "S", value: 8, count: 0 },
+    ],
+    totalEnrollmentsThisWeek: 0,
+    activeSessions: 0,
+  };
+
+  const stats = propStats && propStats.activityChart ? propStats : defaultStats;
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -16,10 +34,10 @@ export function ActivityChartWidget() {
       <div className="flex flex-col justify-between rounded-[2rem] bg-[#0a1a1c] p-6 shadow-sm border border-white/10">
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-lg font-medium text-white">Enrollments</h3>
+            <h3 className="text-lg font-medium text-white">Số lượt đăng ký khóa học trong tuần</h3>
             <div className="mt-2 flex items-end gap-2">
-              <span className="text-3xl font-light text-white">24</span>
-              <span className="mb-1 text-xs text-white/50">Students this week</span>
+              <span className="text-3xl font-light text-white">{stats.totalEnrollmentsThisWeek}</span>
+              <span className="mb-1 text-xs text-white/50">Học viên trong tuần</span>
             </div>
           </div>
           <button className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 hover:bg-white/10 hover:text-white">
@@ -28,22 +46,22 @@ export function ActivityChartWidget() {
         </div>
 
         <div className="mt-8 flex h-32 items-end justify-between px-2 relative">
-           {/* Center dashed line */}
+          {/* Center dashed line */}
           <div className="absolute top-1/2 left-0 right-0 border-t border-dashed border-white/10"></div>
 
-          {chartData.map((d, i) => (
+          {stats.activityChart.map((d, i) => (
             <div key={i} className="flex flex-col items-center gap-2 z-10">
               <div className="relative flex w-2 justify-center">
                 {d.active && (
                   <div className="absolute -top-8 rounded-full bg-[#ffb800] px-2 py-1 text-[10px] font-medium text-black whitespace-nowrap">
-                    24 Enrolls
+                    {d.count} Enrolls
                   </div>
                 )}
                 <div
-                  className={`w-2 rounded-full ${
-                    d.active ? "bg-[#ffb800]" : "bg-white/20"
-                  }`}
+                  className={`w-2 rounded-full ${d.active ? "bg-[#ffb800]" : "bg-white/20"
+                    }`}
                   style={{ height: `${d.value}%` }}
+                  title={`${d.count} lượt đăng ký`}
                 />
               </div>
               <span className="text-[10px] text-white/40">{d.day}</span>
@@ -55,14 +73,14 @@ export function ActivityChartWidget() {
       {/* Active Sessions */}
       <div className="flex flex-col items-center justify-center rounded-[2rem] bg-[#0a1a1c] p-6 shadow-sm border border-white/10">
         <div className="w-full flex items-start justify-between">
-           <h3 className="text-lg font-medium text-white">Active Sessions</h3>
-           <button className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 hover:bg-white/10 hover:text-white">
+          <h3 className="text-lg font-medium text-white">Khóa học đang hoạt động</h3>
+          <button className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 hover:bg-white/10 hover:text-white">
             <ArrowUpRight className="h-4 w-4" />
           </button>
         </div>
-        
+
         <div className="relative mt-4 flex h-40 w-40 items-center justify-center">
-           {/* Circular dashed border */}
+          {/* Circular dashed border */}
           <svg className="absolute inset-0 h-full w-full rotate-[-90deg]">
             <circle
               cx="80"
@@ -85,23 +103,9 @@ export function ActivityChartWidget() {
             />
           </svg>
           <div className="text-center">
-            <div className="text-3xl font-light text-white">12:35</div>
-            <div className="text-[10px] text-white/50">Live Classes</div>
+            <div className="text-3xl font-light text-white">{stats.activeSessions}</div>
+            <div className="text-[10px] text-white/50">Đang mở cho học viên</div>
           </div>
-        </div>
-
-        <div className="mt-4 flex w-full justify-between items-center px-4">
-          <div className="flex gap-2">
-            <button className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/70 hover:bg-white/10 hover:text-white">
-              <Play className="h-4 w-4" />
-            </button>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/70 hover:bg-white/10 hover:text-white">
-              <Pause className="h-4 w-4" />
-            </button>
-          </div>
-          <button className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1f6f5e] text-white hover:bg-[#175649] shadow-lg shadow-[#1f6f5e]/40">
-            <Clock className="h-4 w-4" />
-          </button>
         </div>
       </div>
     </div>

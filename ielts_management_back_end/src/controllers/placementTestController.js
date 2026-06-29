@@ -8,30 +8,44 @@ const logger = require('../utils/logger');
  */
 const startTest = async (req, res, next) => {
   try {
-    // Check if the user already has an in_progress test
-    const existingTest = await PlacementTest.findOne({
+    // Luôn xóa bỏ các bài test cũ đang làm dở để học viên làm lại đề mới từ đầu
+    await PlacementTest.deleteMany({
       studentId: req.user._id,
       status: 'in_progress',
     });
 
-    if (existingTest) {
-      return res.status(200).json({
-        success: true,
-        message: 'Bắt đầu làm bài test',
-        data: existingTest,
-      });
-    }
-
-    // Fetch 15 random active questions
+    // Fetch 15 random active questions: 8 multipleChoice, 6 listeningChoice, 1 speaking
     const questions = await PlacementQuestion.aggregate([
       { $match: { isActive: true } },
-      { $sample: { size: 15 } },
+      {
+        $facet: { //facet cho phép chạy nhiều luồng song song trên 1 tập dữ liệu
+          multipleChoice: [
+            { $match: { questionType: 'multipleChoice' } },
+            { $sample: { size: 8 } }
+          ],
+          listeningChoice: [
+            { $match: { questionType: 'listeningChoice' } },
+            { $sample: { size: 6 } }
+          ],
+          speaking: [
+            { $match: { questionType: 'speaking' } },
+            { $sample: { size: 1 } }
+          ]
+        }
+      },
+      {
+        $project: {
+          allQuestions: { $concatArrays: ["$multipleChoice", "$listeningChoice", "$speaking"] }
+        }
+      },
+      { $unwind: "$allQuestions" },
+      { $replaceRoot: { newRoot: "$allQuestions" } }//định nghĩa lại cấu trúc dữ liệu đầu ra
     ]);
 
     if (questions.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Không có câu hỏi nào trong ngân hàng đề. Vui lòng liên hệ giáo viên.',
+        message: 'Không đủ tài nguyên câu hỏi để có thể tạo ra một đề kiểm tra năng lực.',
       });
     }
 
@@ -232,9 +246,9 @@ const gradeSpeakingWithAI = async (req, res, next) => {
         try {
           const aiResult = await azureSpeechService.assessPronunciation(ans.audioSubmissionUrl);
           ans.aiAssessment = aiResult;
-          
+
           // Basic logic for IELTS/CEFR speaking map - could be customized
-          ans.score = aiResult.pronunciationScore > 60 ? 1 : 0; 
+          ans.score = aiResult.pronunciationScore > 60 ? 1 : 0;
 
           assessedCount++;
         } catch (err) {
@@ -247,7 +261,7 @@ const gradeSpeakingWithAI = async (req, res, next) => {
       // Recalculate total score
       let newTotal = 0;
       for (const ans of test.answers) {
-         newTotal += ans.score || 0;
+        newTotal += ans.score || 0;
       }
       test.totalScore = newTotal;
       await test.save();
