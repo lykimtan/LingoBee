@@ -124,12 +124,8 @@ exports.createPaymentUrl = async (req, res) => {
     // 1. Tìm hoặc tạo Student profile cho User này
     let student = await Student.findOne({ userId });
     if (!student) {
-      if (req.user.role === 'student') {
-        student = new Student({ userId });
-        await student.save();
-      } else {
-        return res.status(403).json({ success: false, message: 'Chỉ học viên mới có thể mua khóa học' });
-      }
+      student = new Student({ userId });
+      await student.save();
     }
 
     // 2. Tìm Course
@@ -413,6 +409,8 @@ exports.getAdminPayments = async (req, res) => {
  */
 exports.getAdminRevenueStats = async (req, res) => {
   try {
+    const { chartDays = '30', courseDays = 'all' } = req.query;
+
     const completedPayments = await Payment.find({ paymentStatus: 'completed' })
       .populate('courseId', 'title slug');
 
@@ -420,9 +418,23 @@ exports.getAdminRevenueStats = async (req, res) => {
     const totalTransactions = completedPayments.length;
     const averageOrderValue = totalTransactions > 0 ? Math.round(totalRevenue / totalTransactions) : 0;
 
-    // Revenue by course breakdown
+    // Revenue by course breakdown with courseDays filter
+    let courseFilteredPayments = completedPayments;
+    if (courseDays !== 'all') {
+      const cDays = parseInt(courseDays);
+      if (!isNaN(cDays) && cDays > 0) {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - (cDays - 1));
+        cutoff.setHours(0, 0, 0, 0);
+        courseFilteredPayments = completedPayments.filter(pm => {
+          const d = pm.paymentDate ? new Date(pm.paymentDate) : new Date(pm.createdAt);
+          return d >= cutoff;
+        });
+      }
+    }
+
     const courseRevenueMap = {};
-    completedPayments.forEach(pm => {
+    courseFilteredPayments.forEach(pm => {
       const c = pm.courseId;
       const cName = c ? c.title : 'Khóa học đã xóa';
       const amt = pm.finalAmount || pm.totalAmount || 0;
@@ -434,22 +446,99 @@ exports.getAdminRevenueStats = async (req, res) => {
     });
     const revenueByCourse = Object.values(courseRevenueMap).sort((a, b) => b.revenue - a.revenue);
 
-    // Revenue chart 30 days
+    // Dynamic Chart Computation based on chartDays
+    let revenueChart = [];
+    let revenueChartTotal = 0;
+
+    if (chartDays === 'all' || chartDays === '365' || parseInt(chartDays) > 90) {
+      const monthMap = {};
+      const now = new Date();
+      
+      let startDate = new Date();
+      if (chartDays === 'all') {
+        if (completedPayments.length > 0) {
+          const earliest = completedPayments.reduce((min, pm) => {
+            const d = pm.paymentDate ? new Date(pm.paymentDate) : new Date(pm.createdAt);
+            return d < min ? d : min;
+          }, new Date());
+          startDate = new Date(earliest.getFullYear(), earliest.getMonth(), 1);
+        } else {
+          startDate.setMonth(startDate.getMonth() - 11);
+          startDate.setDate(1);
+        }
+      } else {
+        startDate.setMonth(startDate.getMonth() - 11);
+        startDate.setDate(1);
+      }
+      startDate.setHours(0, 0, 0, 0);
+
+      let curr = new Date(startDate);
+      while (curr <= now || (curr.getMonth() === now.getMonth() && curr.getFullYear() === now.getFullYear())) {
+        const key = `T${curr.getMonth() + 1}/${curr.getFullYear().toString().slice(-2)}`;
+        monthMap[key] = 0;
+        curr.setMonth(curr.getMonth() + 1);
+      }
+
+      completedPayments.forEach(pm => {
+        const d = pm.paymentDate ? new Date(pm.paymentDate) : new Date(pm.createdAt);
+        if (d >= startDate) {
+          const amt = pm.finalAmount || pm.totalAmount || 0;
+          revenueChartTotal += amt;
+          const key = `T${d.getMonth() + 1}/${d.getFullYear().toString().slice(-2)}`;
+          if (monthMap[key] !== undefined) {
+            monthMap[key] += amt;
+          } else {
+            monthMap[key] = amt;
+          }
+        }
+      });
+
+      revenueChart = Object.keys(monthMap).map(date => ({
+        date,
+        amount: monthMap[date]
+      }));
+    } else {
+      const numDays = parseInt(chartDays) || 30;
+      const dayMap = {};
+      for (let i = numDays - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const key = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+        dayMap[key] = 0;
+      }
+
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - (numDays - 1));
+      cutoffDate.setHours(0, 0, 0, 0);
+
+      completedPayments.forEach(pm => {
+        const d = pm.paymentDate ? new Date(pm.paymentDate) : new Date(pm.createdAt);
+        if (d >= cutoffDate) {
+          const amt = pm.finalAmount || pm.totalAmount || 0;
+          revenueChartTotal += amt;
+          const key = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+          if (dayMap[key] !== undefined) dayMap[key] += amt;
+        }
+      });
+
+      revenueChart = Object.keys(dayMap).map(date => ({
+        date,
+        amount: dayMap[date]
+      }));
+    }
+
+    // Keep legacy 30 days calculations for compatibility
     const revenue30DaysMap = {};
-    const revenue7DaysMap = {};
     for (let i = 29; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const key = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
       revenue30DaysMap[key] = 0;
-      if (i <= 6) revenue7DaysMap[key] = 0;
     }
-
     let revenue30DaysTotal = 0;
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
     thirtyDaysAgo.setHours(0, 0, 0, 0);
-
     completedPayments.forEach(pm => {
       const d = pm.paymentDate ? new Date(pm.paymentDate) : new Date(pm.createdAt);
       if (d >= thirtyDaysAgo) {
@@ -457,18 +546,11 @@ exports.getAdminRevenueStats = async (req, res) => {
         revenue30DaysTotal += amt;
         const key = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
         if (revenue30DaysMap[key] !== undefined) revenue30DaysMap[key] += amt;
-        if (revenue7DaysMap[key] !== undefined) revenue7DaysMap[key] += amt;
       }
     });
-
     const revenue30DaysChart = Object.keys(revenue30DaysMap).map(date => ({
       date,
       amount: revenue30DaysMap[date]
-    }));
-
-    const revenueWeeklyChart = Object.keys(revenue7DaysMap).map(date => ({
-      date,
-      amount: revenue7DaysMap[date]
     }));
 
     res.status(200).json({
@@ -477,9 +559,10 @@ exports.getAdminRevenueStats = async (req, res) => {
         totalRevenue,
         totalTransactions,
         averageOrderValue,
+        revenueChartTotal,
+        revenueChart,
         revenue30DaysTotal,
         revenue30DaysChart,
-        revenueWeeklyChart,
         revenueByCourse
       }
     });

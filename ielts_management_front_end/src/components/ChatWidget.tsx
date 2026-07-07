@@ -73,8 +73,9 @@ export default function ChatWidget() {
     }
   }, [messages]);
 
-  // Kiểm tra xem trang hiện tại có được phép hiển thị ChatWidget không
-  const isAllowedPage = pathname === '/' || pathname?.startsWith('/courses') || pathname?.startsWith('/placement-test');
+  // Kiểm tra xem trang hiện tại có được phép hiển thị ChatWidget không (Ẩn khi đang làm bài thi /take)
+  const isTakingTest = pathname?.includes('/take');
+  const isAllowedPage = (pathname === '/' || pathname?.startsWith('/courses') || pathname?.startsWith('/placement-test')) && !isTakingTest;
 
   if (!isAllowedPage) {
     return null;

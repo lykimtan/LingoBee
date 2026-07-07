@@ -32,11 +32,10 @@ export const LearningChatDrawer: React.FC<LearningChatDrawerProps> = ({ isOpen, 
         const res = await conversationService.getCourseConversations(courseId);
         if (res.status === 'success' && res.data) {
           setConversations(res.data);
-
-          // Mặc định chọn group
-          const groupConv = res.data.find(c => c.type === 'group');
-          if (groupConv) {
-            setSelectedConversation(groupConv);
+          const targetType = activeTab === 'groups' ? 'group' : 'private';
+          const targetConv = res.data.find(c => c.type === targetType) || res.data[0];
+          if (targetConv) {
+            setSelectedConversation(targetConv);
           }
         }
       } catch (error) {

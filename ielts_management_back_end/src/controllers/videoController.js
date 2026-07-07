@@ -19,6 +19,24 @@ const canAccessCourse = async (courseId, user) => {
   return course;
 };
 
+const syncCourseVideoStats = async (courseId) => {
+  try {
+    const videos = await Video.find({ courseId });
+    const totalVideos = videos.length;
+    const totalDurationSeconds = videos.reduce((sum, v) => sum + (v.duration || 0), 0);
+    const durationInHours = Number((totalDurationSeconds / 3600).toFixed(1));
+
+    await Course.findByIdAndUpdate(courseId, {
+      totalVideos,
+      durationInHours,
+    });
+    return { totalVideos, durationInHours };
+  } catch (error) {
+    logger.error(`Error syncing course video stats: ${error.message}`);
+    return null;
+  }
+};
+
 const getCourseVideos = async (req, res, next) => {
   try {
     const { courseId } = req.params;
@@ -31,6 +49,7 @@ const getCourseVideos = async (req, res, next) => {
       });
     }
 
+    await syncCourseVideoStats(courseId);
     const videos = await Video.find({ courseId }).sort({ order: 1 }).populate('exercises');
 
     return res.status(200).json({
@@ -94,7 +113,7 @@ const createCourseVideo = async (req, res, next) => {
     });
 
     await video.save();
-    await Course.findByIdAndUpdate(courseId, { $inc: { totalVideos: 1 } });
+    await syncCourseVideoStats(courseId);
 
     return res.status(201).json({
       success: true,
@@ -165,6 +184,7 @@ const updateVideo = async (req, res, next) => {
     if (typeof materialName === 'string') video.materialName = materialName;
 
     await video.save();
+    await syncCourseVideoStats(video.courseId);
 
     if (typeof videoUrl === 'string' && previousVideoUrl && previousVideoUrl !== videoUrl) {
       await deleteCloudinaryAsset(previousVideoUrl, 'video');
@@ -236,7 +256,7 @@ const deleteVideo = async (req, res, next) => {
     const thumbnailUrl = video.thumbnailUrl;
     const materialUrl = video.materialUrl;
     await video.deleteOne();
-    await Course.findByIdAndUpdate(video.courseId, { $inc: { totalVideos: -1 } });
+    await syncCourseVideoStats(video.courseId);
     await deleteCloudinaryAsset(videoUrl, 'video');
     if (thumbnailUrl) {
       await deleteCloudinaryAsset(thumbnailUrl, 'image');
@@ -260,4 +280,5 @@ module.exports = {
   createCourseVideo,
   updateVideo,
   deleteVideo,
+  syncCourseVideoStats,
 };

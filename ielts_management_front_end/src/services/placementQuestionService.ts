@@ -1,8 +1,18 @@
 import { apiClient } from '@/utils/api';
 import { ApiResponse, PaginatedData, PlacementQuestion } from '@/types';
 
+export interface QuestionPerformanceStats {
+  multipleChoice: { totalAttempts: number; correctAttempts: number; accuracyRate: number };
+  listeningChoice: { totalAttempts: number; correctAttempts: number; accuracyRate: number };
+  speaking: { totalAttempts: number; totalScore: number; averageScore: number };
+}
+
 class PlacementQuestionService {
   private readonly baseUrl = '/api/placement-questions';
+
+  async getPerformanceStats(): Promise<ApiResponse<QuestionPerformanceStats>> {
+    return apiClient.get(`${this.baseUrl}/statistics/performance`);
+  }
 
   async getQuestions(params?: {
     page?: number;

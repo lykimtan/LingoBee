@@ -1,161 +1,224 @@
 /**
- * Skill Proficiency Component
- * Shows proficiency levels across different skills with radar chart
+ * Enrolled Courses & Progress Component (replaces former SkillProficiency)
+ * Displays the courses that the student has enrolled in along with their learning progress
  */
+"use client";
+
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
-interface SkillData {
-  name: string;
-  level: number; // 0-100
-  bandScore?: number; // IELTS band score
-  color: string;
+import { 
+  BookOpen, 
+  PlayCircle, 
+  ArrowRight, 
+  CheckCircle2, 
+  Clock, 
+  Loader2, 
+  Sparkles, 
+  TrendingUp,
+  Award
+} from "lucide-react";
+import { userService } from "@/services/userService";
+import { useAuthContext } from "@/context/AuthContext";
+
+export interface EnrolledCourseItem {
+  _id?: string;
+  courseId: {
+    _id?: string;
+    title?: string;
+    slug?: string;
+    level?: string;
+    category?: string;
+    publicInfo?: {
+      thumbnail?: string;
+    };
+  } | string;
+  progress?: number;
+  status?: string;
+  enrollmentDate?: string;
 }
 
-interface SkillProficiencyProps {
-  skills?: SkillData[];
-}
+export const SkillProficiency = () => {
+  const { user, isLoading: authLoading } = useAuthContext();
+  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-const defaultSkills: SkillData[] = [
-  { name: "Reading", level: 85, bandScore: 8.5, color: "#60a5fa" },
-  { name: "Writing", level: 65, bandScore: 6.5, color: "#ec4899" },
-  { name: "Speaking", level: 65, bandScore: 6.5, color: "#f97316" },
-  { name: "Listening", level: 75, bandScore: 7.5, color: "#3b82f6" },
-];
+  useEffect(() => {
+    let isMounted = true;
+    const fetchEnrolledCourses = async () => {
+      if (!user) {
+        if (isMounted) setLoading(false);
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await userService.getUserProfile();
+        const profile = res.data?.student || res.data;
+        const courses = profile?.enrolledCourses || [];
+        if (isMounted) {
+          setEnrolledCourses(courses);
+        }
+      } catch (err) {
+        console.error("Error fetching enrolled courses for profile:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
 
-export const SkillProficiency = ({ skills = defaultSkills }: SkillProficiencyProps) => {
-  // Find strongest and weakest skills
-  const strongest = skills.reduce((prev, current) =>
-    current.level > prev.level ? current : prev
-  );
-  const weakest = skills.reduce((prev, current) =>
-    current.level < prev.level ? current : prev
-  );
+    if (!authLoading) {
+      fetchEnrolledCourses();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, authLoading]);
 
   return (
-    <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-white/5 to-white/10 border border-white/20 p-8 backdrop-blur-sm">
+    <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-white/5 to-white/10 border border-white/20 p-8 backdrop-blur-sm flex flex-col h-full justify-between shadow-xl text-white">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <h3 className="text-white text-xl font-semibold">Skill Proficiency</h3>
-        <button className="text-muted-foreground hover:text-foreground transition-colors">
-           <Image
-                      src={"/profile/progress.gif"}
-                      alt="Refresh"
-                      width={40}
-                      height={40}
-                      unoptimized
-                      sizes="40px"
-                      className="object-contain rounded-md"
-                    />
-        </button>
-      </div>
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-teal-500/20 border border-teal-500/30 flex items-center justify-center text-teal-300">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-white text-xl font-bold">Khóa học & Tiến độ</h3>
+              <p className="text-xs text-white/60">Lộ trình học tập bạn đang tham gia</p>
+            </div>
+          </div>
 
-      {/* Radar Chart */}
-      <div className="flex items-center justify-center mb-12">
-        <svg
-          viewBox="0 0 320 320"
-          className="w-full max-w-xs"
-          style={{ maxWidth: "320px", height: "auto" }}
-        >
-          {/* Background grid circles */}
-          {[1, 2, 3, 4, 5].map((i) => (
-            <circle
-              key={`grid-${i}`}
-              cx="160"
-              cy="160"
-              r={30 * i}
-              fill="none"
-              stroke="rgb(255, 255, 255)"
-              strokeOpacity="0.08"
-              strokeWidth="1"
-            />
-          ))}
+          <Link
+            href="/courses"
+            className="text-xs font-bold text-teal-400 hover:text-teal-300 transition-colors flex items-center gap-1 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full border border-white/10"
+          >
+            <span>Khám phá thêm</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
 
-          {/* Polygon for 4 skills - Reading(top), Writing(right), Speaking(bottom), Listening(left) */}
-          <g>
-            {/* Polygon filled area */}
-            <polygon
-              points={`
-                ${160 + (skills[0].level / 100) * 100 * Math.sin(0)},${160 - (skills[0].level / 100) * 100 * Math.cos(0)}
-                ${160 + (skills[1].level / 100) * 100 * Math.sin((Math.PI * 2) / 4)},${160 - (skills[1].level / 100) * 100 * Math.cos((Math.PI * 2) / 4)}
-                ${160 + (skills[2].level / 100) * 100 * Math.sin((Math.PI * 2) / 2)},${160 - (skills[2].level / 100) * 100 * Math.cos((Math.PI * 2) / 2)}
-                ${160 + (skills[3].level / 100) * 100 * Math.sin((Math.PI * 2 * 3) / 4)},${160 - (skills[3].level / 100) * 100 * Math.cos((Math.PI * 2 * 3) / 4)}
-              `}
-              fill="rgb(59, 130, 246)"
-              fillOpacity="0.15"
-              stroke="rgb(147, 197, 253)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+        {/* Content Area */}
+        {loading || authLoading ? (
+          <div className="flex flex-col items-center justify-center py-16 space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-teal-400" />
+            <p className="text-xs text-white/60 font-medium">Đang tải dữ liệu khóa học...</p>
+          </div>
+        ) : enrolledCourses && enrolledCourses.length > 0 ? (
+          <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1 -mr-1 custom-scrollbar">
+            {enrolledCourses.map((enroll, idx) => {
+              const course = enroll.courseId;
+              if (!course || typeof course !== "object") return null;
 
-            {/* Axis lines */}
-            {skills.map((_, index) => {
-              const angle = (index * Math.PI * 2) / 4 - Math.PI / 2;
-              const distance = 130;
-              const x = 160 + distance * Math.cos(angle);
-              const y = 160 + distance * Math.sin(angle);
-              return (
-                <line
-                  key={`axis-${index}`}
-                  x1="160"
-                  y1="160"
-                  x2={x}
-                  y2={y}
-                  stroke="rgb(255, 255, 255)"
-                  strokeOpacity="0.1"
-                  strokeWidth="1"
-                />
-              );
-            })}
-
-            {/* Skill Labels on axes */}
-            {skills.map((skill, index) => {
-              const angle = (index * Math.PI * 2) / 4 - Math.PI / 2;
-              const distance = 155;
-              const x = 160 + distance * Math.cos(angle);
-              const y = 160 + distance * Math.sin(angle);
+              const title = course.title || "Khóa học IELTS LingoBee";
+              const slug = course.slug || course._id;
+              const thumbnail = course.publicInfo?.thumbnail || "/CoursesPage/thumbnailCourse.webp";
+              const level = course.level || "IELTS";
+              const category = course.category || "General";
+              const progress = enroll.progress || 0;
+              const status = enroll.status === "completed" || progress >= 100 ? "completed" : "active";
 
               return (
-                <text
-                  key={`label-${index}`}
-                  x={x}
-                  y={y}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fill="rgb(209, 213, 219)"
-                  fontSize="12"
-                  fontWeight="600"
-                  letterSpacing="0.05em"
+                <Link
+                  href={`/courses/${slug}`}
+                  key={enroll._id || idx}
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 hover:border-white/30 hover:bg-white/15 transition-all duration-300 group cursor-pointer shadow-sm hover:shadow-md"
                 >
-                  {skill.name}
-                </text>
+                  {/* Thumbnail */}
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white/5 shrink-0 border border-white/20">
+                    <Image
+                      src={thumbnail}
+                      alt={title}
+                      fill
+                      sizes="64px"
+                      className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-black/20" />
+                    <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm text-[9px] font-bold text-amber-300">
+                      {level}
+                    </div>
+                  </div>
+
+                  {/* Info & Progress */}
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-teal-300 truncate">
+                        {category}
+                      </span>
+                      <span className="text-[11px] font-bold text-white/70 shrink-0">
+                        {status === "completed" ? (
+                          <span className="text-emerald-400 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 inline" /> Hoàn thành
+                          </span>
+                        ) : (
+                          <span>{progress}%</span>
+                        )}
+                      </span>
+                    </div>
+
+                    <h4 className="text-sm font-bold text-white truncate group-hover:text-teal-300 transition-colors">
+                      {title}
+                    </h4>
+
+                    {/* Progress Bar */}
+                    <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          progress >= 80
+                            ? "bg-gradient-to-r from-emerald-400 to-teal-400"
+                            : "bg-gradient-to-r from-teal-400 to-cyan-400"
+                        }`}
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Action Icon */}
+                  <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/70 group-hover:bg-teal-500 group-hover:text-white group-hover:border-teal-500 transition-all shrink-0">
+                    <PlayCircle className="w-5 h-5" />
+                  </div>
+                </Link>
               );
             })}
-          </g>
-        </svg>
+          </div>
+        ) : (
+          /* Empty State */
+          <div className="rounded-2xl p-8 text-center space-y-4 bg-white/5 border border-white/10 my-4">
+            <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto text-amber-300 shadow-sm">
+              <BookOpen className="w-7 h-7" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-base font-bold text-white">Bạn chưa đăng ký khóa học nào</h4>
+              <p className="text-xs text-white/60 max-w-xs mx-auto">
+                Hãy bắt đầu hành trình nâng cao điểm số IELTS & SAT ngay với các lộ trình từ chuyên gia LingoBee!
+              </p>
+            </div>
+            <Link
+              href="/courses"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white font-bold text-xs shadow-md shadow-teal-500/20 transition-all"
+            >
+              <span>Xem danh sách khóa học</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        )}
       </div>
 
-      {/* Legend with Strongest and Attention */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Strongest */}
-        <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">
-            Strongest
-          </p>
-          <p className="text-lg font-bold text-blue-300">
-            {strongest.name} {strongest.bandScore ? `(${strongest.bandScore})` : `(${strongest.level}%)`}
-          </p>
+      {/* Footer / Summary */}
+      {enrolledCourses && enrolledCourses.length > 0 && (
+        <div className="pt-6 mt-6 border-t border-white/10 flex items-center justify-between text-xs text-white/70">
+          <div className="flex items-center gap-1.5">
+            <Award className="w-4 h-4 text-amber-300" />
+            <span>Đang học: <strong className="text-white">{enrolledCourses.filter(c => (c.progress || 0) < 100 && c.status !== 'completed').length}</strong> khóa</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>Hoàn thành: <strong className="text-white">{enrolledCourses.filter(c => (c.progress || 0) >= 100 || c.status === 'completed').length}</strong> khóa</span>
+          </div>
         </div>
-
-        {/* Attention */}
-        <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">
-            Attention
-          </p>
-          <p className="text-lg font-bold text-orange-300">
-            {weakest.name} {weakest.bandScore ? `(${weakest.bandScore})` : `(${weakest.level}%)`}
-          </p>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
+
+export const EnrolledCoursesProgress = SkillProficiency;

@@ -74,15 +74,40 @@ const analyzeImage = async (req, res) => {
         model: googleProvider('gemini-flash-lite-latest'),
         schema: z.object({
           vocabularies: z.array(z.object({
-            word: z.string().describe('Từ vựng tiếng Anh (từ gốc dạng nguyên thể).'),
+            detectedWord: z.string().describe('Từ gốc chính xác từ YOLO (vd: "cell phone", "tie", "person").'),
+            word: z.string().describe('BẮT BUỘC giữ nguyên CHÍNH XÁC từ gốc trong detectedWord (không được thay bằng từ khác hay từ đồng nghĩa). Chỉ được viết hoa chữ cái đầu cho chuẩn (vd: "Cell Phone", "Tie", "Person").'),
             translation: z.string().describe('Nghĩa tiếng Việt ngắn gọn, dễ hiểu.'),
             partOfSpeech: z.string().describe('Từ loại (vd: noun, verb, adj).'),
             phonetic: z.string().describe('Phiên âm quốc tế IPA (vd: /wɜːd/).'),
             example: z.string().describe('Một câu ví dụ thực tế sử dụng từ này bằng tiếng Anh.'),
-            synonyms: z.array(z.string()).describe('Ít nhất 3 từ đồng nghĩa cấp độ cao')
+            synonyms: z.array(z.string()).describe('Ít nhất 3 từ đồng nghĩa hoặc từ học thuật cấp độ cao (IELTS 7.0+)')
           }))
         }),
-        prompt: `Tôi vừa dùng AI nhận diện được các vật thể sau trong một bức ảnh: ${detectedObjects.join(', ')}. Hãy tạo thông tin từ vựng chi tiết cho từng từ để giúp người học IELTS ôn tập. Đặc biệt, với mỗi từ vựng, hãy cung cấp ít nhất 3 từ đồng nghĩa (synonyms) ở cấp độ cao (IELTS 7.0 trở lên).`
+        prompt: `Tôi vừa dùng AI (YOLO) nhận diện được danh sách các vật thể/từ vựng sau từ một bức ảnh: ${JSON.stringify(detectedObjects)}.
+                YÊU CẦU BẮT BUỘC:
+                1. Bạn phải tạo danh sách từ vựng tương ứng 1-1 với danh sách trên và giữ ĐÚNG THỨ TỰ.
+                2. Với mỗi phần tử, trường "detectedWord" phải là từ gốc từ YOLO.
+                3. Trường "word" BẮT BUỘC PHẢI LÀ TỪ GỐC ĐÓ. TUYỆT ĐỐI KHÔNG ĐƯỢC thay thế từ gốc bằng từ đồng nghĩa hay từ khác (ví dụ: cấm đổi "cell phone" thành "Mobile phone", cấm đổi "tie" thành "Necktie").
+                4. Vì đây là ứng dụng học IELTS, hãy đưa các từ từ đồng nghĩa cao cấp (như Mobile phone, Handheld device, Necktie, Cravat...) vào trường "synonyms" (ít nhất 3 từ đồng nghĩa cấp độ IELTS 7.0+) để học viên mở rộng vốn từ.`
+      });
+
+      // Post-process to guarantee 100% that the exact detected word from YOLO is preserved as the main word
+      const finalVocabularies = object.vocabularies.map((vocab, idx) => {
+        // Match with detectedWord or fallback to index
+        const matchedDetected = detectedObjects.find(
+          d => d.toLowerCase() === vocab.detectedWord?.toLowerCase() ||
+            d.toLowerCase() === vocab.word?.toLowerCase()
+        ) || detectedObjects[idx];
+
+        if (matchedDetected) {
+          // Format as Title Case (e.g. "cell phone" -> "Cell Phone", "tie" -> "Tie")
+          const formattedWord = matchedDetected.replace(/\b\w/g, l => l.toUpperCase());
+          return {
+            ...vocab,
+            word: formattedWord
+          };
+        }
+        return vocab;
       });
 
       // 4. Trả về kết quả cho Front-end (không lưu vào DB)
@@ -90,7 +115,7 @@ const analyzeImage = async (req, res) => {
         success: true,
         data: {
           imageUrl: cloudinaryUrl,
-          vocabularies: object.vocabularies
+          vocabularies: finalVocabularies
         }
       });
 

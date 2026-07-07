@@ -9,7 +9,7 @@ import { isValidEmail } from "@/utils/helpers";
 export const LoginPanel = () => {
   const router = useRouter();
   const { login, isLoading, error: authError } = useAuthContext();
-  
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
@@ -30,7 +30,7 @@ export const LoginPanel = () => {
     e.preventDefault();
     setSuccessMessage("");
     setErrors({});
-    
+
     // Basic validation
     const newErrors: Record<string, string> = {};
     if (!email.trim()) {
@@ -38,11 +38,11 @@ export const LoginPanel = () => {
     } else if (!isValidEmail(email)) {
       newErrors.email = "Please enter a valid email address";
     }
-    
+
     if (!password) {
       newErrors.password = "Password is required";
     }
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -100,9 +100,6 @@ export const LoginPanel = () => {
           Welcome to
           <span className="text-3xl md:text-5xl"> LingoBee</span>
         </h1>
-        <p className="text-gray-400 text-sm leading-relaxed">
-          Authentication required 
-        </p>
       </div>
 
       {/* Success Message */}
@@ -140,9 +137,8 @@ export const LoginPanel = () => {
                 });
               }
             }}
-            className={`w-full px-6 py-3 rounded-full bg-white/5 border text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-white/20 transition-all duration-200 backdrop-blur-sm ${
-              errors.email ? "border-red-500/50 focus:ring-red-500/20" : "border-white/10 focus:ring-white/20"
-            }`}
+            className={`w-full px-6 py-3 rounded-full bg-white/5 border text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-white/20 transition-all duration-200 backdrop-blur-sm ${errors.email ? "border-red-500/50 focus:ring-red-500/20" : "border-white/10 focus:ring-white/20"
+              }`}
           />
           {errors.email && <p className="text-red-400 text-xs">{errors.email}</p>}
         </div>
@@ -175,9 +171,8 @@ export const LoginPanel = () => {
                   });
                 }
               }}
-              className={`w-full px-6 pr-20 py-3 rounded-full bg-white/5 border text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-white/20 transition-all duration-200 backdrop-blur-sm ${
-                errors.password ? "border-red-500/50 focus:ring-red-500/20" : "border-white/10 focus:ring-white/20"
-              }`}
+              className={`w-full px-6 pr-20 py-3 rounded-full bg-white/5 border text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-white/20 transition-all duration-200 backdrop-blur-sm ${errors.password ? "border-red-500/50 focus:ring-red-500/20" : "border-white/10 focus:ring-white/20"
+                }`}
             />
             <button
               type="button"
@@ -220,7 +215,7 @@ export const LoginPanel = () => {
         </div>
         <div className="relative flex justify-center text-xs">
           <span className="px-3 bg-gradient-to-br from-slate-950 via-slate-900 to-black text-gray-500 uppercase tracking-widest">
-            External Verification
+            Phương thức đăng nhập khác
           </span>
         </div>
       </div>
@@ -240,24 +235,11 @@ export const LoginPanel = () => {
       {/* Bottom Links */}
       <div className="mt-8 pt-8 border-t border-white/10 space-y-4 text-center">
         <p className="text-sm text-gray-400">
-          New Researcher?{" "}
+          Bạn chưa có tài khoản?{" "}
           <Link href="/register" className="text-white hover:text-yellow-50 transition-colors font-medium">
             Sign Up
           </Link>
         </p>
-        <div className="flex items-center justify-center gap-4 text-xs text-gray-500 uppercase tracking-widest">
-          <Link href="#" className="hover:text-gray-300 transition-colors">
-            Privacy
-          </Link>
-          <span className="text-gray-700">•</span>
-          <Link href="#" className="hover:text-gray-300 transition-colors">
-            Protocols
-          </Link>
-          <span className="text-gray-700">•</span>
-          <Link href="#" className="hover:text-gray-300 transition-colors">
-            System Support
-          </Link>
-        </div>
       </div>
     </div>
   );

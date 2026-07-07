@@ -72,6 +72,10 @@ class UserService {
     return apiClient.post<any>(`/api/users/students/admin/${userId}/upgrade-to-teacher`, {});
   }
 
+  async adminVerifyUserEmail(userId: string): Promise<ApiResponse<any>> {
+    return apiClient.post<any>(`/api/users/students/admin/${userId}/verify-email`, {});
+  }
+
   async upgradeToAdmin(userId: string): Promise<ApiResponse<any>> {
     return apiClient.post<any>(`/api/users/${userId}/upgrade-to-admin`, {});
   }

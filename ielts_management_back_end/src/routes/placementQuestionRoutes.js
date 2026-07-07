@@ -7,6 +7,7 @@ const {
   getQuestionById,
   updateQuestion,
   deleteQuestion,
+  getQuestionPerformanceStats,
 } = require('../controllers/placementQuestionController');
 
 // All placement question routes require authentication
@@ -14,6 +15,8 @@ router.use(authMiddleware);
 
 // Only admin and teacher can manage placement questions
 router.use(authorize('admin', 'teacher'));
+
+router.get('/statistics/performance', getQuestionPerformanceStats);
 
 router
   .route('/')

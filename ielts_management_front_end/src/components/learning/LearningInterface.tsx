@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { LearningHeader } from "./Layout/LearningHeader";
 import { FloatingAskButton } from "./Layout/FloatingAskButton";
 import { CourseListItem } from "./SideBar/CourseListItem";
@@ -390,7 +391,7 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
                   ) : (
                     <div className="flex flex-col items-center justify-center text-center py-10 h-full">
                       <div className="w-16 h-16 bg-[#f4e900]/10 rounded-full flex items-center justify-center mb-4">
-                        <span className="text-3xl">🤖</span>
+                        <Image src="/beeRobot.png" alt="Bee Robot" width={80} height={80}></Image>
                       </div>
                       <h3 className="text-lg font-bold text-white mb-2">Chưa có lộ trình AI</h3>
                       <p className="text-sm text-white/60 mb-6">Hãy để AI thiết kế cho bạn một lịch học hoàn hảo dựa trên thời gian rảnh của bạn.</p>

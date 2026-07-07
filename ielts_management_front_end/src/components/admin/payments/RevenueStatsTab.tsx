@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { DollarSign, TrendingUp, CreditCard, Calendar, Search, ArrowUpRight, CheckCircle2, XCircle, Clock, Tag, RefreshCw } from 'lucide-react';
+import { DollarSign, TrendingUp, CreditCard, Calendar, Search, ArrowUpRight, CheckCircle2, XCircle, Clock, Tag, RefreshCw, Download, Loader2 } from 'lucide-react';
 import { paymentService } from '@/services/paymentService';
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 import { toast } from 'react-toastify';
@@ -9,12 +9,70 @@ import { toast } from 'react-toastify';
 export function RevenueStatsTab() {
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingPayments, setLoadingPayments] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const [payments, setPayments] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [chartDays, setChartDays] = useState<'7' | '30' | '90' | '365' | 'all'>('30');
+  const [courseDays, setCourseDays] = useState<'7' | '30' | '90' | '365' | 'all'>('all');
+
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      const res = await paymentService.getAdminPayments({ page: 1, limit: 1000 });
+      const allPayments = (res as any).data || payments || [];
+
+      let csvContent = "\uFEFF"; // UTF-8 BOM
+      csvContent += "BÁO CÁO THỐNG KÊ DOANH THU LINGOBEE\n";
+      csvContent += `Ngày xuất báo cáo: ${new Date().toLocaleDateString('vi-VN')} ${new Date().toLocaleTimeString('vi-VN')}\n\n`;
+
+      csvContent += "1. TỔNG QUAN CHỈ SỐ\n";
+      csvContent += `Chỉ số,Giá trị\n`;
+      csvContent += `Tổng doanh thu thực tế,${stats?.totalRevenue || 0} VND\n`;
+      csvContent += `Giao dịch thành công,${stats?.totalTransactions || 0}\n`;
+      csvContent += `Giá trị đơn trung bình (AOV),${stats?.averageOrderValue || 0} VND\n\n`;
+
+      if (stats?.revenueByCourse && stats.revenueByCourse.length > 0) {
+        csvContent += "2. DOANH THU THEO KHÓA HỌC\n";
+        csvContent += "Tên khóa học,Số giao dịch,Tổng doanh thu (VND)\n";
+        stats.revenueByCourse.forEach((c: any) => {
+          const name = `"${(c.name || '').replace(/"/g, '""')}"`;
+          csvContent += `${name},${c.transactions || 0},${c.revenue || 0}\n`;
+        });
+        csvContent += "\n";
+      }
+
+      csvContent += "3. CHI TIẾT LỊCH SỬ GIAO DỊCH\n";
+      csvContent += "Mã giao dịch,Khóa học,Số tiền (VND),Phương thức,Ngày thanh toán,Trạng thái\n";
+      allPayments.forEach((pm: any) => {
+        const code = `"${pm.orderId || pm.vnp_TxnRef || pm._id || ''}"`;
+        const courseName = `"${(pm.courseId?.title || pm.courseTitle || 'Khóa học').replace(/"/g, '""')}"`;
+        const amount = pm.finalAmount || pm.totalAmount || 0;
+        const method = `"${pm.paymentMethod || 'vnpay'}"`;
+        const date = pm.paymentDate ? new Date(pm.paymentDate).toLocaleDateString('vi-VN') : new Date(pm.createdAt).toLocaleDateString('vi-VN');
+        const status = pm.paymentStatus === 'completed' ? 'Thành công' : pm.paymentStatus === 'failed' ? 'Thất bại' : 'Đang chờ';
+        csvContent += `${code},${courseName},${amount},${method},${date},${status}\n`;
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Bao_Cao_Doanh_Thu_LingoBee_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Xuất file báo cáo thống kê doanh thu thành công!');
+    } catch (err) {
+      console.error("Lỗi xuất báo cáo:", err);
+      toast.error('Có lỗi khi xuất file báo cáo!');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const formatVND = (val: number) => {
     return new Intl.NumberFormat('vi-VN').format(val || 0) + ' đ';
@@ -29,7 +87,7 @@ export function RevenueStatsTab() {
   const loadStats = async () => {
     setLoadingStats(true);
     try {
-      const res = await paymentService.getAdminRevenueStats();
+      const res = await paymentService.getAdminRevenueStats({ chartDays, courseDays });
       const payload = (res as any).data || res;
       setStats(payload);
     } catch (err) {
@@ -57,7 +115,7 @@ export function RevenueStatsTab() {
 
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [chartDays, courseDays]);
 
   useEffect(() => {
     loadPayments();
@@ -127,36 +185,57 @@ export function RevenueStatsTab() {
 
       {/* Charts Section */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Chart 1: Revenue 30 Days */}
+        {/* Chart 1: Revenue Chart */}
         <div className="rounded-3xl bg-[#0f2326] p-6 border border-white/10 shadow-xl flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-emerald-400" />
-                <span>Biểu đồ doanh thu 30 ngày qua</span>
+                <span>Biểu đồ doanh thu ({chartDays === '7' ? '7 ngày qua' : chartDays === '30' ? '30 ngày qua' : chartDays === '90' ? '3 tháng qua' : chartDays === '365' ? '1 năm qua' : 'Tất cả'})</span>
               </h3>
-              <p className="text-xs text-white/50 mt-0.5">Tổng: <strong className="text-emerald-400">{formatVND(stats?.revenue30DaysTotal || 0)}</strong></p>
+              <p className="text-xs text-white/50 mt-0.5">
+                Tổng: <strong className="text-emerald-400">{formatVND(stats?.revenueChartTotal ?? stats?.revenue30DaysTotal ?? 0)}</strong>
+              </p>
             </div>
-            <span className="px-3 py-1 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white/70">
-              Cập nhật liên tục
-            </span>
+            <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10 self-start sm:self-auto flex-wrap">
+              {[
+                { key: '7', label: '7 ngày' },
+                { key: '30', label: '30 ngày' },
+                { key: '90', label: '3 tháng' },
+                { key: '365', label: '1 năm' },
+                { key: 'all', label: 'Tất cả' },
+              ].map(opt => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setChartDays(opt.key as any)}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                    chartDays === opt.key
+                      ? 'bg-emerald-500 text-white shadow-sm'
+                      : 'text-white/60 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="h-64 w-full">
             {loadingStats ? (
               <div className="h-full flex items-center justify-center text-white/40 text-sm">Đang tải dữ liệu biểu đồ...</div>
-            ) : (stats?.revenue30DaysChart || []).length === 0 ? (
-              <div className="h-full flex items-center justify-center text-white/40 text-sm">Chưa có phát sinh doanh thu trong 30 ngày qua</div>
+            ) : (stats?.revenueChart || stats?.revenue30DaysChart || []).length === 0 ? (
+              <div className="h-full flex items-center justify-center text-white/40 text-sm">Chưa có phát sinh doanh thu trong khoảng thời gian này</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats.revenue30DaysChart} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={stats?.revenueChart || stats?.revenue30DaysChart || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorRevAdmin" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
                       <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11 }} interval={6} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11 }} interval={chartDays === '7' ? 0 : chartDays === '30' ? 5 : chartDays === '90' ? 14 : 0} axisLine={false} tickLine={false} />
                   <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11 }} tickFormatter={formatCompactVND} axisLine={false} tickLine={false} />
                   <Tooltip
                     formatter={(val: any) => [formatVND(val || 0), "Doanh thu"]}
@@ -172,13 +251,37 @@ export function RevenueStatsTab() {
 
         {/* Chart 2: Revenue breakdown by course */}
         <div className="rounded-3xl bg-[#0f2326] p-6 border border-white/10 shadow-xl flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Tag className="w-5 h-5 text-blue-400" />
                 <span>Doanh thu theo từng khóa học</span>
               </h3>
-              <p className="text-xs text-white/50 mt-0.5">Top các khóa học mang lại doanh thu cao nhất</p>
+              <p className="text-xs text-white/50 mt-0.5">
+                {courseDays === 'all' ? 'Top doanh thu cao nhất mọi thời điểm' : `Trong ${courseDays === '7' ? '7 ngày qua' : courseDays === '30' ? '30 ngày qua' : courseDays === '90' ? '3 tháng qua' : '1 năm qua'}`}
+              </p>
+            </div>
+            <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10 self-start sm:self-auto flex-wrap">
+              {[
+                { key: '7', label: '7 ngày' },
+                { key: '30', label: '30 ngày' },
+                { key: '90', label: '3 tháng' },
+                { key: '365', label: '1 năm' },
+                { key: 'all', label: 'Tất cả' },
+              ].map(opt => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setCourseDays(opt.key as any)}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                    courseDays === opt.key
+                      ? 'bg-blue-500 text-white shadow-sm'
+                      : 'text-white/60 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -217,7 +320,7 @@ export function RevenueStatsTab() {
             <p className="text-xs text-white/50 mt-0.5">Toàn bộ các yêu cầu thanh toán qua cổng VNPay</p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <form onSubmit={handleSearchSubmit} className="relative">
               <Search className="w-4 h-4 text-white/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
@@ -239,6 +342,25 @@ export function RevenueStatsTab() {
               <option value="pending" className="bg-[#0f2326]">Đang chờ (Pending)</option>
               <option value="failed" className="bg-[#0f2326]">Thất bại (Failed)</option>
             </select>
+
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              disabled={exporting}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 transition cursor-pointer disabled:opacity-50"
+            >
+              {exporting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Đang xuất...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  <span>Xuất báo cáo (CSV)</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 

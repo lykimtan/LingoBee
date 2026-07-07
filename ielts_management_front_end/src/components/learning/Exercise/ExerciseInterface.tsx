@@ -8,7 +8,7 @@ import {
   ExerciseAttemptAnswer,
   ExerciseQuestion
 } from "@/services/learningService";
-import { Loader2, Save, Send, ArrowLeft, ArrowRight, RotateCcw, FileText, Clock, Sparkles } from "lucide-react";
+import { Loader2, Save, Send, ArrowLeft, ArrowRight, RotateCcw, FileText, Clock } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal";
 import { WordCountIndicator } from '@/components/common/WordCountIndicator';
 import SpeakingAIFeedback from './SpeakingAIFeedback';

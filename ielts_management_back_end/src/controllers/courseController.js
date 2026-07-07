@@ -1,4 +1,5 @@
-const { Course, CourseInvitation, Notification, User, Exercise, Student } = require('../models');
+const mongoose = require('mongoose');
+const { Course, CourseInvitation, Notification, User, Exercise, Student, Video, TeacherProfile } = require('../models');
 const { emitNotification } = require('../socket');
 const logger = require('../utils/logger');
 const { deleteCloudinaryAsset } = require('./uploadController');
@@ -179,8 +180,20 @@ const getMyTeachingCourses = async (req, res, next) => {
     }
 
     const courses = await Course.find(query)
-      .select('title slug category level status totalStudents updatedAt publicInfo')
+      .select('title slug category level status totalStudents totalVideos durationInHours updatedAt publicInfo')
       .sort({ updatedAt: -1 });
+
+    for (const c of courses) {
+      const videos = await Video.find({ courseId: c._id }, 'duration');
+      const totalVideos = videos.length;
+      const totalDurationSeconds = videos.reduce((sum, v) => sum + (v.duration || 0), 0);
+      const durationInHours = Number((totalDurationSeconds / 3600).toFixed(1));
+      if (c.totalVideos !== totalVideos || c.durationInHours !== durationInHours) {
+        c.totalVideos = totalVideos;
+        c.durationInHours = durationInHours;
+        await Course.findByIdAndUpdate(c._id, { totalVideos, durationInHours });
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -473,7 +486,7 @@ const getPublicCourseBySlug = async (req, res, next) => {
     const cacheKey = `${redisPrefix}course:public:slug:${slug}`;
     
     const cachedData = await getValue(cacheKey);
-    if (cachedData) {
+    if (cachedData && cachedData.instructorsShowcase) {
       return res.status(200).json({
         success: true,
         data: cachedData,
@@ -483,8 +496,8 @@ const getPublicCourseBySlug = async (req, res, next) => {
     const course = await Course.findOne({
       slug,
       $or: [{ status: 'published' }, { isPublished: true }],
-    }).populate('teacher', 'name avatar bio')
-      .populate('teachingAssistants', 'name avatar bio');
+    }).populate('teacher', 'name avatar bio role')
+      .populate('teachingAssistants', 'name avatar bio role');
 
     if (!course) {
       return res.status(404).json({
@@ -493,12 +506,49 @@ const getPublicCourseBySlug = async (req, res, next) => {
       });
     }
 
+    const courseObj = course.toObject();
+
+    // Fetch TeacherProfiles for teacher and TAs
+    const userIds = [];
+    if (courseObj.teacher?._id) userIds.push(courseObj.teacher._id);
+    if (courseObj.teachingAssistants && courseObj.teachingAssistants.length > 0) {
+      courseObj.teachingAssistants.forEach(ta => {
+        if (ta?._id) userIds.push(ta._id);
+      });
+    }
+
+    const profiles = await TeacherProfile.find({ userId: { $in: userIds } }).lean();
+    const profilesMap = {};
+    profiles.forEach(p => {
+      if (p.userId) profilesMap[p.userId.toString()] = p;
+    });
+
+    const instructors = [courseObj.teacher, ...(courseObj.teachingAssistants || [])].filter(u => u && u._id);
+    courseObj.instructorsShowcase = instructors.map(u => {
+      const uIdStr = u._id.toString();
+      const isMainTeacher = uIdStr === courseObj.teacher?._id?.toString();
+      const p = profilesMap[uIdStr] || {};
+      return {
+        id: uIdStr,
+        name: u.name || 'Giảng viên',
+        role: isMainTeacher ? 'Giảng viên phụ trách' : 'Trợ giảng chuyên môn',
+        title: p.title || (isMainTeacher ? 'Chuyên gia IELTS LingoBee' : 'Trợ giảng IELTS LingoBee'),
+        band: p.band || '8.0+',
+        bio: p.bio || u.bio || 'Tận tâm đồng hành cùng học viên bứt phá điểm số.',
+        teachingPhilosophy: p.teachingPhilosophy || 'Lấy học viên làm trung tâm, tối ưu lộ trình học tập.',
+        highlights: p.highlights && p.highlights.length > 0 ? p.highlights : ['Phương pháp giảng dạy hiện đại', 'Chữa bài cặn kẽ chi tiết', 'Đồng hành 1-1 hỗ trợ thắc mắc'],
+        certificates: p.certificates || [],
+        socialLinks: p.socialLinks || {},
+        image: u.avatar || '/homepage/teacher_ngtaif.png'
+      };
+    });
+
     // Save to cache for 1 hour
-    await setWithTTL(cacheKey, course, 3600);
+    await setWithTTL(cacheKey, courseObj, 3600);
 
     res.status(200).json({
       success: true,
-      data: course,
+      data: courseObj,
     });
   } catch (error) {
     logger.error(`Error in getPublicCourseBySlug: ${error.message}`);
@@ -686,6 +736,404 @@ const getCourseAdminStats = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get detailed course analytics/stats for teacher course dashboard
+ * @route   GET /api/courses/:id/teacher-stats
+ * @access  Private/Teacher
+ */
+const getCourseTeacherStats = async (req, res, next) => {
+  try {
+    const courseId = req.params.id;
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ success: false, message: 'Khóa học không tồn tại' });
+    }
+
+    // Verify permission (Teacher, Teaching Assistant, or Admin)
+    const userIdStr = req.user.id || req.user._id?.toString();
+    const isTeacher = course.teacher?.toString() === userIdStr;
+    const isAssistant = course.teachingAssistants?.some(a => a.toString() === userIdStr);
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isTeacher && !isAssistant && !isAdmin) {
+      return res.status(403).json({ success: false, message: 'Bạn không có quyền xem thống kê khóa học này' });
+    }
+
+    const Video = require('../models/Video');
+    const VideoProgress = require('../models/VideoProgress');
+    const ExerciseAttempt = require('../models/AnswerSub');
+
+    const enrolledStudents = await Student.find({ 'enrolledCourses.courseId': courseId })
+      .populate('userId', 'name email avatar')
+      .populate('enrolledCourses.learningPath', 'overallProgress isCompleted');
+
+    const totalVideos = await Video.countDocuments({ courseId, isPublished: true });
+    const totalAttempts = await ExerciseAttempt.countDocuments({ courseId });
+    const pendingGrading = await ExerciseAttempt.countDocuments({ courseId, status: 'submitted' });
+
+    let completedStudents = 0;
+    let totalProgressSum = 0;
+
+    const progressSegments = {
+      completed: 0,  // >= 80%
+      inProgress: 0, // 50% - 79%
+      started: 0,    // 1% - 49%
+      notStarted: 0  // 0%
+    };
+
+    const studentList = await Promise.all(enrolledStudents.map(async (s) => {
+      const enrollment = s.enrolledCourses?.find(c => (c.courseId?._id || c.courseId).toString() === courseId.toString());
+      
+      const completedVideosCount = await VideoProgress.countDocuments({ studentId: s._id, courseId, isCompleted: true });
+      const videoProgressPct = totalVideos > 0 ? Math.round((completedVideosCount / totalVideos) * 100) : 0;
+      
+      const lpProgress = enrollment?.learningPath?.overallProgress || 0;
+      const baseProgress = enrollment?.progress || 0;
+      
+      const progress = Math.min(100, Math.max(baseProgress, lpProgress, videoProgressPct));
+      const status = (progress >= 100 || enrollment?.status === 'completed' || enrollment?.learningPath?.isCompleted) ? 'completed' : (enrollment?.status || 'active');
+
+      if (status === 'completed' || progress >= 100) {
+        completedStudents++;
+      }
+      totalProgressSum += progress;
+
+      if (progress >= 80) progressSegments.completed++;
+      else if (progress >= 50) progressSegments.inProgress++;
+      else if (progress > 0) progressSegments.started++;
+      else progressSegments.notStarted++;
+
+      const attemptsCount = await ExerciseAttempt.countDocuments({ studentId: s._id, courseId });
+
+      return {
+        _id: s._id,
+        user: s.userId || { name: 'Học viên ẩn danh', email: 'N/A' },
+        progress,
+        status,
+        attemptsCount,
+        enrollmentDate: enrollment?.enrollmentDate || s.createdAt
+      };
+    }));
+
+    const totalStudents = enrolledStudents.length;
+    const completionRate = totalStudents > 0 ? Math.round((completedStudents / totalStudents) * 100) : 0;
+    const avgProgress = totalStudents > 0 ? Math.round(totalProgressSum / totalStudents) : 0;
+
+    // Top students (sort descending by progress then attemptsCount)
+    const sortedStudents = [...studentList].sort((a, b) => b.progress - a.progress || b.attemptsCount - a.attemptsCount);
+    const topStudents = sortedStudents.slice(0, 5);
+
+    // Needs attention (sort ascending by progress, only take < 40%)
+    const needsAttentionStudents = [...studentList]
+      .filter(s => s.progress < 40)
+      .sort((a, b) => a.progress - b.progress)
+      .slice(0, 5);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        course: {
+          _id: course._id,
+          title: course.title,
+          level: course.level,
+          targetBand: course.targetBand
+        },
+        totalStudents,
+        completedStudents,
+        completionRate,
+        avgProgress,
+        totalVideos,
+        totalAttempts,
+        pendingGrading,
+        progressSegments,
+        topStudents,
+        needsAttentionStudents,
+        studentList
+      }
+    });
+  } catch (error) {
+    logger.error(`Error in getCourseTeacherStats: ${error.message}`);
+    next(error);
+  }
+};
+
+/**
+ * @desc    Get real enrollment statistics for teacher dashboard
+ * @route   GET /api/courses/my/enrollment-stats
+ * @access  Private (Teacher)
+ */
+const getTeacherEnrollmentStats = async (req, res, next) => {
+  try {
+    const { Student } = require('../models');
+
+    // 1. Find all courses taught or assisted by this teacher
+    const courses = await Course.find({
+      $or: [
+        { teacher: req.user.id },
+        { teachingAssistants: req.user.id }
+      ]
+    }).select('_id title status totalStudents');
+
+    const courseIds = courses.map(c => c._id.toString());
+    const publishedCount = courses.filter(c => c.status === 'published').length;
+
+    // 2. Find all enrollments for these courses
+    const students = await Student.find({
+      'enrolledCourses.courseId': { $in: courseIds }
+    }).select('enrolledCourses');
+
+    let totalEnrollments = 0;
+    let newThisWeek = 0;
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const daysOfWeek = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    const chartMap = { 'T2': 0, 'T3': 0, 'T4': 0, 'T5': 0, 'T6': 0, 'T7': 0, 'CN': 0 };
+
+    students.forEach(student => {
+      if (student.enrolledCourses && Array.isArray(student.enrolledCourses)) {
+        student.enrolledCourses.forEach(enroll => {
+          if (enroll.courseId && courseIds.includes(enroll.courseId.toString())) {
+            totalEnrollments++;
+            const enrollDate = enroll.enrollmentDate ? new Date(enroll.enrollmentDate) : new Date();
+            if (enrollDate >= oneWeekAgo) {
+              newThisWeek++;
+            }
+            const dayLabel = daysOfWeek[enrollDate.getDay()];
+            if (chartMap[dayLabel] !== undefined) {
+              chartMap[dayLabel]++;
+            }
+          }
+        });
+      }
+    });
+
+    const order = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+    const maxVal = Math.max(...Object.values(chartMap), 1);
+    const todayLabel = daysOfWeek[now.getDay()];
+
+    const chartData = order.map(day => {
+      const count = chartMap[day];
+      const percent = Math.min(Math.round((count / maxVal) * 100), 100);
+      return {
+        day,
+        value: count > 0 ? Math.max(percent, 20) : 10,
+        count,
+        active: day === todayLabel
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalEnrollments,
+        newThisWeek,
+        totalCourses: courses.length,
+        publishedCourses: publishedCount,
+        chartData
+      }
+    });
+  } catch (error) {
+    logger.error(`Error in getTeacherEnrollmentStats: ${error.message}`);
+    next(error);
+  }
+};
+
+/**
+ * @desc    Get detailed list and statistics of students enrolled in teacher's courses
+ * @route   GET /api/courses/my/students
+ * @access  Private (Teacher)
+ */
+const getTeacherStudentsList = async (req, res, next) => {
+  try {
+    const { Student } = require('../models');
+    const { courseId, search, status } = req.query;
+
+    const query = {
+      $or: [
+        { teacher: req.user.id },
+        { teachingAssistants: req.user.id }
+      ]
+    };
+    if (courseId && courseId !== 'all') {
+      query._id = courseId;
+    }
+
+    const courses = await Course.find(query).select('_id title slug level');
+    const courseMap = new Map();
+    courses.forEach(c => courseMap.set(c._id.toString(), c));
+
+    const targetCourseIds = courses.map(c => c._id.toString());
+
+    const Video = require('../models/Video');
+    const VideoProgress = require('../models/VideoProgress');
+
+    // Count published videos per course
+    const videos = await Video.aggregate([
+      { $match: { courseId: { $in: targetCourseIds.map(id => new mongoose.Types.ObjectId(id)) }, isPublished: true } },
+      { $group: { _id: '$courseId', count: { $sum: 1 } } }
+    ]);
+    const videoCountMap = new Map();
+    videos.forEach(v => videoCountMap.set(v._id.toString(), v.count));
+
+    // Find students enrolled in these courses
+    const students = await Student.find({
+      'enrolledCourses.courseId': { $in: targetCourseIds }
+    })
+      .populate('userId', 'name email avatar phone')
+      .populate('enrolledCourses.learningPath', 'overallProgress isCompleted');
+
+    // Fetch video progress counts for these students across target courses
+    const studentIds = students.map(s => s._id);
+    const videoProgressList = await VideoProgress.aggregate([
+      { $match: { studentId: { $in: studentIds }, courseId: { $in: targetCourseIds.map(id => new mongoose.Types.ObjectId(id)) }, isCompleted: true } },
+      { $group: { _id: { studentId: '$studentId', courseId: '$courseId' }, count: { $sum: 1 } } }
+    ]);
+    const videoProgressMap = new Map();
+    videoProgressList.forEach(vp => {
+      videoProgressMap.set(`${vp._id.studentId.toString()}_${vp._id.courseId.toString()}`, vp.count);
+    });
+
+    // Fetch placement tests for these students/users
+    const PlacementTest = require('../models/PlacementTest');
+    const userIds = students.map(s => s.userId?._id || s.userId).filter(Boolean);
+    const allPlacementTests = await PlacementTest.find({
+      $or: [
+        { studentId: { $in: userIds } },
+        { studentId: { $in: studentIds } }
+      ],
+      status: { $in: ['completed', 'graded'] }
+    })
+      .select('_id studentId totalScore questions submittedAt createdAt status')
+      .sort({ submittedAt: -1, createdAt: -1 })
+      .lean();
+
+    const placementMap = new Map();
+    allPlacementTests.forEach(pt => {
+      const sIdStr = pt.studentId.toString();
+      if (!placementMap.has(sIdStr)) {
+        placementMap.set(sIdStr, []);
+      }
+      const list = placementMap.get(sIdStr);
+      if (list.length < 2) {
+        list.push({
+          testId: pt._id,
+          totalScore: pt.totalScore || 0,
+          maxScore: pt.questions ? pt.questions.length : 15,
+          date: pt.submittedAt || pt.createdAt || new Date(),
+          status: pt.status
+        });
+      }
+    });
+
+    const enrollments = [];
+    const uniqueStudentIds = new Set();
+    let activeCount = 0;
+    let completedCount = 0;
+    let totalProgressSum = 0;
+    let progressCount = 0;
+
+    students.forEach(student => {
+      if (!student.userId) return; // In case user was deleted
+      const u = student.userId;
+
+      // Filter by search term if provided
+      if (search) {
+        const sLower = search.toLowerCase();
+        const nameMatch = u.name && u.name.toLowerCase().includes(sLower);
+        const emailMatch = u.email && u.email.toLowerCase().includes(sLower);
+        if (!nameMatch && !emailMatch) return;
+      }
+
+      if (student.enrolledCourses && Array.isArray(student.enrolledCourses)) {
+        student.enrolledCourses.forEach(enroll => {
+          const cIdObj = enroll.courseId?._id || enroll.courseId;
+          if (!cIdObj) return;
+          const cIdStr = cIdObj.toString();
+
+          if (targetCourseIds.includes(cIdStr)) {
+            const courseObj = courseMap.get(cIdStr);
+            if (!courseObj) return;
+
+            const totalVids = videoCountMap.get(cIdStr) || 0;
+            const completedVids = videoProgressMap.get(`${student._id.toString()}_${cIdStr}`) || 0;
+            const videoPct = totalVids > 0 ? Math.round((completedVids / totalVids) * 100) : 0;
+
+            const lpProgress = enroll.learningPath?.overallProgress || 0;
+            const baseProgress = typeof enroll.progress === 'number' ? enroll.progress : 0;
+
+            let prog = Math.min(100, Math.max(baseProgress, lpProgress, videoPct));
+            let enrollStatus = enroll.status || 'active';
+
+            if (enrollStatus === 'completed' || enroll.learningPath?.isCompleted || prog >= 100) {
+              enrollStatus = 'completed';
+              if (prog === 0) prog = 100;
+            }
+
+            if (status && status !== 'all' && enrollStatus !== status) return;
+
+            uniqueStudentIds.add(u._id.toString());
+            if (enrollStatus === 'active') activeCount++;
+            if (enrollStatus === 'completed') completedCount++;
+
+            totalProgressSum += prog;
+            progressCount++;
+
+            const uIdStr = u._id ? u._id.toString() : u.toString();
+            const sIdStr = student._id.toString();
+            const pTests = placementMap.get(uIdStr) || placementMap.get(sIdStr) || [];
+
+            enrollments.push({
+              enrollmentId: `${student._id}_${cIdStr}`,
+              studentId: student._id,
+              userId: {
+                _id: u._id,
+                name: u.name,
+                email: u.email,
+                avatar: u.avatar,
+                phone: u.phone
+              },
+              courseId: {
+                _id: courseObj._id,
+                title: courseObj.title,
+                slug: courseObj.slug,
+                level: courseObj.level
+              },
+              enrollmentDate: enroll.enrollmentDate || student.createdAt || new Date(),
+              progress: prog,
+              status: enrollStatus,
+              placementTests: pTests
+            });
+          }
+        });
+      }
+    });
+
+    // Sort enrollments by enrollmentDate desc
+    enrollments.sort((a, b) => new Date(b.enrollmentDate) - new Date(a.enrollmentDate));
+
+    const avgProgress = progressCount > 0 ? Math.round(totalProgressSum / progressCount) : 0;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        summary: {
+          totalStudents: uniqueStudentIds.size,
+          activeCount,
+          completedCount,
+          avgProgress,
+          totalEnrollments: enrollments.length
+        },
+        courses: courses.map(c => ({ _id: c._id, title: c.title, level: c.level })),
+        enrollments
+      }
+    });
+  } catch (error) {
+    logger.error(`Error in getTeacherStudentsList: ${error.message}`);
+    next(error);
+  }
+};
+
 module.exports = {
   createCourse,
   getAllCourses,
@@ -699,5 +1147,8 @@ module.exports = {
   getPublicCourseBySlug,
   requestCoursePreview,
   getCourseStudents,
-  getCourseAdminStats
+  getCourseAdminStats,
+  getCourseTeacherStats,
+  getTeacherEnrollmentStats,
+  getTeacherStudentsList
 };

@@ -140,6 +140,7 @@ export default function TeacherPlacementQuestionsPage() {
             <main className="flex-1 w-full">
                 <div className="w-full pt-6">
                     <PlacementQuestionsHeader
+                        questions={questions}
                         onSearch={setSearchQuery}
                         onFilterChange={handleFilterChange}
                         onCreateClick={handleCreateNew}

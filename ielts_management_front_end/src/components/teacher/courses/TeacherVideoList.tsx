@@ -111,7 +111,7 @@ export default function TeacherVideoList({ videos, onPlay, onDeleteRequest, onEd
                     type="button"
                     onClick={() => onEdit(video)}
                     className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100"
-                    title="Cap nhat video"
+                    title="Cập nhật video"
                   >
                     <Pencil className="h-4 w-4" />
                   </button>

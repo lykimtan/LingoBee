@@ -15,6 +15,7 @@ import {
 
 import { invitationService } from "@/services/invatationService";
 import { courseService } from "@/services/courseService";
+import { ScheduleWidget } from "@/components/teacher/ScheduleWidget";
 
 import { TeacherInvitation, TeacherCourseItem } from "@/types";
 
@@ -152,7 +153,7 @@ export default function TeacherCoursesPage() {
 
 	return (
 		<div className="flex flex-col h-full">
-			<TeacherCoursesHeader />
+			<TeacherCoursesHeader courses={courses} />
 			<div className="flex flex-col gap-6 md:flex-row px-6">
 				<TeacherCoursesSidebar
 					activeTab={activeTab}
@@ -160,8 +161,15 @@ export default function TeacherCoursesPage() {
 					isOpen={isSidebarOpen}
 					onToggle={() => setIsSidebarOpen((prev) => !prev)}
 				/>
-				<div className="flex-1 rounded-2xl border border-white/60 bg-white/70 p-6 shadow-sm">
-					{tabContent}
+				<div className="flex-1 flex flex-col gap-6 min-w-0">
+					{activeTab === "my-courses" && (
+						<div className="w-full">
+							<ScheduleWidget />
+						</div>
+					)}
+					<div className="flex-1 rounded-2xl border border-white/60 bg-white/70 p-6 shadow-sm min-w-0">
+						{tabContent}
+					</div>
 				</div>
 			</div>
 		</div>

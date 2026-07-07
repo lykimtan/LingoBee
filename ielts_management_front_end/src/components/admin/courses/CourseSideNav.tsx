@@ -18,7 +18,6 @@ const navItems = [
   { id: "statistical", label: "Thống kê", icon: ChartPie, href: undefined },
   { id: "list", label: "Danh sách khóa học", icon: BookOpen, href: "/admin/courses" },
   { id: "create", label: "Tạo khóa học mới", icon: PlusCircle, href: undefined },
-  { id: "status", label: "Quản lý trạng thái", icon: Activity, href: undefined },
 ] as const;
 
 export function CourseSideNav({

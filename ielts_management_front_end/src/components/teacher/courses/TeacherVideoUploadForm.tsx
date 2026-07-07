@@ -8,7 +8,7 @@ import { CloudUpload, ArrowUpFromLine } from "lucide-react";
 import { toast } from "react-toastify";
 import { CourseVideo } from "@/types";
 import Image from "next/image";
-import RichTextEditor  from "@/components/teacher/RichTextEditor";
+import RichTextEditor from "@/components/teacher/RichTextEditor";
 
 import Uppy from '@uppy/core';
 import Dashboard from '@uppy/react/dashboard';
@@ -37,7 +37,7 @@ export default function TeacherVideoUploadForm({
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [isPublished, setIsPublished] = useState(false);
+  const [isPublished, setIsPublished] = useState(true);
   const [isMandatory, setIsMandatory] = useState(true);
   const isEditing = Boolean(initialVideo?._id);
 
@@ -382,7 +382,7 @@ export default function TeacherVideoUploadForm({
         toast.success("Cập nhật video thành công!");
         onCancelEdit?.();
       } else {
-        const createResponse = await videoService.createVideoByCourse(courseId,payload);
+        const createResponse = await videoService.createVideoByCourse(courseId, payload);
 
         if (createResponse.status === "error" || !createResponse.data) {
           throw new Error(createResponse.message || "Không thể tạo video.");
@@ -520,6 +520,7 @@ export default function TeacherVideoUploadForm({
             <input
               type="checkbox"
               checked={isPublished}
+
               onChange={(event) => setIsPublished(event.target.checked)}
               className="h-5 w-5 rounded border-gray-300 text-black focus:ring-black"
             />

@@ -39,7 +39,7 @@ export function TeacherHeader() {
     { label: "Khóa học", href: "/teacher/courses" },
     { label: "Học viên", href: "/teacher/students" },
     { label: "Đề thi ĐGNL", href: "/teacher/placement-questions" },
-    { label: "Cài đặt", href: "/teacher/settings" },
+    { label: "Profile", href: "/teacher/profile" },
   ];
 
   const isActive = (href: string) => {

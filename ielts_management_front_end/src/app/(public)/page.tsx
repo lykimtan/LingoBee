@@ -3,6 +3,7 @@ import { Navigation } from "@/components/Navigation";
 import { HeroSection } from "@/components/HeroSection";
 import { ProgramStats } from "@/components/ProgramStats";
 import { TeacherShowcase } from "@/components/TeacherShowcase";
+import { HallOfFameSection } from "@/components/HallOfFameSection";
 import { PromoSection } from "@/components/PromoSection";
 import { MissionSection } from "@/components/MissionSection";
 import { Footer } from "@/components/Footer";
@@ -41,6 +42,9 @@ export default async function Home() {
 
       {/* Teacher Showcase Section */}
       <TeacherShowcase />
+
+      {/* Hall Of Fame Section */}
+      <HallOfFameSection />
 
 
       {/* Mission Section */}

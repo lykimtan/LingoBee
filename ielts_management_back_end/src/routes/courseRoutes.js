@@ -46,11 +46,14 @@ router.post(
   inviteAssistantToCourse
 );
 router.get('/invitations', authMiddleware, isTeacher, getMyCourseInvitations);
+router.get('/my/enrollment-stats', authMiddleware, isTeacher, courseController.getTeacherEnrollmentStats);
+router.get('/my/students', authMiddleware, isTeacher, courseController.getTeacherStudentsList);
 router.get('/my', authMiddleware, isTeacher, courseController.getMyTeachingCourses);
 router.get('/my/:slug', authMiddleware, isTeacher, courseController.getMyTeachingCourseBySlug);
 router.get('/', authMiddleware, isAdmin, courseController.getAllCourses);
 router.get('/slug/:slug', authMiddleware, isAdmin, courseController.getAdminCourseBySlug);
 router.get('/:id/admin-stats', authMiddleware, isAdmin, courseController.getCourseAdminStats);
+router.get('/:id/teacher-stats', authMiddleware, isTeacher, courseController.getCourseTeacherStats);
 router.get('/:id', authMiddleware, isAdmin, courseController.getCourseById);
 router.get('/:id/students', authMiddleware, isTeacher, courseController.getCourseStudents);
 router.put(

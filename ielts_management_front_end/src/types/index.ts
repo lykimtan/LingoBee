@@ -110,6 +110,8 @@ export type TeacherCourseItem = {
   level: string;
   status: string;
   totalStudents?: number;
+  totalVideos?: number;
+  durationInHours?: number;
   updatedAt?: string;
   publicInfo?: {
     thumbnail?: string | null;

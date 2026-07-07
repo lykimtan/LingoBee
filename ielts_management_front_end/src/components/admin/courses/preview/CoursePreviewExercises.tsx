@@ -117,7 +117,7 @@ export default function CoursePreviewExercises({ activeVideo }: CoursePreviewExe
                                 }`}
                             >
                               <div dangerouslySetInnerHTML={createSafeHtml(opt.text)} />
-                              {q.correctOptionId === opt.id && <span className="shrink-0"> (Correct)</span>}
+                              {q.correctOptionId === opt.id && <span className="shrink-0"> (Đáp án)</span>}
                             </div>
                           ))}
                         </div>

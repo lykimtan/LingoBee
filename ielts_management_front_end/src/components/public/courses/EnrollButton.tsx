@@ -41,29 +41,33 @@ export function EnrollButton({ courseId, price, slug }: EnrollButtonProps) {
         return;
       }
       
+      setCheckingEnrollment(true);
       try {
-        if (user.role === 'student') {
-          const res = await userService.getUserProfile();
-          if (res.data?.student?.enrolledCourses) {
-            const enrolledCourse = res.data.student.enrolledCourses.find(
-              (c: any) => c.courseId === courseId || c.courseId?._id === courseId
-            );
-            if (isMounted) {
-              setIsEnrolled(!!enrolledCourse);
-              if (enrolledCourse) {
-                // Fetch actual progress from learning data
-                try {
-                  const learningRes = await learningService.getCourseLearningData(slug);
-                  if (learningRes.success && learningRes.data) {
-                    const videos = learningRes.data.videos;
-                    const completedCount = videos.filter((v: any) => v.progress?.isCompleted).length;
-                    const actualProgress = videos.length > 0 ? Math.round((completedCount / videos.length) * 100) : 0;
-                    setProgress(actualProgress);
-                  }
-                } catch (e) {
-                  setProgress(enrolledCourse.progress || 0);
-                }
+        const res = await userService.getUserProfile();
+        const studentProfile = res.data?.student || res.data;
+        const enrolledCourses = studentProfile?.enrolledCourses || [];
+        const targetId = String(courseId || '').trim();
+
+        const enrolledCourse = enrolledCourses.find((c: any) => {
+          if (!c) return false;
+          const rawId = c.courseId?._id || c.courseId?.id || c.courseId || c._id || c.id;
+          return String(rawId || '').trim() === targetId;
+        });
+
+        if (isMounted) {
+          setIsEnrolled(!!enrolledCourse);
+          if (enrolledCourse) {
+            // Fetch actual progress from learning data
+            try {
+              const learningRes = await learningService.getCourseLearningData(slug);
+              if (learningRes.success && learningRes.data) {
+                const videos = learningRes.data.videos;
+                const completedCount = videos.filter((v: any) => v.progress?.isCompleted).length;
+                const actualProgress = videos.length > 0 ? Math.round((completedCount / videos.length) * 100) : 0;
+                setProgress(actualProgress);
               }
+            } catch (e) {
+              setProgress(enrolledCourse.progress || 0);
             }
           }
         }

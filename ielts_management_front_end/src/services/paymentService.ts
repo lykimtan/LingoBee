@@ -42,8 +42,12 @@ class PaymentService {
   /**
    * Lấy thống kê doanh thu chi tiết (Admin)
    */
-  async getAdminRevenueStats(): Promise<ApiResponse<any>> {
-    return apiClient.get('/api/payments/admin/revenue-stats');
+  async getAdminRevenueStats(params?: { chartDays?: string; courseDays?: string }): Promise<ApiResponse<any>> {
+    const query = new URLSearchParams();
+    if (params?.chartDays) query.append('chartDays', params.chartDays);
+    if (params?.courseDays) query.append('courseDays', params.courseDays);
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    return apiClient.get(`/api/payments/admin/revenue-stats${queryString}`);
   }
 }
 

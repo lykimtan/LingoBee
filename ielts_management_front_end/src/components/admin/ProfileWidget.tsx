@@ -44,7 +44,7 @@ export function ProfileWidget() {
             <Mail className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] text-white/50">Email đăng nhập</p>
+            <p className="text-[11px] text-white/50">Email: </p>
             <p className="truncate text-xs font-medium text-white/90">{user?.email || "admin@lingobee.edu.vn"}</p>
           </div>
         </div>

@@ -160,11 +160,10 @@ export function CoursesManager() {
                       <button
                         key={tab.value}
                         onClick={() => setFilterStatus(tab.value)}
-                        className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
-                          filterStatus === tab.value
+                        className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${filterStatus === tab.value
                             ? "bg-white text-black"
                             : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
-                        }`}
+                          }`}
                       >
                         {tab.label}
                       </button>
@@ -195,16 +194,16 @@ export function CoursesManager() {
                     {filteredCourses.map((course) => {
                       const teacherName = course.teacher
                         ? `${course.teacher.firstName || ""} ${course.teacher.lastName || ""}`.trim() ||
-                          course.teacher.email ||
-                          "Chưa gán"
+                        course.teacher.email ||
+                        "Chưa gán"
                         : "Chưa gán";
                       const thumbnail = course.publicInfo?.thumbnail || "";
                       const backgroundStyle = thumbnail
                         ? { backgroundImage: `url(${thumbnail})` }
                         : {
-                            backgroundImage:
-                              "linear-gradient(135deg, rgba(255,184,0,0.2), rgba(31,111,94,0.35))",
-                          };
+                          backgroundImage:
+                            "linear-gradient(135deg, rgba(255,184,0,0.2), rgba(31,111,94,0.35))",
+                        };
 
                       return (
                         <div
@@ -263,13 +262,6 @@ export function CoursesManager() {
                     <CourseShellSidebar />
                   </div>
                 </div>
-              </div>
-            )}
-
-            {activeTab === "status" && (
-              <div className="flex h-full flex-col items-center justify-center text-white/50">
-                <p className="text-xl">Quản lý trạng thái</p>
-                <p className="text-sm">Component quản lý trạng thái khóa học sẽ nằm ở đây.</p>
               </div>
             )}
 

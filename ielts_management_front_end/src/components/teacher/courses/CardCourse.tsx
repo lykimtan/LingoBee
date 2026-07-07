@@ -62,11 +62,17 @@ const CardCourse = ({ course }: CardCourseProps) => {
           </span>
         </div>
 
-        <div className="mt-auto flex flex-wrap gap-3 text-xs text-gray-700 font-medium">
-          <span>Học viên: {course.totalStudents ?? 0}</span>
-          {course.updatedAt && (
-            <span>Cập nhật: {new Date(course.updatedAt).toLocaleDateString()}</span>
-          )}
+        <div className="mt-auto flex flex-col gap-1.5 text-xs text-gray-700 font-medium border-t border-gray-100/80 pt-2">
+          <div className="flex items-center justify-between">
+            <span>Học viên: <strong className="text-gray-900">{course.totalStudents ?? 0}</strong></span>
+            <span>Video: <strong className="text-gray-900">{course.totalVideos ?? 0}</strong></span>
+          </div>
+          <div className="flex items-center justify-between text-gray-600">
+            <span>Thời lượng: <strong className="text-[#1f6f5e]">{course.durationInHours ?? 0} giờ</strong></span>
+            {course.updatedAt && (
+              <span className="text-[11px] text-gray-400">{new Date(course.updatedAt).toLocaleDateString("vi-VN")}</span>
+            )}
+          </div>
         </div>
 
         <div className="ml-auto inline-flex items-center gap-2 text-xs font-semibold text-[#1f6f5e] opacity-0 transition group-hover:opacity-100">

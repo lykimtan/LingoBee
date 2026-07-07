@@ -3,6 +3,51 @@ const logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const { sendEmail } = require('../services/apiService');
 
+const enrichStudentCoursesProgress = async (student) => {
+  if (!student || !student.enrolledCourses || !Array.isArray(student.enrolledCourses) || student.enrolledCourses.length === 0) return;
+  try {
+    const VideoProgress = require('../models/VideoProgress');
+    const Video = require('../models/Video');
+    let updated = false;
+
+    for (let i = 0; i < student.enrolledCourses.length; i++) {
+      const enroll = student.enrolledCourses[i];
+      const course = enroll.courseId;
+      const courseId = course?._id || course;
+      if (!courseId) continue;
+
+      // 1. Video progress percentage
+      const completedVideosCount = await VideoProgress.countDocuments({ studentId: student._id, courseId, isCompleted: true });
+      const totalVideos = await Video.countDocuments({ courseId, isPublished: true });
+      const videoProgressPct = totalVideos > 0 ? Math.round((completedVideosCount / totalVideos) * 100) : 0;
+
+      // 2. Learning path progress
+      const lpProgress = enroll.learningPath?.overallProgress || 0;
+
+      // 3. Base progress in DB
+      const baseProgress = enroll.progress || 0;
+
+      // Real progress
+      const realProgress = Math.min(100, Math.max(baseProgress, lpProgress, videoProgressPct));
+
+      if (enroll.progress !== realProgress || (realProgress >= 100 && enroll.status !== 'completed')) {
+        enroll.progress = realProgress;
+        if (realProgress >= 100) {
+          enroll.status = 'completed';
+        }
+        updated = true;
+      }
+    }
+
+    if (updated) {
+      await student.save();
+    }
+  } catch (err) {
+    logger.error(`Error enriching student course progress: ${err.message}`);
+  }
+};
+
+
 // ============================================
 // GET ALL USERS (ADMIN ONLY)
 // ============================================
@@ -91,8 +136,11 @@ const getUserById = async (req, res) => {
     let student = null;
     if (user.role === 'student') {
       student = await Student.findOne({ userId })
-        .populate('enrolledCourses.courseId', 'title description')
+        .populate('enrolledCourses.courseId', 'title slug description level category price publicInfo promoVideoUrl')
         .populate('enrolledCourses.learningPath', 'dailySchedule');
+      if (student) {
+        await enrichStudentCoursesProgress(student);
+      }
     }
 
     logger.info(`User retrieved: ${user.email}`);
@@ -428,6 +476,27 @@ const upgradeToAdmin = async (req, res) => {
       message: 'Lỗi khi thăng quyền Quản trị viên',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
+  }
+};
+
+/**
+ * @desc    Admin manually verify user's email
+ * @route   POST /api/users/students/admin/:userId/verify-email
+ * @access  Private (Admin)
+ */
+const adminVerifyUserEmail = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản học viên' });
+    }
+    user.isEmailVerified = true;
+    await user.save();
+    logger.info(`User email manually verified: ${user.email} by ${req.user ? req.user.email : 'Admin'}`);
+    res.status(200).json({ success: true, message: 'Xác thực email thành công', data: user });
+  } catch (error) {
+    logger.error(`Error verifying user email manually: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Lỗi server khi xác thực email' });
   }
 };
 
@@ -780,12 +849,13 @@ const getUserProfile = async (req, res) => {
 
     let profileData = { user };
 
-    // If student, get student profile
-    if (user.role === 'student') {
-      const student = await Student.findOne({ userId })
-        .populate('enrolledCourses.courseId', 'title description price')
-        .populate('enrolledCourses.learningPath');
+    // Get student profile if exists (even if user is admin/teacher testing courses)
+    const student = await Student.findOne({ userId })
+      .populate('enrolledCourses.courseId', 'title slug description level category price publicInfo promoVideoUrl')
+      .populate('enrolledCourses.learningPath');
 
+    if (student) {
+      await enrichStudentCoursesProgress(student);
       profileData.student = student;
     }
 
@@ -1014,7 +1084,10 @@ const getAdminStudentDetail = async (req, res) => {
     }
 
     const studentProfile = await Student.findOne({ userId })
-      .populate('enrolledCourses.courseId', 'title slug level category promoVideoUrl');
+      .populate('enrolledCourses.courseId', 'title slug description level category price publicInfo promoVideoUrl');
+    if (studentProfile) {
+      await enrichStudentCoursesProgress(studentProfile);
+    }
 
     const placementTests = await PlacementTest.find({ studentId: userId }).sort({ createdAt: -1 });
 
@@ -1181,19 +1254,21 @@ const getAdminTeacherStats = async (req, res) => {
 const getAdminTeacherDetail = async (req, res) => {
   try {
     const { userId } = req.params;
-    const Course = require('../models/Course');
+    const { Course, TeacherProfile } = require('../models');
 
     const user = await User.findById(userId).select('-password');
     if (!user) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy giảng viên' });
     }
 
+    const teacherProfile = await TeacherProfile.findOne({ userId });
     const assignedCourses = await Course.find({ teacher: userId }).select('title slug level category promoVideoUrl createdAt publicInfo.thumbnail isPublished status');
     const assistingCourses = await Course.find({ teachingAssistants: userId }).select('title slug level category promoVideoUrl createdAt publicInfo.thumbnail isPublished status');
     return res.status(200).json({
       success: true,
       data: {
         user,
+        teacherProfile,
         assignedCourses,
         assistingCourses
       }
@@ -1241,6 +1316,126 @@ const downgradeToStudent = async (req, res) => {
   }
 };
 
+const getTeacherMyProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { TeacherProfile } = require('../models');
+    const user = await User.findById(userId).select('_id name email avatar phone role status');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    let profile = await TeacherProfile.findOne({ userId });
+    if (!profile) {
+      profile = await TeacherProfile.create({
+        userId,
+        title: 'Giảng viên IELTS LingoBee',
+        band: '8.0',
+        experienceYears: 3,
+        bio: 'Chuyên gia luyện thi IELTS với nhiều năm kinh nghiệm giảng dạy và đồng hành cùng học viên chinh phục mục tiêu điểm số.',
+        highlights: [
+          'Bài giảng mô hình hiện đại, tập trung ứng dụng',
+          'Cam kết đầu ra rõ ràng theo lộ trình cá nhân hóa',
+          'Theo sát tiến độ qua bản đồ năng lực chuyên sâu',
+        ],
+        certificates: ['IELTS Academic Band 8.0+', 'TESOL / CELTA Certified'],
+        isFeatured: true
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      data: {
+        user,
+        profile
+      }
+    });
+  } catch (error) {
+    logger.error(`Error in getTeacherMyProfile: ${error.message}`);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const updateTeacherMyProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { TeacherProfile } = require('../models');
+    const { name, avatar, phone, title, band, experienceYears, bio, teachingPhilosophy, highlights, certificates, socialLinks, isFeatured } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    if (name !== undefined) user.name = name;
+    if (avatar !== undefined) user.avatar = avatar;
+    await user.save();
+
+    let profile = await TeacherProfile.findOne({ userId });
+    if (!profile) {
+      profile = new TeacherProfile({ userId });
+    }
+    if (title !== undefined) profile.title = title;
+    if (band !== undefined) profile.band = band;
+    if (experienceYears !== undefined) profile.experienceYears = Number(experienceYears);
+    if (bio !== undefined) profile.bio = bio;
+    if (teachingPhilosophy !== undefined) profile.teachingPhilosophy = teachingPhilosophy;
+    if (Array.isArray(highlights)) profile.highlights = highlights;
+    if (Array.isArray(certificates)) profile.certificates = certificates;
+    if (socialLinks && typeof socialLinks === 'object') {
+      profile.socialLinks = { ...profile.socialLinks, ...socialLinks };
+    }
+    if (isFeatured !== undefined) profile.isFeatured = Boolean(isFeatured);
+
+    await profile.save();
+
+    // Sync to Knowledge Base with updated profile
+    const knowledgeSyncService = require('../services/knowledgeSyncService');
+    await knowledgeSyncService.syncTeacher(user);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật hồ sơ giảng viên thành công',
+      data: {
+        user,
+        profile
+      }
+    });
+  } catch (error) {
+    logger.error(`Error in updateTeacherMyProfile: ${error.message}`);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getPublicTeachersShowcase = async (req, res) => {
+  try {
+    const { TeacherProfile } = require('../models');
+    const profiles = await TeacherProfile.find({ isFeatured: true })
+      .populate('userId', 'name email avatar status role')
+      .sort({ updatedAt: -1 });
+
+    const activeTeachers = profiles
+      .filter(p => p.userId && p.userId.status === 'active' && p.userId.role === 'teacher')
+      .map(p => ({
+        id: p.userId._id.toString(),
+        name: p.userId.name,
+        title: p.title || 'Giảng viên IELTS LingoBee',
+        band: p.band || '8.0',
+        bio: p.bio || '',
+        teachingPhilosophy: p.teachingPhilosophy || '',
+        highlights: p.highlights && p.highlights.length > 0 ? p.highlights : ['Phương pháp giảng dạy hiện đại', 'Cam kết đầu ra'],
+        certificates: p.certificates || [],
+        socialLinks: p.socialLinks || {},
+        image: p.userId.avatar || '/homepage/teacher_ngtaif.png'
+      }));
+
+    return res.status(200).json({
+      success: true,
+      data: activeTeachers
+    });
+  } catch (error) {
+    logger.error(`Error in getPublicTeachersShowcase: ${error.message}`);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
@@ -1257,9 +1452,13 @@ module.exports = {
   getAdminStudentDetail,
   upgradeToTeacher,
   upgradeToAdmin,
+  adminVerifyUserEmail,
   getAdminTeachers,
   getAdminTeacherStats,
   getAdminTeacherDetail,
   downgradeToStudent,
+  getTeacherMyProfile,
+  updateTeacherMyProfile,
+  getPublicTeachersShowcase,
 };
 

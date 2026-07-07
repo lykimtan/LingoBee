@@ -122,11 +122,17 @@ export default function TakePlacementTestPage({ params }: { params: Promise<{ te
         const hasSpeaking = formattedAnswers.some(a => a.audioSubmissionUrl);
         if (hasSpeaking) {
           toast.update(toastId, { render: "Đang phân tích và chấm điểm Speaking bằng AI...", type: "info", isLoading: true });
-          // Call the AI grading API
-          await placementTestService.gradeSpeakingWithAI(testId);
+          try {
+            await placementTestService.gradeSpeakingWithAI(testId);
+            toast.update(toastId, { render: "Hoàn tất! Đang chuyển sang trang kết quả...", type: "success", isLoading: false, autoClose: 2000 });
+          } catch (aiError) {
+            console.warn("Lỗi hoặc timeout khi chấm Speaking AI:", aiError);
+            toast.dismiss();
+            toast.info("Nộp bài thành công! Điểm Speaking AI đang xử lý ngầm và sẽ cập nhật sau.");
+          }
+        } else {
+          toast.update(toastId, { render: "Hoàn tất! Đang chuyển sang trang kết quả...", type: "success", isLoading: false, autoClose: 2000 });
         }
-
-        toast.update(toastId, { render: "Hoàn tất! Đang chuyển sang trang kết quả...", type: "success", isLoading: false, autoClose: 2000 });
         router.push(`/placement-test/${testId}/results`);
       }
     } catch (error: any) {

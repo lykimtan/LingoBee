@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { teacherProfileService } from "@/services/teacherProfileService";
 
-const teachers = [
+const defaultTeachers = [
   {
     id: "vu-hoang-anh",
     name: "Hoang Anh Vu",
@@ -48,24 +49,42 @@ const teachers = [
   },
 ];
 
-export const TeacherShowcase = () => {
+export const TeacherShowcase = ({ initialTeachers }: { initialTeachers?: any[] }) => {
+  const [teacherList, setTeacherList] = useState<any[]>(
+    initialTeachers && initialTeachers.length > 0 ? initialTeachers : defaultTeachers
+  );
   const [activeIndex, setActiveIndex] = useState(0);
-  const currentTeacher = teachers[activeIndex];
+  const currentTeacher = teacherList[activeIndex] || defaultTeachers[0];
+
+  useEffect(() => {
+    if (initialTeachers && initialTeachers.length > 0) {
+      setTeacherList(initialTeachers);
+      setActiveIndex(0);
+      return;
+    }
+    const fetchDynamicTeachers = async () => {
+      const res = await teacherProfileService.getPublicShowcaseTeachers();
+      if (res.success && res.data && res.data.length > 0) {
+        setTeacherList(res.data);
+      }
+    };
+    fetchDynamicTeachers();
+  }, [initialTeachers]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % teachers.length);
+      setActiveIndex((prev) => (prev + 1) % teacherList.length);
     }, 4500);
 
     return () => clearInterval(intervalId);
-  }, []);
+  }, [teacherList.length]);
 
   const goNext = () => {
-    setActiveIndex((prev) => (prev + 1) % teachers.length);
+    setActiveIndex((prev) => (prev + 1) % teacherList.length);
   };
 
   const goPrev = () => {
-    setActiveIndex((prev) => (prev - 1 + teachers.length) % teachers.length);
+    setActiveIndex((prev) => (prev - 1 + teacherList.length) % teacherList.length);
   };
 
   return (
@@ -117,7 +136,7 @@ export const TeacherShowcase = () => {
                     IELTS {currentTeacher.band}
                   </span>
                   <span className="text-xs uppercase tracking-[0.35em] text-slate-400">
-                    Expert
+                    {currentTeacher.role || "Expert"}
                   </span>
                 </div>
                 <div>
@@ -128,23 +147,14 @@ export const TeacherShowcase = () => {
                 </div>
                 <p className="text-base text-slate-600">{currentTeacher.bio}</p>
                 <ul className="space-y-2 text-sm text-slate-600">
-                  {currentTeacher.highlights.map((item) => (
-                    <li key={item} className="flex items-start gap-3">
+                  {currentTeacher.highlights?.map((item: string, idx: number) => (
+                    <li key={idx} className="flex items-start gap-3">
                       <span className="mt-1 h-2 w-2 rounded-full bg-[#ef4444]" />
                       <span>{item}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-            </div>
-
-            <div className="flex flex-wrap gap-4">
-              <button className="rounded-full bg-[#ef4444] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#ef4444]/30 hover:scale-[1.02] transition-transform">
-                Đăng ký tư vấn
-              </button>
-              <button className="rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 hover:border-[#1c7c78] hover:text-[#1c7c78] transition-colors">
-                Xem hồ sơ giảng viên
-              </button>
             </div>
           </div>
 
@@ -230,7 +240,7 @@ export const TeacherShowcase = () => {
             </div>
 
             <div className="mt-10 flex items-center gap-3">
-              {teachers.map((teacher, index) => (
+              {teacherList.map((teacher, index) => (
                 <button
                   key={teacher.id}
                   type="button"

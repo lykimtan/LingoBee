@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Plyr } from "plyr-react";
 import "plyr-react/plyr.css";
 import { X } from "lucide-react";
@@ -10,8 +11,6 @@ interface VideoPlayerModalProps {
   title: string;
 }
 
-
-
 export default function VideoPlayerModal({
   isOpen,
   onClose,
@@ -22,11 +21,10 @@ export default function VideoPlayerModal({
   const [isRendered, setIsRendered] = useState(false);
 
   useEffect(() => {
-  if(videoUrl) {
+    if (videoUrl) {
       console.log("Video URL: ", videoUrl);
-  }
-}, [videoUrl]);
-
+    }
+  }, [videoUrl]);
 
   useEffect(() => {
     if (isOpen) {
@@ -41,10 +39,21 @@ export default function VideoPlayerModal({
     }
   }, [isOpen]);
 
-  if (!isRendered) return null;
+  useEffect(() => {
+    if (!isRendered) return;
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 md:p-12">
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isRendered]);
+
+  if (!isRendered || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 md:p-12">
       {/* Backdrop */}
       <div
         className={`fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity duration-300 ${
@@ -100,6 +109,8 @@ export default function VideoPlayerModal({
           />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
+

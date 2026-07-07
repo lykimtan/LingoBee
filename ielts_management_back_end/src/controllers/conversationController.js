@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { Conversation, Message, User } = require('../models');
+const { Conversation, Message, User, Course } = require('../models');
 const { getRedis, getValue, setWithTTL } = require('../config/redis');
 const { getIo } = require('../socket');
 const logger = require('../utils/logger');
@@ -20,11 +20,6 @@ const getCourseConversations = async (req, res) => {
       ];
     } else {
       // Giảng viên/Trợ giảng thấy phòng group và tất cả phòng private của khóa học
-      // Để tránh tải nặng, ở đây chỉ query các phòng họ tham gia hoặc phòng group.
-      // Nếu thiết kế là GV thấy TẤT CẢ học sinh, thì GV luôn có mặt trong `participants`.
-      // Tuy nhiên, phòng group luôn hiện. Phòng private sẽ hiện nếu GV có quyền (ví dụ: query hết cho giáo viên)
-      // Tùy theo logic nghiệp vụ, giả sử GV thấy hết:
-      // Không giới hạn $or, chỉ query courseId là đủ.
     }
 
     let conversations = await Conversation.find(query)
@@ -39,11 +34,31 @@ const getCourseConversations = async (req, res) => {
       const newGroup = new Conversation({
         type: 'group',
         courseId,
-        participants: [] // Thêm thành viên sau theo logic của bạn, hoặc để trống (tất cả những người trong khóa học đều được mặc định tham gia)
+        participants: []
       });
       await newGroup.save();
-      // Thêm nhóm mới tạo vào đầu danh sách trả về
       conversations.unshift(newGroup.toObject());
+    }
+
+    // Lazy initialization: Auto-create private conversation between Student and Course Teacher if it doesn't exist
+    if (userRole === 'student') {
+      const hasPrivate = conversations.some(c => c.type === 'private');
+      if (!hasPrivate) {
+        const course = await Course.findById(courseId);
+        if (course && course.teacher) {
+          const newPrivate = new Conversation({
+            type: 'private',
+            courseId,
+            participants: [
+              { userId },
+              { userId: course.teacher }
+            ]
+          });
+          await newPrivate.save();
+          await newPrivate.populate('participants.userId', 'name avatar role email');
+          conversations.push(newPrivate.toObject());
+        }
+      }
     }
 
     res.status(200).json({

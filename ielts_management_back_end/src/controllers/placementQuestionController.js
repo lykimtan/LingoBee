@@ -1,4 +1,4 @@
-const { PlacementQuestion } = require('../models');
+const { PlacementQuestion, PlacementTest } = require('../models');
 const logger = require('../utils/logger');
 const { deleteCloudinaryAsset } = require('./uploadController');
 
@@ -216,10 +216,88 @@ const deleteQuestion = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get performance analytics / accuracy rate for placement question types
+ * @route   GET /api/placement-questions/statistics/performance
+ * @access  Private (Admin/Teacher)
+ */
+const getQuestionPerformanceStats = async (req, res, next) => {
+  try {
+    const stats = await PlacementTest.aggregate([
+      { $match: { status: { $in: ['completed', 'graded'] } } },
+      { $unwind: '$answers' },
+      {
+        $lookup: {
+          from: 'placementquestions',
+          localField: 'answers.questionId',
+          foreignField: '_id',
+          as: 'questionInfo',
+        },
+      },
+      { $unwind: '$questionInfo' },
+      {
+        $group: {
+          _id: '$questionInfo.questionType',
+          totalAttempts: { $sum: 1 },
+          correctAttempts: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $in: ['$questionInfo.questionType', ['multipleChoice', 'listeningChoice']] },
+                    { $gt: ['$answers.score', 0] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          totalScore: { $sum: '$answers.score' },
+        },
+      },
+    ]);
+
+    const formattedStats = {
+      multipleChoice: { totalAttempts: 0, correctAttempts: 0, accuracyRate: 0 },
+      listeningChoice: { totalAttempts: 0, correctAttempts: 0, accuracyRate: 0 },
+      speaking: { totalAttempts: 0, totalScore: 0, averageScore: 0 },
+    };
+
+    stats.forEach((item) => {
+      const type = item._id;
+      if (type === 'multipleChoice' || type === 'listeningChoice') {
+        const rate = item.totalAttempts > 0 ? Math.round((item.correctAttempts / item.totalAttempts) * 100) : 0;
+        formattedStats[type] = {
+          totalAttempts: item.totalAttempts,
+          correctAttempts: item.correctAttempts,
+          accuracyRate: rate,
+        };
+      } else if (type === 'speaking') {
+        const avg = item.totalAttempts > 0 ? Number((item.totalScore / item.totalAttempts).toFixed(1)) : 0;
+        formattedStats[type] = {
+          totalAttempts: item.totalAttempts,
+          totalScore: item.totalScore,
+          averageScore: avg,
+        };
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: formattedStats,
+    });
+  } catch (error) {
+    logger.error(`Error in getQuestionPerformanceStats: ${error.message}`);
+    return next(error);
+  }
+};
+
 module.exports = {
   createQuestion,
   getQuestions,
   getQuestionById,
   updateQuestion,
   deleteQuestion,
+  getQuestionPerformanceStats,
 };

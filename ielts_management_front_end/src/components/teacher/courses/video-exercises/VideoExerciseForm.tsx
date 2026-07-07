@@ -373,7 +373,7 @@ function MultipleChoiceEditor({
           />
         </div>
         <div>
-          <FieldLabel label="Ky nang muc tieu" />
+          <FieldLabel label="Kỹ năng mục tiêu" />
           <SelectField
             value={question.skill}
             onChange={(value) => onChange({ skill: value as SkillValue })}
@@ -383,7 +383,7 @@ function MultipleChoiceEditor({
         </div>
       </div>
       <div>
-        <FieldLabel label="Cac phuong an tra loi" />
+        <FieldLabel label="Các phương án trả lời" />
         <div className="mt-2 space-y-3">
           {question.options.map((option) => (
             <div
@@ -402,7 +402,7 @@ function MultipleChoiceEditor({
                 onChange={(event) => onUpdateOption(option.id, event.target.value)}
                 disabled={disabled}
                 className="flex-1 bg-transparent text-sm font-medium text-gray-900 outline-none"
-                placeholder="Nhap phuong an tra loi"
+                placeholder="Nhập phương án trả lời"
               />
               <button
                 type="button"
@@ -603,7 +603,7 @@ function FillBlankEditor({
   return (
     <div className="space-y-4 rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm font-medium text-gray-500">
       <div>
-        <FieldLabel label="Noi dung cau hoi" />
+        <FieldLabel label="Nội dung câu hỏi" />
         <TextInput
           value={question.prompt}
           onChange={(value) => onChange({ prompt: value })}
@@ -623,7 +623,7 @@ function FillBlankEditor({
               onChange={(event) => onUpdateAnswer(answer.id, event.target.value)}
               disabled={disabled}
               className="flex-1 bg-transparent text-sm font-medium text-gray-900 outline-none"
-              placeholder="Nhap dap an dung"
+              placeholder="Nhập đáp án đúng"
             />
             <button
               type="button"
@@ -644,12 +644,12 @@ function FillBlankEditor({
           <span className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 text-gray-500">
             +
           </span>
-          Them dap an
+          Thêm đáp án
         </button>
       </div>
 
       <div>
-        <FieldLabel label="Giai thich / Dap an chi tiet" />
+        <FieldLabel label="Giải thích / Đáp án chi tiết" />
         <div className={disabled ? "pointer-events-none opacity-60" : undefined}>
           <RichTextEditor
             value={question.explanation}
@@ -1083,7 +1083,7 @@ export default function VideoExerciseForm({
       }
 
       updateQuestion(questionId, { audioUrl: uploadResult.secure_url });
-      toast.success("Tai audio thanh cong!");
+      toast.success("Tải audio thành công!");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Tai audio that bai.";
@@ -1278,14 +1278,14 @@ export default function VideoExerciseForm({
           }
         }}
         onConfirm={confirmRemoveQuestion}
-        title="Xoa cau hoi nay?"
+        title="Xóa câu hỏi này?"
         message={
           questionToDelete?.audioUrl
-            ? "Cau hoi va file audio tren Cloudinary se bi xoa. Ban co muon tiep tuc?"
-            : "Cau hoi nay se bi xoa khoi danh sach. Ban co muon tiep tuc?"
+            ? "Câu hỏi và file audio trên Cloudinary sẽ bị xóa. Bạn có muốn tiếp tục?"
+            : "Câu hỏi này sẽ bị xóa khỏi danh sách. Bạn có muốn tiếp tục?"
         }
-        confirmText="Xoa"
-        cancelText="Huy"
+        confirmText="Xóa"
+        cancelText="Hủy"
         isDestructive
         isLoading={isDeletingQuestion}
       />

@@ -22,6 +22,7 @@ const Flashcard = require('./Flashcard');
 const FlashcardReview = require('./FlashcardReview');
 const PlacementQuestion = require('./PlacementQuestion');
 const PlacementTest = require('./PlacementTest');
+const TeacherProfile = require('./TeacherProfile');
 
 module.exports = {
   User,
@@ -45,5 +46,6 @@ module.exports = {
   Flashcard,
   FlashcardReview,
   PlacementQuestion,
-  PlacementTest
+  PlacementTest,
+  TeacherProfile
 };

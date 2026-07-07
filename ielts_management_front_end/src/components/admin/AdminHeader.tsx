@@ -45,10 +45,11 @@ export function AdminHeader() {
   ];
 
   const isActive = (href: string) => {
-    if (href === "/admin") {
-      return pathname === href;
+    const cleanHref = href.split('?')[0];
+    if (cleanHref === "/admin") {
+      return pathname === cleanHref;
     }
-    return pathname === href || pathname.startsWith(`${href}/`);
+    return pathname === cleanHref || pathname.startsWith(`${cleanHref}/`);
   };
 
   const handleLogout = async () => {

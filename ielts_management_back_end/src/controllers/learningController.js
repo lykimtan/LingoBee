@@ -233,6 +233,40 @@ const updateVideoProgress = async (req, res, next) => {
       }
     }
 
+    // Always sync real video progress into Student.enrolledCourses
+    try {
+      const completedVideosCount = await VideoProgress.countDocuments({
+        studentId: student._id,
+        courseId: video.courseId,
+        isCompleted: true
+      });
+      const totalVideos = await Video.countDocuments({
+        courseId: video.courseId,
+        isPublished: true
+      });
+      const videoProgressPct = totalVideos > 0 ? Math.round((completedVideosCount / totalVideos) * 100) : 0;
+
+      const enrollmentIndex = student.enrolledCourses?.findIndex(
+        c => (c.courseId?._id || c.courseId).toString() === video.courseId.toString()
+      );
+      if (enrollmentIndex !== -1 && enrollmentIndex !== undefined) {
+        const lpProgress = student.enrolledCourses[enrollmentIndex].learningPath?.overallProgress || 0;
+        const baseProgress = student.enrolledCourses[enrollmentIndex].progress || 0;
+        const newProgress = Math.min(100, Math.max(baseProgress, lpProgress, videoProgressPct));
+        
+        if (student.enrolledCourses[enrollmentIndex].progress !== newProgress || (newProgress >= 100 && student.enrolledCourses[enrollmentIndex].status !== 'completed')) {
+          student.enrolledCourses[enrollmentIndex].progress = newProgress;
+          if (newProgress >= 100) {
+            student.enrolledCourses[enrollmentIndex].status = 'completed';
+          }
+          await student.save();
+        }
+      }
+    } catch (syncErr) {
+      logger.error(`Error syncing video progress to enrollment: ${syncErr.message}`);
+    }
+
+
     res.status(200).json({
       success: true,
       data: progress,

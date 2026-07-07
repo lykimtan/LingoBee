@@ -3,11 +3,16 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const { authMiddleware, authorize, isAdmin } = require('../middleware/authMiddleware');
 
-// Public routes (none for user management)
+// Public routes
+router.get('/public/teachers-showcase', userController.getPublicTeachersShowcase);
 
 // Protected routes - require authentication
 // Get user profile with related data (any authenticated user)
 router.get('/profile', authMiddleware, userController.getUserProfile);
+
+// Teacher self profile management
+router.get('/teacher/my-profile', authMiddleware, authorize('teacher', 'admin'), userController.getTeacherMyProfile);
+router.put('/teacher/my-profile', authMiddleware, authorize('teacher', 'admin'), userController.updateTeacherMyProfile);
 
 // Get user by ID (admin or self)
 router.get('/:userId', authMiddleware, userController.getUserById);
@@ -32,6 +37,9 @@ router.post('/students/admin/:userId/upgrade-to-teacher', authMiddleware, isAdmi
 router.post('/students/admin/:userId/upgrade-to-admin', authMiddleware, isAdmin, userController.upgradeToAdmin);
 router.post('/teachers/admin/:userId/upgrade-to-admin', authMiddleware, isAdmin, userController.upgradeToAdmin);
 router.post('/:userId/upgrade-to-admin', authMiddleware, isAdmin, userController.upgradeToAdmin);
+
+// Admin manually verify student email
+router.post('/students/admin/:userId/verify-email', authMiddleware, isAdmin, userController.adminVerifyUserEmail);
 
 // Teacher Admin routes
 // Get teacher stats for admin

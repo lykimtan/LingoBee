@@ -23,7 +23,81 @@ export interface CourseRecord {
   status: string;
 }
 
+export interface TeacherEnrollmentStats {
+  totalEnrollments: number;
+  newThisWeek: number;
+  totalCourses: number;
+  publishedCourses: number;
+  chartData: Array<{
+    day: string;
+    value: number;
+    count: number;
+    active: boolean;
+  }>;
+}
+
+export interface TeacherStudentEnrollment {
+  enrollmentId: string;
+  studentId: string;
+  userId: {
+    _id: string;
+    name?: string;
+    email?: string;
+    avatar?: string;
+    phone?: string;
+  };
+  courseId: {
+    _id: string;
+    title: string;
+    slug?: string;
+    level?: string;
+  };
+  enrollmentDate: string;
+  progress: number;
+  status: 'active' | 'completed' | 'dropped' | string;
+  placementTests?: Array<{
+    testId: string;
+    totalScore: number;
+    maxScore: number;
+    date: string;
+    status: string;
+  }>;
+}
+
+export interface TeacherStudentsOverview {
+  summary: {
+    totalStudents: number;
+    activeCount: number;
+    completedCount: number;
+    avgProgress: number;
+    totalEnrollments: number;
+  };
+  courses: Array<{
+    _id: string;
+    title: string;
+    level?: string;
+  }>;
+  enrollments: TeacherStudentEnrollment[];
+}
+
 class CourseService {
+  async getTeacherEnrollmentStats(): Promise<ApiResponse<TeacherEnrollmentStats>> {
+    return apiClient.get<TeacherEnrollmentStats>('/api/courses/my/enrollment-stats');
+  }
+
+  async getTeacherStudents(
+    courseId?: string,
+    search?: string,
+    status?: string
+  ): Promise<ApiResponse<TeacherStudentsOverview>> {
+    const params = new URLSearchParams();
+    if (courseId && courseId !== 'all') params.append('courseId', courseId);
+    if (search) params.append('search', search);
+    if (status && status !== 'all') params.append('status', status);
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return apiClient.get<TeacherStudentsOverview>(`/api/courses/my/students${queryString}`);
+  }
+
   async createCourseShell(
     payload: CreateCourseShellPayload
   ): Promise<ApiResponse<CourseRecord>> {
@@ -75,6 +149,11 @@ class CourseService {
   async getCourseAdminStats(courseId: string): Promise<ApiResponse<any>> {
     const encoded = encodeURIComponent(courseId);
     return apiClient.get<any>(`/api/courses/${encoded}/admin-stats`);
+  }
+
+  async getCourseTeacherStats(courseId: string): Promise<ApiResponse<any>> {
+    const encoded = encodeURIComponent(courseId);
+    return apiClient.get<any>(`/api/courses/${encoded}/teacher-stats`);
   }
 }
 

@@ -9,7 +9,7 @@ import { validateRegisterForm } from "@/utils/helpers";
 export const RegisterPanel = () => {
   const router = useRouter();
   const { register, isLoading, error: authError } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -38,7 +38,7 @@ export const RegisterPanel = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSuccessMessage("");
-    
+
     // Validate form
     const validation = validateRegisterForm(formData);
     if (!validation.valid) {
@@ -59,7 +59,7 @@ export const RegisterPanel = () => {
         setSuccessMessage(result.message || "Account created successfully! Redirecting...");
         setErrors({});
         setFormData({ name: "", email: "", password: "", confirmPassword: "" });
-        
+
         // Redirect to home or dashboard after 1.5 seconds
         setTimeout(() => {
           router.push("/");
@@ -134,9 +134,8 @@ export const RegisterPanel = () => {
             placeholder="LingoBee Student"
             value={formData.name}
             onChange={handleChange}
-            className={`w-full px-6 py-3 rounded-full bg-white/5 border text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-white/20 transition-all duration-200 backdrop-blur-sm ${
-              errors.name ? "border-red-500/50 focus:ring-red-500/20" : "border-white/10 focus:ring-white/20"
-            }`}
+            className={`w-full px-6 py-3 rounded-full bg-white/5 border text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-white/20 transition-all duration-200 backdrop-blur-sm ${errors.name ? "border-red-500/50 focus:ring-red-500/20" : "border-white/10 focus:ring-white/20"
+              }`}
           />
           {errors.name && <p className="text-red-400 text-xs">{errors.name}</p>}
         </div>
@@ -152,9 +151,8 @@ export const RegisterPanel = () => {
             placeholder="name@gmail.com"
             value={formData.email}
             onChange={handleChange}
-            className={`w-full px-6 py-3 rounded-full bg-white/5 border text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-white/20 transition-all duration-200 backdrop-blur-sm ${
-              errors.email ? "border-red-500/50 focus:ring-red-500/20" : "border-white/10 focus:ring-white/20"
-            }`}
+            className={`w-full px-6 py-3 rounded-full bg-white/5 border text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-white/20 transition-all duration-200 backdrop-blur-sm ${errors.email ? "border-red-500/50 focus:ring-red-500/20" : "border-white/10 focus:ring-white/20"
+              }`}
           />
           {errors.email && <p className="text-red-400 text-xs">{errors.email}</p>}
         </div>
@@ -171,9 +169,8 @@ export const RegisterPanel = () => {
               placeholder="••••••••••••"
               value={formData.password}
               onChange={handleChange}
-              className={`w-full px-6 pr-20 py-3 rounded-full bg-white/5 border text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-white/20 transition-all duration-200 backdrop-blur-sm ${
-                errors.password ? "border-red-500/50 focus:ring-red-500/20" : "border-white/10 focus:ring-white/20"
-              }`}
+              className={`w-full px-6 pr-20 py-3 rounded-full bg-white/5 border text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-white/20 transition-all duration-200 backdrop-blur-sm ${errors.password ? "border-red-500/50 focus:ring-red-500/20" : "border-white/10 focus:ring-white/20"
+                }`}
             />
             <button
               type="button"
@@ -199,9 +196,8 @@ export const RegisterPanel = () => {
               placeholder="••••••••••••"
               value={formData.confirmPassword}
               onChange={handleChange}
-              className={`w-full px-6 pr-20 py-3 rounded-full bg-white/5 border text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-white/20 transition-all duration-200 backdrop-blur-sm ${
-                errors.confirmPassword ? "border-red-500/50 focus:ring-red-500/20" : "border-white/10 focus:ring-white/20"
-              }`}
+              className={`w-full px-6 pr-20 py-3 rounded-full bg-white/5 border text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-white/20 transition-all duration-200 backdrop-blur-sm ${errors.confirmPassword ? "border-red-500/50 focus:ring-red-500/20" : "border-white/10 focus:ring-white/20"
+                }`}
             />
             <button
               type="button"
@@ -231,7 +227,7 @@ export const RegisterPanel = () => {
         </div>
         <div className="relative flex justify-center text-xs">
           <span className="px-3 bg-gradient-to-br from-slate-950 via-slate-900 to-black text-gray-500 uppercase tracking-widest">
-            External Verification
+            Phương thức đăng nhập khác
           </span>
         </div>
       </div>
@@ -251,7 +247,7 @@ export const RegisterPanel = () => {
       {/* Bottom Links */}
       <div className="mt-8 pt-8 border-t border-white/10 space-y-4 text-center">
         <p className="text-sm text-gray-400">
-          Already a Researcher?{" "}
+          Bạn đã có tài khoản?{" "}
           <Link
             href="/login"
             className="text-white hover:text-yellow-50 transition-colors font-medium"
@@ -259,19 +255,6 @@ export const RegisterPanel = () => {
             Sign In
           </Link>
         </p>
-        <div className="flex items-center justify-center gap-4 text-xs text-gray-500 uppercase tracking-widest">
-          <Link href="#" className="hover:text-gray-300 transition-colors">
-            Privacy
-          </Link>
-          <span className="text-gray-700">•</span>
-          <Link href="#" className="hover:text-gray-300 transition-colors">
-            Protocols
-          </Link>
-          <span className="text-gray-700">•</span>
-          <Link href="#" className="hover:text-gray-300 transition-colors">
-            System Support
-          </Link>
-        </div>
       </div>
     </div>
   );

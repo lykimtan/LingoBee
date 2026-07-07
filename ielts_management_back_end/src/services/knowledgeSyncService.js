@@ -90,8 +90,23 @@ exports.syncTeacher = async (user) => {
 
     const collection = getKnowledgeCollection();
     
-    const textContent = `Giảng viên ${user.name} (Email: ${user.email}). 
-Đây là một giảng viên của trung tâm IELTS LingoBee.`;
+    // Fetch teacher profile if exists
+    let profileText = '';
+    try {
+      const TeacherProfile = require('../models/TeacherProfile');
+      const profile = await TeacherProfile.findOne({ userId: user._id });
+      if (profile) {
+        profileText = `\nChức danh: ${profile.title || 'Giảng viên IELTS'}. Trình độ IELTS Overall: Band ${profile.band || '8.0'}. Số năm kinh nghiệm: ${profile.experienceYears || 0} năm.
+Giới thiệu: ${profile.bio || ''}
+Triết lý giảng dạy: ${profile.teachingPhilosophy || ''}
+Điểm nổi bật: ${profile.highlights ? profile.highlights.join('; ') : ''}
+Bằng cấp & Chứng chỉ: ${profile.certificates ? profile.certificates.join('; ') : ''}`;
+      }
+    } catch (err) {
+      console.warn('[Sync Warning] Không tải được TeacherProfile để đồng bộ:', err.message);
+    }
+
+    const textContent = `Giảng viên ${user.name} (Email: ${user.email}). Đây là một giảng viên của trung tâm IELTS LingoBee.${profileText}`;
 
     const { embedding } = await embed({
       model: googleProvider.textEmbeddingModel('gemini-embedding-001'),

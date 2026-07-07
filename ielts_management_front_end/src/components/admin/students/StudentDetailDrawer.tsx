@@ -5,6 +5,7 @@ import { X, User, BookOpen, Award, ShieldCheck, ShieldAlert, Calendar, Mail, Loa
 import { userService } from '@/services/userService';
 import ConfirmModal from "@/components/ConfirmModal";
 import { VerifyAdminPasswordModal } from "@/components/admin/VerifyAdminPasswordModal";
+import { toast } from 'react-toastify';
 
 interface StudentDetailDrawerProps {
   studentId: string | null;
@@ -19,7 +20,7 @@ export function StudentDetailDrawer({ studentId, onClose, onStatusChange }: Stud
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [verifyModalOpen, setVerifyModalOpen] = useState(false);
-  const [modalActionType, setModalActionType] = useState<'status' | 'upgrade' | 'upgrade_admin'>('status');
+  const [modalActionType, setModalActionType] = useState<'status' | 'upgrade' | 'upgrade_admin' | 'verify_email'>('status');
 
   useEffect(() => {
     if (!studentId) return;
@@ -48,14 +49,21 @@ export function StudentDetailDrawer({ studentId, onClose, onStatusChange }: Stud
     try {
       if (modalActionType === 'upgrade') {
         await userService.upgradeToTeacher(user._id);
-        alert("Nâng cấp Giảng viên thành công!");
+        toast.success("Nâng cấp Giảng viên thành công!");
         onClose();
         if (onStatusChange) onStatusChange(user._id, 'teacher');
       } else if (modalActionType === 'upgrade_admin') {
         await userService.upgradeToAdmin(user._id);
-        alert("Nâng cấp Quản trị viên (Admin) thành công!");
+        toast.success("Nâng cấp Quản trị viên (Admin) thành công!");
         onClose();
         if (onStatusChange) onStatusChange(user._id, 'admin');
+      } else if (modalActionType === 'verify_email') {
+        await userService.adminVerifyUserEmail(user._id);
+        toast.success("Xác thực email thủ công cho học viên thành công!");
+        setData((prev: any) => ({
+          ...prev,
+          user: { ...prev.user, isEmailVerified: true }
+        }));
       } else {
         const nextStatus = user.status === 'active' ? 'blocked' : 'active';
         if (nextStatus === 'blocked') {
@@ -67,11 +75,12 @@ export function StudentDetailDrawer({ studentId, onClose, onStatusChange }: Stud
           ...prev,
           user: { ...prev.user, status: nextStatus }
         }));
+        toast.success(nextStatus === 'blocked' ? "Đã vô hiệu hóa tài khoản học viên!" : "Đã mở khóa tài khoản học viên!");
         if (onStatusChange) onStatusChange(user._id, nextStatus);
       }
       setConfirmModalOpen(false);
     } catch (error: any) {
-      alert(error?.response?.data?.message || "Thao tác thất bại!");
+      toast.error(error?.response?.data?.message || "Thao tác thất bại!");
     } finally {
       setUpdatingStatus(false);
     }
@@ -211,7 +220,26 @@ export function StudentDetailDrawer({ studentId, onClose, onStatusChange }: Stud
                     <span className="text-white/40 flex items-center gap-1.5">
                       <Mail className="w-4 h-4" /> Xác thực Email
                     </span>
-                    <p className="font-medium text-green-400">{user.isEmailVerified ? 'Đã xác thực' : 'Chưa xác thực'}</p>
+                    <div className="flex items-center gap-2.5">
+                      <p className={`font-medium ${user.isEmailVerified ? 'text-green-400' : 'text-amber-400'}`}>
+                        {user.isEmailVerified ? 'Đã xác thực' : 'Chưa xác thực'}
+                      </p>
+                      {!user.isEmailVerified && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setModalActionType('verify_email');
+                            setVerifyModalOpen(true);
+                          }}
+                          disabled={updatingStatus}
+                          className="px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-sm"
+                          title="Xác thực email thủ công"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Xác thực ngay</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-1 col-span-2">
                     <span className="text-white/40 flex items-center gap-1.5">
@@ -321,22 +349,24 @@ export function StudentDetailDrawer({ studentId, onClose, onStatusChange }: Stud
         </div>
       </div>
 
-      {/* Modal xác nhận thao tác Khóa / Mở khóa / Thăng cấp trong Drawer */}
+      {/* Modal xác nhận thao tác Khóa / Mở khóa / Thăng cấp / Xác thực trong Drawer */}
       <ConfirmModal
         isOpen={confirmModalOpen}
         onClose={() => setConfirmModalOpen(false)}
         onConfirm={executeModalAction}
-        title={modalActionType === 'upgrade' ? "Cấp quyền Giảng viên" : modalActionType === 'upgrade_admin' ? "Cấp quyền Quản trị viên" : user.status === 'active' ? "Vô hiệu hóa tài khoản" : "Kích hoạt lại tài khoản"}
+        title={modalActionType === 'upgrade' ? "Cấp quyền Giảng viên" : modalActionType === 'upgrade_admin' ? "Cấp quyền Quản trị viên" : modalActionType === 'verify_email' ? "Xác thực Email Học viên" : user.status === 'active' ? "Vô hiệu hóa tài khoản" : "Kích hoạt lại tài khoản"}
         message={modalActionType === 'upgrade'
           ? `Bạn có chắc chắn muốn nâng cấp học viên "${user.name || user.email}" thành Giảng viên chính thức?`
           : modalActionType === 'upgrade_admin'
             ? `Bạn có chắc chắn muốn thăng cấp học viên "${user.name || user.email}" thành Quản trị viên (Admin) với toàn quyền quản lý hệ thống?`
-            : user.status === 'active'
-              ? "Bạn có chắc chắn muốn vô hiệu hóa tài khoản học viên này? Học viên sẽ bị đăng xuất và không thể truy cập hệ thống."
-              : "Bạn muốn mở khóa kích hoạt lại quyền truy cập cho học viên này?"}
+            : modalActionType === 'verify_email'
+              ? `Bạn muốn xác thực thủ công địa chỉ email cho học viên "${user.name || user.email}"? Tài khoản sẽ được chuyển sang trạng thái Đã xác thực.`
+              : user.status === 'active'
+                ? "Bạn có chắc chắn muốn vô hiệu hóa tài khoản học viên này? Học viên sẽ bị đăng xuất và không thể truy cập hệ thống."
+                : "Bạn muốn mở khóa kích hoạt lại quyền truy cập cho học viên này?"}
         isDestructive={modalActionType === 'status' && user.status === 'active'}
         isLoading={updatingStatus}
-        confirmText={modalActionType === 'upgrade' ? "Thăng cấp Giảng viên" : modalActionType === 'upgrade_admin' ? "Thăng cấp Admin" : user.status === 'active' ? "Khóa tài khoản" : "Mở khóa"}
+        confirmText={modalActionType === 'upgrade' ? "Thăng cấp Giảng viên" : modalActionType === 'upgrade_admin' ? "Thăng cấp Admin" : modalActionType === 'verify_email' ? "Xác thực ngay" : user.status === 'active' ? "Khóa tài khoản" : "Mở khóa"}
       />
 
       {/* Modal xác nhận mật khẩu Admin trước thao tác quan trọng */}
@@ -348,9 +378,11 @@ export function StudentDetailDrawer({ studentId, onClose, onStatusChange }: Stud
             ? `thăng cấp học viên "${user.name || user.email}" thành Giảng viên`
             : modalActionType === 'upgrade_admin'
               ? `thăng cấp học viên "${user.name || user.email}" thành Quản trị viên`
-              : user.status === 'active'
-                ? `vô hiệu hóa tài khoản học viên "${user.name || user.email}"`
-                : `kích hoạt lại tài khoản học viên "${user.name || user.email}"`
+              : modalActionType === 'verify_email'
+                ? `xác thực thủ công email cho học viên "${user.name || user.email}"`
+                : user.status === 'active'
+                  ? `vô hiệu hóa tài khoản học viên "${user.name || user.email}"`
+                  : `kích hoạt lại tài khoản học viên "${user.name || user.email}"`
         }
         onSuccess={() => {
           setVerifyModalOpen(false);

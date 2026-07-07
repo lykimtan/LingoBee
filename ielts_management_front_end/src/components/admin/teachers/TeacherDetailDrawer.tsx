@@ -2,10 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from "next/image";
-import { X, User, BookOpen, ShieldCheck, ShieldAlert, Calendar, Mail, Loader2, CheckCircle2, Clock, UserMinus, Users } from 'lucide-react';
+import { X, User, BookOpen, ShieldCheck, ShieldAlert, Calendar, Mail, Loader2, CheckCircle2, Clock, UserMinus, Users, Award, Globe, Star } from 'lucide-react';
 import { userService } from '@/services/userService';
 import ConfirmModal from "@/components/ConfirmModal";
 import { VerifyAdminPasswordModal } from "@/components/admin/VerifyAdminPasswordModal";
+import { toast } from 'react-toastify';
 
 interface TeacherDetailDrawerProps {
   teacherId: string | null;
@@ -41,6 +42,7 @@ export function TeacherDetailDrawer({ teacherId, onClose, onRefresh }: TeacherDe
   const user = data?.user || {};
   const courses = data?.assignedCourses || [];
   const assistingCourses = data?.assistingCourses || [];
+  const profile = data?.teacherProfile;
 
   const executeModalAction = async () => {
     if (!user._id) return;
@@ -48,12 +50,12 @@ export function TeacherDetailDrawer({ teacherId, onClose, onRefresh }: TeacherDe
     try {
       if (modalActionType === 'downgrade') {
         await userService.downgradeToStudent(user._id);
-        alert(`Đã hạ quyền Giảng viên "${user.name}" về lại Học viên thành công!`);
+        toast.success(`Đã hạ quyền Giảng viên "${user.name}" về lại Học viên thành công!`);
         onRefresh?.();
         onClose();
       } else if (modalActionType === 'upgrade_admin') {
         await userService.upgradeToAdmin(user._id);
-        alert(`Đã nâng cấp Giảng viên "${user.name}" lên Quản trị viên (Admin) thành công!`);
+        toast.success(`Đã nâng cấp Giảng viên "${user.name}" lên Quản trị viên (Admin) thành công!`);
         onRefresh?.();
         onClose();
       } else {
@@ -67,10 +69,11 @@ export function TeacherDetailDrawer({ teacherId, onClose, onRefresh }: TeacherDe
           ...prev,
           user: { ...prev.user, status: nextStatus }
         }));
+        toast.success(nextStatus === 'blocked' ? "Đã vô hiệu hóa tài khoản giảng viên!" : "Đã mở khóa tài khoản giảng viên!");
         onRefresh?.();
       }
     } catch (err: any) {
-      alert(err.message || "Thao tác thất bại!");
+      toast.error(err.message || "Thao tác thất bại!");
     } finally {
       setUpdatingStatus(false);
     }
@@ -207,6 +210,121 @@ export function TeacherDetailDrawer({ teacherId, onClose, onRefresh }: TeacherDe
             </div>
           ) : activeTab === 'profile' ? (
             <div className="space-y-6">
+              {/* Hồ Sơ Chuyên Môn Giảng Viên */}
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-2">
+                    <Award className="w-4 h-4 text-yellow-400" />
+                    <span>Hồ Sơ Chuyên Môn (Teacher Profile)</span>
+                  </h4>
+                  {profile?.isFeatured && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-400/10 text-emerald-300 border border-emerald-400/20 flex items-center gap-1">
+                      Hiển thị Trang chủ
+                    </span>
+                  )}
+                </div>
+
+                {profile ? (
+                  <div className="space-y-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-white/40 block text-xs">Chức danh / Tiêu đề</span>
+                        <span className="text-white font-semibold mt-0.5 block">{profile.title || '---'}</span>
+                      </div>
+                      <div>
+                        <span className="text-white/40 block text-xs">Điểm IELTS Overall Band</span>
+                        <span className="inline-block mt-0.5 px-2.5 py-0.5 rounded bg-yellow-400/20 text-yellow-300 font-bold text-xs border border-yellow-400/30">
+                          Band {profile.band || '---'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-white/40 block text-xs">Kinh nghiệm giảng dạy</span>
+                      <span className="text-white font-medium mt-0.5 block">{profile.experienceYears || 0} năm kinh nghiệm</span>
+                    </div>
+
+                    {profile.bio && (
+                      <div>
+                        <span className="text-white/40 block text-xs">Giới thiệu ngắn (Bio)</span>
+                        <p className="text-white/80 bg-black/20 p-3 rounded-xl mt-1 text-xs leading-relaxed italic border border-white/5">
+                          &ldquo;{profile.bio}&rdquo;
+                        </p>
+                      </div>
+                    )}
+
+                    {profile.teachingPhilosophy && (
+                      <div>
+                        <span className="text-white/40 block text-xs">Triết lý giảng dạy</span>
+                        <p className="text-white/80 bg-black/20 p-3 rounded-xl mt-1 text-xs leading-relaxed border border-white/5">
+                          {profile.teachingPhilosophy}
+                        </p>
+                      </div>
+                    )}
+
+                    {profile.highlights && profile.highlights.length > 0 && (
+                      <div>
+                        <span className="text-white/40 block text-xs mb-1.5">Điểm nổi bật giảng dạy</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {profile.highlights.map((h: string, idx: number) => (
+                            <span key={idx} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-500/10 text-teal-300 border border-teal-500/20 px-2.5 py-1 text-xs font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+                              {h}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {profile.certificates && profile.certificates.length > 0 && (
+                      <div>
+                        <span className="text-white/40 block text-xs mb-1.5">Bằng cấp & Chứng chỉ</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {profile.certificates.map((c: string, idx: number) => (
+                            <span key={idx} className="inline-flex items-center gap-1.5 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 px-2.5 py-1 text-xs font-medium">
+                              <Award className="w-3.5 h-3.5 text-blue-400" />
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(profile.socialLinks?.facebook || profile.socialLinks?.linkedin || profile.socialLinks?.youtube || profile.socialLinks?.website) && (
+                      <div className="pt-2 border-t border-white/10">
+                        <span className="text-white/40 block text-xs mb-2">Liên kết mạng xã hội & Website</span>
+                        <div className="flex flex-wrap gap-3 text-xs">
+                          {profile.socialLinks.facebook && (
+                            <a href={profile.socialLinks.facebook} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline flex items-center gap-1">
+                              <Globe className="w-3.5 h-3.5" /> Facebook
+                            </a>
+                          )}
+                          {profile.socialLinks.linkedin && (
+                            <a href={profile.socialLinks.linkedin} target="_blank" rel="noreferrer" className="text-blue-300 hover:underline flex items-center gap-1">
+                              <Globe className="w-3.5 h-3.5" /> LinkedIn
+                            </a>
+                          )}
+                          {profile.socialLinks.youtube && (
+                            <a href={profile.socialLinks.youtube} target="_blank" rel="noreferrer" className="text-red-400 hover:underline flex items-center gap-1">
+                              <Globe className="w-3.5 h-3.5" /> YouTube
+                            </a>
+                          )}
+                          {profile.socialLinks.website && (
+                            <a href={profile.socialLinks.website} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline flex items-center gap-1">
+                              <Globe className="w-3.5 h-3.5" /> Website
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-white/50 bg-black/20 rounded-xl border border-white/5">
+                    <p className="text-xs">Giảng viên chưa cập nhật Hồ sơ chuyên môn.</p>
+                  </div>
+                )}
+              </div>
+
               <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
                 <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-2">
                   <span>Thông tin phân quyền</span>

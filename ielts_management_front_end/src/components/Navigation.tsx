@@ -179,7 +179,7 @@ export const Navigation = () => {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/5 border-b border-white/10 shadow-lg transition-transform duration-300 ${isNavbarVisible ? "translate-y-0" : "-translate-y-full"
       }`}>
-      <div className="flex flex-row justify-between items-center px-8 py-6 max-w-7xl mx-auto w-full">
+      <div className="flex flex-row justify-between items-center px-6 md:px-10 py-4 w-full">
         {/* Logo */}
         <div onClick={() => router.push(homeUrl)} className="flex items-center gap-3 cursor-pointer">
           <Image
@@ -197,10 +197,10 @@ export const Navigation = () => {
         </div>
 
         {/* Nav Links - Hidden on mobile */}
-        <div className="hidden md:flex flex-row gap-12 items-center">
+        <div className="hidden md:flex flex-row gap-8 lg:gap-12 items-center">
           <Link
             href={homeUrl}
-            className="inline-flex items-center gap-2 text-sm text-foreground transition-colors h-6"
+            className="inline-flex items-center gap-2 text-sm text-foreground transition-colors py-1"
             aria-label="Trang chủ"
           >
             <Image
@@ -209,14 +209,14 @@ export const Navigation = () => {
               width={50}
               height={50}
               unoptimized
-              className="h-8 w-auto"
+              className="h-6 w-6 object-contain"
             />
             <span>Trang chủ</span>
           </Link>
           <Link
             href="/courses"
-            className="inline-flex items-center gap-2 text-sm text-foreground transition-colors h-6"
-            aria-label="Trang chủ"
+            className="inline-flex items-center gap-2 text-sm text-foreground transition-colors py-1"
+            aria-label="Khóa học"
           >
             <Image
               src="/homepage/course.gif"
@@ -224,28 +224,28 @@ export const Navigation = () => {
               width={50}
               height={50}
               unoptimized
-              className="h-8 w-auto"
+              className="h-6 w-6 object-contain"
             />
             <span>Khóa học</span>
           </Link>
           <Link
             href="/vocabulary-tools"
-            className="inline-flex items-center gap-2 text-sm text-foreground transition-colors h-6"
-            aria-label="Đề thi tổng hợp"
+            className="inline-flex items-center gap-2 text-sm text-foreground transition-colors py-1"
+            aria-label="Công cụ học tập"
           >
             <Image
               src="/homepage/ielts_test.gif"
-              alt="Đề thi tổng hợp"
+              alt="Công cụ học tập"
               width={50}
               height={50}
               unoptimized
-              className="h-8 w-auto"
+              className="h-6 w-6 object-contain"
             />
             <span>Công cụ học tập</span>
           </Link>
           <Link
             href="/placement-test"
-            className="inline-flex items-center gap-2 text-sm text-foreground transition-colors h-6"
+            className="inline-flex items-center gap-2 text-sm text-foreground transition-colors py-1"
             aria-label="Kiểm tra đầu vào"
           >
             <Image
@@ -254,13 +254,13 @@ export const Navigation = () => {
               width={50}
               height={50}
               unoptimized
-              className="h-8 w-auto"
+              className="h-6 w-6 object-contain"
             />
             <span>Bài test đầu vào</span>
           </Link>
           <Link
             href="/about"
-            className="inline-flex items-center gap-2 text-sm text-foreground transition-colors h-6"
+            className="inline-flex items-center gap-2 text-sm text-foreground transition-colors py-1"
             aria-label="Về chúng tôi"
           >
             <Image
@@ -269,7 +269,7 @@ export const Navigation = () => {
               width={50}
               height={50}
               unoptimized
-              className="h-8 w-auto"
+              className="h-6 w-6 object-contain"
             />
             <span>Về chúng tôi</span>
           </Link>
