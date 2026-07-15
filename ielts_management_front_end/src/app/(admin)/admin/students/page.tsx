@@ -10,13 +10,16 @@ export default function StudentsManagementPage() {
   const [filters, setFilters] = useState({
     search: "",
     status: "all",
-    courseId: "all"
+    courseId: "all",
+    startDate: "",
+    endDate: "",
+    datePreset: "all"
   });
 
   return (
     <div className="w-full max-w-7xl mx-auto pb-12">
       <StudentsHeader />
-      <StudentsStats />
+      <StudentsStats filters={filters} setFilters={setFilters} />
       <StudentsFilter filters={filters} setFilters={setFilters} />
       <StudentsTable filters={filters} />
     </div>

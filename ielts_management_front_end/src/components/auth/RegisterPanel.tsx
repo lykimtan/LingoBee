@@ -126,7 +126,7 @@ export const RegisterPanel = () => {
         {/* Name Field */}
         <div className="space-y-2">
           <label className="text-xs uppercase tracking-widest text-gray-400 font-medium">
-            Full Name
+            Họ và tên
           </label>
           <input
             type="text"
@@ -187,7 +187,7 @@ export const RegisterPanel = () => {
         {/* Confirm Password Field */}
         <div className="space-y-2">
           <label className="text-xs uppercase tracking-widest text-gray-400 font-medium">
-            Confirm Password
+            Nhập lại mật khẩu
           </label>
           <div className="relative">
             <input

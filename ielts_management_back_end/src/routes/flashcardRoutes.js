@@ -6,6 +6,9 @@ const { authMiddleware } = require('../middleware/authMiddleware');
 // Apply auth middleware to all flashcard routes
 router.use(authMiddleware);
 
+// --- DICTIONARY LOOKUP ROUTE ---
+router.get('/dictionary/lookup', flashcardController.lookupDictionary);
+
 // --- DECK ROUTES ---
 router.route('/decks')
   .post(flashcardController.createDeck)

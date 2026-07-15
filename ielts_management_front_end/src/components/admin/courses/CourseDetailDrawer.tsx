@@ -27,11 +27,20 @@ export function CourseDetailDrawer({ courseId, onClose }: CourseDetailDrawerProp
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'students' | 'reviews' | 'revenue'>('students');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [dateFilterPreset, setDateFilterPreset] = useState<'all' | 'today' | '7days' | '30days' | 'thisMonth' | 'custom'>('all');
+
+  useEffect(() => {
+    setStartDate('');
+    setEndDate('');
+    setDateFilterPreset('all');
+  }, [courseId]);
 
   useEffect(() => {
     if (!courseId) return;
     setLoading(true);
-    courseService.getCourseAdminStats(courseId)
+    courseService.getCourseAdminStats(courseId, startDate, endDate)
       .then(res => {
         const payload = (res as any).data || res;
         setData(payload);
@@ -42,7 +51,7 @@ export function CourseDetailDrawer({ courseId, onClose }: CourseDetailDrawerProp
       .finally(() => {
         setLoading(false);
       });
-  }, [courseId]);
+  }, [courseId, startDate, endDate]);
 
   const handleToggleHide = async (commentId: string) => {
     try {
@@ -200,6 +209,113 @@ export function CourseDetailDrawer({ courseId, onClose }: CourseDetailDrawerProp
           </div>
         </div>
 
+        {/* Bộ lọc thời gian (Time Filter Bar) */}
+        <div className="p-4 bg-[#112a2e] border-b border-white/10 flex flex-wrap items-center justify-between gap-3 shadow-md z-10">
+          <div className="flex items-center gap-2 text-white/80">
+            <Calendar className="w-4 h-4 text-teal-400" />
+            <span className="text-xs font-bold uppercase tracking-wider">Lọc thời gian:</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {[
+              { id: 'all', label: 'Tất cả' },
+              { id: 'today', label: 'Hôm nay' },
+              { id: '7days', label: '7 ngày qua' },
+              { id: '30days', label: '30 ngày qua' },
+              { id: 'thisMonth', label: 'Tháng này' },
+              { id: 'custom', label: 'Từ ngày - Đến ngày...' },
+            ].map((preset) => {
+              const isActive = dateFilterPreset === preset.id;
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() => {
+                    setDateFilterPreset(preset.id as any);
+                    if (preset.id === 'all') {
+                      setStartDate('');
+                      setEndDate('');
+                    } else if (preset.id === 'today') {
+                      const now = new Date().toISOString().split('T')[0];
+                      setStartDate(now);
+                      setEndDate(now);
+                    } else if (preset.id === '7days') {
+                      const end = new Date();
+                      const start = new Date();
+                      start.setDate(end.getDate() - 6);
+                      setStartDate(start.toISOString().split('T')[0]);
+                      setEndDate(end.toISOString().split('T')[0]);
+                    } else if (preset.id === '30days') {
+                      const end = new Date();
+                      const start = new Date();
+                      start.setDate(end.getDate() - 29);
+                      setStartDate(start.toISOString().split('T')[0]);
+                      setEndDate(end.toISOString().split('T')[0]);
+                    } else if (preset.id === 'thisMonth') {
+                      const now = new Date();
+                      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                      setStartDate(firstDay.toISOString().split('T')[0]);
+                      setEndDate(lastDay.toISOString().split('T')[0]);
+                    } else if (preset.id === 'custom') {
+                      if (!startDate) {
+                        const now = new Date();
+                        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                        setStartDate(firstDay.toISOString().split('T')[0]);
+                      }
+                      const now = new Date();
+                      setEndDate(now.toISOString().split('T')[0]);
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/25 border border-teal-400'
+                      : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/5'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {dateFilterPreset === 'custom' && (
+            <div className="w-full flex flex-wrap items-center justify-end gap-3 pt-2 border-t border-white/5 mt-1 animate-fadeIn">
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-white/70 font-medium">Từ ngày:</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="bg-[#0f2326] text-white text-xs px-3 py-1.5 rounded-lg border border-white/15 focus:border-teal-400 focus:outline-none transition-colors cursor-pointer"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-white/70 font-medium">Đến ngày:</label>
+                <input
+                  type="date"
+                  value={endDate || new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="bg-[#0f2326] text-white text-xs px-3 py-1.5 rounded-lg border border-white/15 focus:border-teal-400 focus:outline-none transition-colors cursor-pointer"
+                />
+              </div>
+              {(startDate || endDate) && (
+                <button
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                    setDateFilterPreset('all');
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer border border-red-500/30"
+                  title="Xóa bộ lọc"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>Đặt lại</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         {loading ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 text-white/60">
             <div className="w-8 h-8 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
@@ -300,6 +416,26 @@ export function CourseDetailDrawer({ courseId, onClose }: CourseDetailDrawerProp
               {/* Tab 1: Danh sách học viên */}
               {activeTab === 'students' && (
                 <div className="space-y-6">
+                  {(startDate || endDate) && (
+                    <div className="px-4 py-2.5 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-between text-xs text-teal-300">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-teal-400 shrink-0" />
+                        <span>
+                          Đang hiển thị học viên đăng ký từ <strong className="text-white">{startDate ? new Date(startDate).toLocaleDateString('vi-VN') : 'khởi tạo'}</strong> đến <strong className="text-white">{endDate ? new Date(endDate).toLocaleDateString('vi-VN') : 'hiện tại'}</strong>
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setStartDate('');
+                          setEndDate('');
+                          setDateFilterPreset('all');
+                        }}
+                        className="text-white/60 hover:text-white underline text-[11px] font-medium cursor-pointer"
+                      >
+                        Xem toàn bộ thời gian
+                      </button>
+                    </div>
+                  )}
                   {/* Recharts: Biểu đồ phân bổ tiến độ */}
                   <div className="p-5 rounded-2xl bg-white/5 border border-white/10 shadow-inner">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-white/70 mb-4 flex items-center gap-1.5">
@@ -383,6 +519,26 @@ export function CourseDetailDrawer({ courseId, onClose }: CourseDetailDrawerProp
               {/* Tab 2: Đánh giá & Bình luận */}
               {activeTab === 'reviews' && (
                 <div className="space-y-6">
+                  {(startDate || endDate) && (
+                    <div className="px-4 py-2.5 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-between text-xs text-teal-300">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-teal-400 shrink-0" />
+                        <span>
+                          Đang hiển thị bình luận đánh giá từ <strong className="text-white">{startDate ? new Date(startDate).toLocaleDateString('vi-VN') : 'khởi tạo'}</strong> đến <strong className="text-white">{endDate ? new Date(endDate).toLocaleDateString('vi-VN') : 'hiện tại'}</strong>
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setStartDate('');
+                          setEndDate('');
+                          setDateFilterPreset('all');
+                        }}
+                        className="text-white/60 hover:text-white underline text-[11px] font-medium cursor-pointer"
+                      >
+                        Xem toàn bộ thời gian
+                      </button>
+                    </div>
+                  )}
                   {/* Recharts: Biểu đồ phân bổ đánh giá sao */}
                   <div className="p-5 rounded-2xl bg-white/5 border border-white/10 shadow-inner">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-white/70 mb-4 flex items-center gap-1.5">
@@ -481,6 +637,26 @@ export function CourseDetailDrawer({ courseId, onClose }: CourseDetailDrawerProp
               {/* Tab 3: Doanh thu */}
               {activeTab === 'revenue' && (
                 <div className="space-y-6">
+                  {(startDate || endDate) && (
+                    <div className="px-4 py-2.5 rounded-xl bg-[#ffb800]/10 border border-[#ffb800]/30 flex items-center justify-between text-xs text-[#ffb800]">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-[#ffb800] shrink-0" />
+                        <span>
+                          Đang hiển thị doanh thu từ <strong className="text-white">{startDate ? new Date(startDate).toLocaleDateString('vi-VN') : 'khởi tạo'}</strong> đến <strong className="text-white">{endDate ? new Date(endDate).toLocaleDateString('vi-VN') : 'hiện tại'}</strong>
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setStartDate('');
+                          setEndDate('');
+                          setDateFilterPreset('all');
+                        }}
+                        className="text-white/60 hover:text-white underline text-[11px] font-medium cursor-pointer"
+                      >
+                        Xem toàn bộ thời gian
+                      </button>
+                    </div>
+                  )}
                   {/* Recharts: Biểu đồ xu hướng doanh thu */}
                   <div className="p-5 rounded-2xl bg-white/5 border border-white/10 shadow-inner">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-white/70 mb-4 flex items-center gap-1.5">

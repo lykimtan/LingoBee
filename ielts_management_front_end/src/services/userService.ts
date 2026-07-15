@@ -36,15 +36,17 @@ class UserService {
     return apiClient.get(`/api/users/search/query?query=${encodeURIComponent(query)}`);
   }
 
-  async getAdminStudents(params?: { page?: number; limit?: number; search?: string; status?: string; courseId?: string }): Promise<ApiResponse<any>> {
+  async getAdminStudents(params?: { page?: number; limit?: number; search?: string; status?: string; courseId?: string; startDate?: string; endDate?: string }): Promise<ApiResponse<any>> {
     let url = '/api/users/students/admin';
     if (params) {
       const query = new URLSearchParams();
       if (params.page) query.append('page', String(params.page));
       if (params.limit) query.append('limit', String(params.limit));
       if (params.search) query.append('search', params.search);
-      if (params.status) query.append('status', params.status);
-      if (params.courseId) query.append('courseId', params.courseId);
+      if (params.status && params.status !== 'all') query.append('status', params.status);
+      if (params.courseId && params.courseId !== 'all') query.append('courseId', params.courseId);
+      if (params.startDate) query.append('startDate', params.startDate);
+      if (params.endDate) query.append('endDate', params.endDate);
       
       const queryString = query.toString();
       if (queryString) url += `?${queryString}`;
@@ -52,8 +54,16 @@ class UserService {
     return apiClient.get<any>(url);
   }
 
-  async getAdminStudentStats(): Promise<ApiResponse<any>> {
-    return apiClient.get<any>('/api/users/students/admin/stats');
+  async getAdminStudentStats(params?: { startDate?: string; endDate?: string }): Promise<ApiResponse<any>> {
+    let url = '/api/users/students/admin/stats';
+    if (params && (params.startDate || params.endDate)) {
+      const query = new URLSearchParams();
+      if (params.startDate) query.append('startDate', params.startDate);
+      if (params.endDate) query.append('endDate', params.endDate);
+      const queryString = query.toString();
+      if (queryString) url += `?${queryString}`;
+    }
+    return apiClient.get<any>(url);
   }
 
   async getAdminStudentDetail(userId: string): Promise<ApiResponse<any>> {

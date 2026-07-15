@@ -1,5 +1,6 @@
 const { FlashcardDeck, Flashcard, FlashcardReview, Student } = require('../models');
 const logger = require('../utils/logger');
+const dictionaryService = require('../services/dictionaryService');
 
 // --- DECK MANAGEMENT ---
 
@@ -465,5 +466,38 @@ exports.deleteCard = async (req, res) => {
   } catch (error) {
     logger.error(`deleteCard error: ${error.message}`);
     res.status(500).json({ success: false, message: 'Lỗi server khi xóa thẻ' });
+  }
+};
+
+exports.lookupDictionary = async (req, res) => {
+  try {
+    const { word } = req.query;
+    if (!word || !word.trim()) {
+      return res.status(400).json({ success: false, message: 'Vui lòng cung cấp từ vựng cần tra cứu' });
+    }
+
+    const cleanWord = word.trim();
+    logger.info(`[Dictionary Lookup] Searching for: "${cleanWord}" (User: ${req.user?.id})`);
+
+    const result = await dictionaryService.lookupWord(cleanWord);
+
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy từ này trong từ điển'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    logger.error(`lookupDictionary error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Không thể tra cứu từ điển lúc này. Vui lòng thử lại sau.'
+    });
   }
 };

@@ -88,13 +88,13 @@ const generateLearningPath = async (courseId, targetDate, availableDays, hoursPe
     };
 
     const systemPrompt = `Bạn là một trợ lý AI thiết kế lộ trình học tập. 
-HÃY LÀM THEO CÁC QUY TẮC BẮT BUỘC SAU ĐÂY MỘT CÁCH TUYỆT ĐỐI:
-1. TRONG TRƯỜNG HỢP NGƯỜI DÙNG ĐẶT MỐC THỜI GIAN HOÀN THÀNH MỤC TIÊU QUÁ XA NGÀY HIỆN TẠI THÌ MỖI NGÀY TỐI ĐA 2 VIDEO: Tuyệt đối không được xếp quá 2 video bài giảng vào cùng một ngày (mảng 'lessons' của mỗi ngày có tối đa 2 phần tử). Nếu ngày hiện tại đã xếp đủ 2 video, BẮT BUỘC chuyển sang ngày rảnh tiếp theo.
-2. CHỈ HỌC VÀO NGÀY RẢNH: Chỉ xếp lịch vào các ngày trong tuần được cung cấp (availableDays: 0=Sun, 1=Mon...).
-3. KHÔNG BỎ SÓT: Bắt buộc phải lên lịch cho TẤT CẢ ${promptData.totalVideos} video trong danh sách. Không được tự ý cắt xén hay gộp video.
-4. THỨ TỰ: Giữ đúng thứ tự video từ đầu đến cuối.
-5. THỜI GIAN: Bắt đầu từ ${promptData.startDate} và kết thúc trước ${promptData.targetDate}.
-Trả về định dạng JSON với mảng 'dailySchedule'.
+            HÃY LÀM THEO CÁC QUY TẮC BẮT BUỘC SAU ĐÂY MỘT CÁCH TUYỆT ĐỐI:
+            1. TRONG TRƯỜNG HỢP NGƯỜI DÙNG ĐẶT MỐC THỜI GIAN HOÀN THÀNH MỤC TIÊU QUÁ XA NGÀY HIỆN TẠI THÌ MỖI NGÀY TỐI ĐA 2 VIDEO: Tuyệt đối không được xếp quá 2 video bài giảng vào cùng một ngày (mảng 'lessons' của mỗi ngày có tối đa 2 phần tử). Nếu ngày hiện tại đã xếp đủ 2 video, BẮT BUỘC chuyển sang ngày rảnh tiếp theo.
+            2. CHỈ HỌC VÀO NGÀY RẢNH: Chỉ xếp lịch vào các ngày trong tuần được cung cấp (availableDays: 0=Sun, 1=Mon...).
+            3. KHÔNG BỎ SÓT: Bắt buộc phải lên lịch cho TẤT CẢ ${promptData.totalVideos} video trong danh sách. Không được tự ý cắt xén hay gộp video.
+            4. THỨ TỰ: Giữ đúng thứ tự video từ đầu đến cuối.
+            5. THỜI GIAN: Bắt đầu từ ${promptData.startDate} và kết thúc trước ${promptData.targetDate}.
+            Trả về định dạng JSON với mảng 'dailySchedule'.
 `;
 
     // 4. Gọi Vercel AI SDK (generateObject)

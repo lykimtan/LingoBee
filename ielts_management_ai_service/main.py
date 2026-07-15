@@ -7,9 +7,9 @@ from PIL import Image
 import base64
 
 app = FastAPI(
-    title="YOLOv10 Vocabulary Generator API",
-    description="Microservice for Object Detection using YOLOv10",
-    version="1.0.0"
+    title="YOLO11 Vocabulary Generator API",
+    description="Microservice for Object Detection using YOLO11 (yolo11m)",
+    version="1.1.0"
 )
 
 
@@ -23,16 +23,16 @@ app.add_middleware(
 
 # Define the absolute path to the model relative to this file
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "yolov10m.pt")
+MODEL_PATH = os.path.join(BASE_DIR, "yolo11m.pt")
 
-print("Loading YOLOv10 model...")
+print("Loading YOLO11 model...")
 try:
     model = YOLO(MODEL_PATH)
     print("Model loaded successfully!")
 except Exception as e:
     print(f"Warning: Model could not be loaded initially. It will be downloaded on first request. Error: {e}")
-    # Ultralytics will auto-download yolov10m.pt if not found
-    model = YOLO("yolov10m.pt") 
+    # Ultralytics will auto-download yolo11m.pt if not found
+    model = YOLO("yolo11m.pt") 
 
 @app.post("/api/analyze-image")
 async def analyze_image(file: UploadFile = File(...)):
@@ -77,4 +77,4 @@ async def analyze_image(file: UploadFile = File(...)):
 
 @app.get("/")
 def read_root():
-    return {"message": "YOLOv10 AI Service is running. Access /docs for the API interface."}
+    return {"message": "YOLO11 AI Service is running. Access /docs for the API interface."}

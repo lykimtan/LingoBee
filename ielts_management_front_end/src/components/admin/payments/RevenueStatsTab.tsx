@@ -18,6 +18,9 @@ export function RevenueStatsTab() {
   const [statusFilter, setStatusFilter] = useState('');
   const [chartDays, setChartDays] = useState<'7' | '30' | '90' | '365' | 'all'>('30');
   const [courseDays, setCourseDays] = useState<'7' | '30' | '90' | '365' | 'all'>('all');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [dateFilterPreset, setDateFilterPreset] = useState<'all' | 'today' | '7days' | '30days' | 'thisMonth' | 'custom'>('all');
 
   const handleExportCSV = async () => {
     setExporting(true);
@@ -87,7 +90,7 @@ export function RevenueStatsTab() {
   const loadStats = async () => {
     setLoadingStats(true);
     try {
-      const res = await paymentService.getAdminRevenueStats({ chartDays, courseDays });
+      const res = await paymentService.getAdminRevenueStats({ chartDays, courseDays, startDate, endDate });
       const payload = (res as any).data || res;
       setStats(payload);
     } catch (err) {
@@ -100,7 +103,7 @@ export function RevenueStatsTab() {
   const loadPayments = async () => {
     setLoadingPayments(true);
     try {
-      const res = await paymentService.getAdminPayments({ page, limit: 10, search, status: statusFilter });
+      const res = await paymentService.getAdminPayments({ page, limit: 10, search, status: statusFilter, startDate, endDate });
       const payload = (res as any).data || res;
       setPayments(payload || []);
       if ((res as any).pagination) {
@@ -115,7 +118,8 @@ export function RevenueStatsTab() {
 
   useEffect(() => {
     loadStats();
-  }, [chartDays, courseDays]);
+    loadPayments();
+  }, [chartDays, courseDays, startDate, endDate]);
 
   useEffect(() => {
     loadPayments();
@@ -131,6 +135,117 @@ export function RevenueStatsTab() {
 
   return (
     <div className="space-y-8 animate-fadeIn">
+      {/* Bộ lọc thời gian (Time Filter Bar) */}
+      <div className="p-5 rounded-3xl bg-[#0f2326] border border-white/10 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+        <div className="flex items-center gap-2 text-white/80">
+          <Calendar className="w-5 h-5 text-teal-400" />
+          <span className="text-sm font-bold uppercase tracking-wider">Lọc doanh thu theo thời gian:</span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {[
+            { id: 'all', label: 'Tất cả' },
+            { id: 'today', label: 'Hôm nay' },
+            { id: '7days', label: '7 ngày qua' },
+            { id: '30days', label: '30 ngày qua' },
+            { id: 'thisMonth', label: 'Tháng này' },
+            { id: 'custom', label: 'Từ ngày - Đến ngày...' },
+          ].map((preset) => {
+            const isActive = dateFilterPreset === preset.id;
+            return (
+              <button
+                key={preset.id}
+                onClick={() => {
+                  setDateFilterPreset(preset.id as any);
+                  if (preset.id === 'all') {
+                    setStartDate('');
+                    setEndDate('');
+                    setChartDays('all');
+                  } else if (preset.id === 'today') {
+                    const now = new Date().toISOString().split('T')[0];
+                    setStartDate(now);
+                    setEndDate(now);
+                  } else if (preset.id === '7days') {
+                    const end = new Date();
+                    const start = new Date();
+                    start.setDate(end.getDate() - 6);
+                    setStartDate(start.toISOString().split('T')[0]);
+                    setEndDate(end.toISOString().split('T')[0]);
+                    setChartDays('7');
+                  } else if (preset.id === '30days') {
+                    const end = new Date();
+                    const start = new Date();
+                    start.setDate(end.getDate() - 29);
+                    setStartDate(start.toISOString().split('T')[0]);
+                    setEndDate(end.toISOString().split('T')[0]);
+                    setChartDays('30');
+                  } else if (preset.id === 'thisMonth') {
+                    const now = new Date();
+                    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                    setStartDate(firstDay.toISOString().split('T')[0]);
+                    setEndDate(lastDay.toISOString().split('T')[0]);
+                    setChartDays('30');
+                  } else if (preset.id === 'custom') {
+                    if (!startDate) {
+                      const now = new Date();
+                      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                      setStartDate(firstDay.toISOString().split('T')[0]);
+                    }
+                    const now = new Date();
+                    setEndDate(now.toISOString().split('T')[0]);
+                  }
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/25 border border-teal-400'
+                    : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/5'
+                }`}
+              >
+                {preset.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {dateFilterPreset === 'custom' && (
+          <div className="w-full flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-white/10 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-white/70 font-medium">Từ ngày:</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-[#142e32] text-white text-xs px-3 py-1.5 rounded-lg border border-white/15 focus:border-teal-400 focus:outline-none transition-colors cursor-pointer"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-white/70 font-medium">Đến ngày:</label>
+              <input
+                type="date"
+                value={endDate || new Date().toISOString().split('T')[0]}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-[#142e32] text-white text-xs px-3 py-1.5 rounded-lg border border-white/15 focus:border-teal-400 focus:outline-none transition-colors cursor-pointer"
+              />
+            </div>
+            {(startDate || endDate) && (
+              <button
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                  setDateFilterPreset('all');
+                  setChartDays('all');
+                }}
+                className="px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer border border-red-500/30"
+                title="Xóa bộ lọc"
+              >
+                <span>Đặt lại</span>
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* KPI Cards */}
       <div className="grid gap-5 md:grid-cols-3">
         <div className="relative overflow-hidden rounded-3xl bg-[#0f2326] p-6 border border-white/10 shadow-xl">

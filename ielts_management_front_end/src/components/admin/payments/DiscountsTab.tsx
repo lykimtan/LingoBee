@@ -15,6 +15,9 @@ export function DiscountsTab() {
   const [courses, setCourses] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [dateFilterPreset, setDateFilterPreset] = useState<'all' | 'today' | '7days' | '30days' | 'thisMonth' | 'custom'>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [stats, setStats] = useState<any>(null);
@@ -73,7 +76,7 @@ export function DiscountsTab() {
   const loadDiscounts = async () => {
     setLoading(true);
     try {
-      const res = await discountService.getDiscounts({ page, limit: 10, search, status: statusFilter });
+      const res = await discountService.getDiscounts({ page, limit: 10, search, status: statusFilter, startDate, endDate });
       const payload = (res as any).data || res;
       setDiscounts(payload || []);
       if ((res as any).pagination) {
@@ -98,7 +101,7 @@ export function DiscountsTab() {
 
   const loadStats = async () => {
     try {
-      const res = await discountService.getDiscountStats();
+      const res = await discountService.getDiscountStats({ startDate, endDate });
       const payload = (res as any).data || res;
       setStats(payload || null);
     } catch (err) {
@@ -108,12 +111,15 @@ export function DiscountsTab() {
 
   useEffect(() => {
     loadDiscounts();
-  }, [page, statusFilter]);
+  }, [page, statusFilter, startDate, endDate]);
 
   useEffect(() => {
     loadCourses();
-    loadStats();
   }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [startDate, endDate]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -316,6 +322,114 @@ export function DiscountsTab() {
 
   return (
     <div className="space-y-8 animate-fadeIn">
+      {/* Bộ lọc thời gian (Time Filter Bar) */}
+      <div className="p-5 rounded-3xl bg-[#0f2326] border border-white/10 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+        <div className="flex items-center gap-2 text-white/80">
+          <Calendar className="w-5 h-5 text-purple-400" />
+          <span className="text-sm font-bold uppercase tracking-wider">Lọc thống kê & ưu đãi theo thời gian:</span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {[
+            { id: 'all', label: 'Tất cả' },
+            { id: 'today', label: 'Hôm nay' },
+            { id: '7days', label: '7 ngày qua' },
+            { id: '30days', label: '30 ngày qua' },
+            { id: 'thisMonth', label: 'Tháng này' },
+            { id: 'custom', label: 'Từ ngày - Đến ngày...' },
+          ].map((preset) => {
+            const isActive = dateFilterPreset === preset.id;
+            return (
+              <button
+                key={preset.id}
+                onClick={() => {
+                  setDateFilterPreset(preset.id as any);
+                  setPage(1);
+                  if (preset.id === 'all') {
+                    setStartDate('');
+                    setEndDate('');
+                  } else if (preset.id === 'today') {
+                    const now = new Date().toISOString().split('T')[0];
+                    setStartDate(now);
+                    setEndDate(now);
+                  } else if (preset.id === '7days') {
+                    const end = new Date();
+                    const start = new Date();
+                    start.setDate(end.getDate() - 6);
+                    setStartDate(start.toISOString().split('T')[0]);
+                    setEndDate(end.toISOString().split('T')[0]);
+                  } else if (preset.id === '30days') {
+                    const end = new Date();
+                    const start = new Date();
+                    start.setDate(end.getDate() - 29);
+                    setStartDate(start.toISOString().split('T')[0]);
+                    setEndDate(end.toISOString().split('T')[0]);
+                  } else if (preset.id === 'thisMonth') {
+                    const now = new Date();
+                    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                    setStartDate(firstDay.toISOString().split('T')[0]);
+                    setEndDate(lastDay.toISOString().split('T')[0]);
+                  } else if (preset.id === 'custom') {
+                    if (!startDate) {
+                      const now = new Date();
+                      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                      setStartDate(firstDay.toISOString().split('T')[0]);
+                    }
+                    const now = new Date();
+                    setEndDate(now.toISOString().split('T')[0]);
+                  }
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/25 border border-purple-400'
+                    : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/5'
+                }`}
+              >
+                {preset.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {dateFilterPreset === 'custom' && (
+          <div className="w-full flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-white/10 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-white/70 font-medium">Từ ngày:</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+                className="bg-[#142e32] text-white text-xs px-3 py-1.5 rounded-lg border border-white/15 focus:border-purple-400 focus:outline-none transition-colors cursor-pointer"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-white/70 font-medium">Đến ngày:</label>
+              <input
+                type="date"
+                value={endDate || new Date().toISOString().split('T')[0]}
+                onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+                className="bg-[#142e32] text-white text-xs px-3 py-1.5 rounded-lg border border-white/15 focus:border-purple-400 focus:outline-none transition-colors cursor-pointer"
+              />
+            </div>
+            {(startDate || endDate) && (
+              <button
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                  setDateFilterPreset('all');
+                  setPage(1);
+                }}
+                className="px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer border border-red-500/30"
+                title="Xóa bộ lọc"
+              >
+                <X className="w-3.5 h-3.5" /> <span>Đặt lại</span>
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Thống kê tỷ lệ sử dụng mã ưu đãi (Pie Chart & Top Codes) */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Pie Chart Card */}
@@ -382,6 +496,11 @@ export function DiscountsTab() {
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               <Tag className="w-5 h-5 text-teal-400" />
               <span>Top mã ưu đãi được áp dụng nhiều nhất</span>
+              {(startDate || endDate) && (
+                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-normal">
+                  Đang lọc theo thời gian
+                </span>
+              )}
             </h3>
             <p className="text-xs text-white/50 mt-0.5">Các chương trình khuyến mãi chuyển đổi tốt nhất</p>
           </div>
@@ -411,7 +530,7 @@ export function DiscountsTab() {
           </div>
 
           <div className="text-right border-t border-white/10 pt-3 text-[11px] text-white/40">
-            Tổng số thanh toán thành công toàn hệ thống: <strong className="text-white">{stats?.totalCompleted || 0} giao dịch</strong>
+            Tổng số thanh toán thành công {(startDate || endDate) ? 'trong kỳ' : 'toàn hệ thống'}: <strong className="text-white">{stats?.totalCompleted || 0} giao dịch</strong>
           </div>
         </div>
       </div>

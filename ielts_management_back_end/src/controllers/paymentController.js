@@ -362,7 +362,7 @@ exports.vnpayIpn = async (req, res) => {
  */
 exports.getAdminPayments = async (req, res) => {
   try {
-    const { page = 1, limit = 20, status, courseId, search } = req.query;
+    const { page = 1, limit = 20, status, courseId, search, startDate, endDate } = req.query;
     const query = {};
 
     if (status) query.paymentStatus = status;
@@ -372,6 +372,31 @@ exports.getAdminPayments = async (req, res) => {
         { txnRef: { $regex: search.trim(), $options: 'i' } },
         { 'discountCode.code': { $regex: search.trim(), $options: 'i' } }
       ];
+    }
+
+    if (startDate || endDate) {
+      const startCond = {};
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        startCond.$gte = start;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        startCond.$lte = end;
+      }
+      const dateOr = [
+        { paymentDate: startCond },
+        { paymentDate: null, createdAt: startCond },
+        { paymentDate: { $exists: false }, createdAt: startCond }
+      ];
+      if (query.$or) {
+        query.$and = [{ $or: query.$or }, { $or: dateOr }];
+        delete query.$or;
+      } else {
+        query.$or = dateOr;
+      }
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -409,10 +434,22 @@ exports.getAdminPayments = async (req, res) => {
  */
 exports.getAdminRevenueStats = async (req, res) => {
   try {
-    const { chartDays = '30', courseDays = 'all' } = req.query;
+    const { chartDays = '30', courseDays = 'all', startDate, endDate } = req.query;
 
-    const completedPayments = await Payment.find({ paymentStatus: 'completed' })
+    let completedPayments = await Payment.find({ paymentStatus: 'completed' })
       .populate('courseId', 'title slug');
+
+    if (startDate || endDate) {
+      const start = startDate ? new Date(startDate) : new Date(0);
+      start.setHours(0, 0, 0, 0);
+      const end = endDate ? new Date(endDate) : new Date('2099-12-31');
+      end.setHours(23, 59, 59, 999);
+
+      completedPayments = completedPayments.filter(pm => {
+        const d = pm.paymentDate ? new Date(pm.paymentDate) : new Date(pm.createdAt);
+        return d >= start && d <= end;
+      });
+    }
 
     const totalRevenue = completedPayments.reduce((acc, curr) => acc + (curr.finalAmount || curr.totalAmount || 0), 0);
     const totalTransactions = completedPayments.length;

@@ -1,3 +1,5 @@
+import { apiClient } from '@/utils/api';
+
 export interface DictionaryMeaning {
   partOfSpeech: string;
   definition: string;
@@ -9,59 +11,29 @@ export interface DictionaryResult {
   phonetic: string;
   audioUrl: string;
   meanings: DictionaryMeaning[];
+  source?: string;
 }
 
 export const dictionaryService = {
   async fetchWordData(word: string): Promise<DictionaryResult> {
-    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word.trim())}`);
-    if (!res.ok) throw new Error("Not found");
-    const data = await res.json();
-    
-    if (!data || data.length === 0) {
-      throw new Error("No data returned");
+    const cleanWord = word.trim();
+    if (!cleanWord) {
+      throw new Error("Vui lòng nhập từ vựng cần tra cứu");
     }
 
-    const entry = data[0];
-    
-    // Extract phonetic
-    let fetchedPhonetic = entry.phonetic || '';
-    let fetchedAudio = '';
-    
-    if (entry.phonetics && entry.phonetics.length > 0) {
-      const phoneticObj = entry.phonetics.find((p: any) => p.text && p.audio);
-      if (phoneticObj) {
-        if (!fetchedPhonetic) fetchedPhonetic = phoneticObj.text;
-        fetchedAudio = phoneticObj.audio;
-      } else {
-        const anyAudio = entry.phonetics.find((p: any) => p.audio);
-        if (anyAudio) fetchedAudio = anyAudio.audio;
-      }
-    }
-    
-    // Extract meanings
-    const meanings: DictionaryMeaning[] = [];
+    try {
+      const res = await apiClient.get<DictionaryResult>(
+        `/api/flashcards/dictionary/lookup?word=${encodeURIComponent(cleanWord)}`
+      );
 
-    if (entry.meanings && entry.meanings.length > 0) {
-      for (const m of entry.meanings) {
-        const partOfSpeech = m.partOfSpeech || '';
-        
-        if (m.definitions && m.definitions.length > 0) {
-          for (const d of m.definitions) {
-            meanings.push({
-              partOfSpeech,
-              definition: d.definition || '',
-              example: d.example || '',
-              synonyms: d.synonyms && d.synonyms.length > 0 ? d.synonyms : m.synonyms || []
-            });
-          }
-        }
+      if (res && (res.success || res.status === 'success') && res.data) {
+        return res.data;
       }
+
+      throw new Error(res.message || "Không nhận được phản hồi từ máy chủ");
+    } catch (error: any) {
+      console.error("Dictionary lookup error:", error);
+      throw new Error(error.message || "Không thể tra cứu từ điển lúc này");
     }
-    
-    return {
-      phonetic: fetchedPhonetic,
-      audioUrl: fetchedAudio,
-      meanings: meanings
-    };
   }
 };

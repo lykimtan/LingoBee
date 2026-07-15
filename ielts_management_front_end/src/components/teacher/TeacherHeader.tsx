@@ -194,10 +194,6 @@ export function TeacherHeader() {
 
       {/* Right Actions */}
       <div className="flex items-center gap-3">
-        <button className="flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100">
-          <Settings className="h-4 w-4" />
-          Setting
-        </button>
         <div className="relative" ref={menuRef}>
           <button
             className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm hover:bg-gray-50"

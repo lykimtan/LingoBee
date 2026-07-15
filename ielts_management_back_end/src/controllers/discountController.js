@@ -11,7 +11,7 @@ const logger = require('../utils/logger');
  */
 exports.getDiscounts = async (req, res) => {
   try {
-    const { page = 1, limit = 20, search = '', status } = req.query;
+    const { page = 1, limit = 20, search = '', status, startDate, endDate } = req.query;
     const query = {};
 
     if (search) {
@@ -28,6 +28,16 @@ exports.getDiscounts = async (req, res) => {
       query.isActive = false;
     } else if (status === 'expired') {
       query.validTo = { $lt: new Date() };
+    }
+
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate + 'T00:00:00.000Z');
+      }
+      if (endDate) {
+        query.createdAt.$lte = new Date(endDate + 'T23:59:59.999Z');
+      }
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -260,7 +270,18 @@ exports.deleteDiscount = async (req, res) => {
  */
 exports.getDiscountStats = async (req, res) => {
   try {
-    const completedPayments = await Payment.find({ paymentStatus: 'completed' });
+    const { startDate, endDate } = req.query;
+    const query = { paymentStatus: 'completed' };
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate + 'T00:00:00.000Z');
+      }
+      if (endDate) {
+        query.createdAt.$lte = new Date(endDate + 'T23:59:59.999Z');
+      }
+    }
+    const completedPayments = await Payment.find(query);
     const totalCompleted = completedPayments.length;
     let withDiscount = 0;
     const codeCountMap = {};

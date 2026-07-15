@@ -525,19 +525,6 @@ export default function TeacherCourseDetailPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-500">
-                          <CheckSquare className="h-5 w-5" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-xs font-semibold text-gray-500">
-                            Mock tests
-                          </p>
-                          <p className="text-lg font-bold text-gray-900">
-                            {course.totalMockTests ?? 0}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-500">
                           <Star className="h-5 w-5" />
                         </div>

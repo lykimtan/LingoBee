@@ -261,7 +261,12 @@ export function StudentDetailDrawer({ studentId, onClose, onStatusChange }: Stud
               ) : (
                 courses.map((item: any, idx: number) => {
                   const courseObj = item.courseId || {};
-                  const progress = item.progressPercentage || 100;
+                  const progress = Math.round(Number(item.progress ?? item.progressPercentage ?? 0));
+                  const isDone = item.status === 'completed' || progress >= 100;
+                  const isDropped = item.status === 'dropped';
+                  const enrollDate = item.enrollmentDate || item.enrolledAt;
+                  const enrollDateStr = enrollDate ? new Date(enrollDate).toLocaleDateString('vi-VN') : 'Gần đây';
+
                   return (
                     <div key={idx} className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3 hover:border-teal-500/30 transition-colors">
                       <div className="flex items-start justify-between">
@@ -269,20 +274,33 @@ export function StudentDetailDrawer({ studentId, onClose, onStatusChange }: Stud
                           <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-500/10 text-teal-300 border border-teal-500/20 uppercase">
                             {courseObj.category || 'IELTS'}
                           </span>
-                          <h4 className="text-lg font-bold text-white mt-1.5">{courseObj.title || item || 'Khóa học'}</h4>
+                          <h4 className="text-lg font-bold text-white mt-1.5">{courseObj.title || (typeof item === 'string' ? item : 'Khóa học')}</h4>
                         </div>
                         <span className="text-sm font-semibold text-teal-400">{progress}%</span>
                       </div>
 
                       <div className="w-full h-2 bg-black/40 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-teal-500 to-emerald-400 rounded-full" style={{ width: `${progress}%` }} />
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${isDone ? 'bg-emerald-400' : isDropped ? 'bg-red-400' : 'bg-gradient-to-r from-teal-500 to-emerald-400'}`}
+                          style={{ width: `${progress}%` }}
+                        />
                       </div>
 
                       <div className="flex items-center justify-between text-xs text-white/50 pt-1">
-                        <span>Đã ghi danh: {item.enrolledAt ? new Date(item.enrolledAt).toLocaleDateString('vi-VN') : 'Gần đây'}</span>
-                        <span className="text-emerald-400 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Hoàn thành
-                        </span>
+                        <span>Đã ghi danh: {enrollDateStr}</span>
+                        {isDone ? (
+                          <span className="text-emerald-400 flex items-center gap-1 font-semibold">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Đã hoàn thành
+                          </span>
+                        ) : isDropped ? (
+                          <span className="text-red-400 flex items-center gap-1 font-semibold">
+                            Đã dừng học
+                          </span>
+                        ) : (
+                          <span className="text-blue-400 flex items-center gap-1 font-semibold">
+                            <Clock className="w-3.5 h-3.5" /> Đang học
+                          </span>
+                        )}
                       </div>
                     </div>
                   );

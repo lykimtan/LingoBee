@@ -4,9 +4,10 @@ import { TeacherStudentsOverview } from "@/services/courseService";
 
 interface TeacherStudentsHeaderProps {
   summary?: TeacherStudentsOverview["summary"];
+  isFiltered?: boolean;
 }
 
-export function TeacherStudentsHeader({ summary }: TeacherStudentsHeaderProps) {
+export function TeacherStudentsHeader({ summary, isFiltered }: TeacherStudentsHeaderProps) {
   const totalStudents = summary?.totalStudents || 0;
   const activeCount = summary?.activeCount || 0;
   const completedCount = summary?.completedCount || 0;
@@ -16,8 +17,13 @@ export function TeacherStudentsHeader({ summary }: TeacherStudentsHeaderProps) {
     <div className="mb-6 flex flex-col justify-between gap-6 px-6 lg:flex-row lg:items-end">
       <div>
         <p className="text-xs uppercase tracking-[0.35em] text-gray-500">Student Management</p>
-        <h1 className="text-4xl font-normal text-gray-900 md:text-5xl">
-          My <span className="font-medium text-[#1f6f5e]">Students</span>
+        <h1 className="text-4xl font-normal text-gray-900 md:text-5xl flex flex-wrap items-center gap-3">
+          <span>My <span className="font-medium text-[#1f6f5e]">Students</span></span>
+          {isFiltered && (
+            <span className="text-xs px-3 py-1 rounded-full bg-[#1f6f5e]/10 text-[#1f6f5e] font-semibold border border-[#1f6f5e]/20">
+              Đang lọc theo thời gian
+            </span>
+          )}
         </h1>
         <p className="mt-3 max-w-xl text-sm text-gray-600">
           Theo dõi tiến độ hoàn thành khóa học, trạng thái hoạt động và quản lý chi tiết từng học viên trong các lớp do bạn phụ trách.

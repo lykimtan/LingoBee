@@ -13,7 +13,7 @@ export default function ChatRightPanel({ conversation, courseName }: ChatRightPa
   const { user } = useAuth();
   let chatName = conversation.type === 'group' ? (courseName ? `${courseName} Group` : 'Nhóm Lớp Chung') : 'Chat Riêng Tư';
   let chatAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(chatName)}&background=eff6ff&color=3b82f6`;
-  
+
   if (conversation.type === 'private') {
     const studentParticipant = conversation.participants.find(p => {
       if (typeof p.userId === 'object' && p.userId !== null) {
@@ -21,7 +21,7 @@ export default function ChatRightPanel({ conversation, courseName }: ChatRightPa
       }
       return false; // Cannot determine role if not populated
     });
-    
+
     // Fallback logic if no student found (e.g. teacher talking to admin, or data missing)
     const targetParticipant = studentParticipant || conversation.participants.find(p => {
       const myId = String(user?.id || (user as any)?._id || '');
@@ -53,21 +53,6 @@ export default function ChatRightPanel({ conversation, courseName }: ChatRightPa
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-8">
-        
-        {/* Upcoming Live Sessions */}
-        <div>
-          <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4">
-            Upcoming Live Sessions
-          </h4>
-          <div className="bg-white border border-gray-200 p-4 rounded-2xl shadow-sm">
-            <p className="text-sm font-bold text-gray-900 mb-1">Speaking Workshop</p>
-            <div className="flex items-center gap-2 text-gray-500">
-              <Calendar className="w-3.5 h-3.5" />
-              <span className="text-xs font-medium">Today, 2:00 PM</span>
-            </div>
-          </div>
-        </div>
-
         {/* Shared Resources */}
         <div>
           <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4">
@@ -80,7 +65,7 @@ export default function ChatRightPanel({ conversation, courseName }: ChatRightPa
               </div>
               <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900 transition-colors truncate">Speaking_Part2.pdf</p>
             </div>
-            
+
             <div className="flex items-center gap-3 group cursor-pointer">
               <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 group-hover:bg-blue-100 transition-colors">
                 <ImageIcon className="w-4 h-4" />

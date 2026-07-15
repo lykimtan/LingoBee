@@ -9,12 +9,14 @@ interface TeacherStudentsTableProps {
   enrollments: TeacherStudentEnrollment[];
   isLoading: boolean;
   onExportCSV: () => void;
+  isFiltered?: boolean;
 }
 
 export function TeacherStudentsTable({
   enrollments,
   isLoading,
   onExportCSV,
+  isFiltered,
 }: TeacherStudentsTableProps) {
   if (isLoading) {
     return (
@@ -30,8 +32,9 @@ export function TeacherStudentsTable({
     <div className="flex flex-col">
       {/* Table Action Bar */}
       <div className="mb-4 flex items-center justify-between">
-        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-          Danh sách ({enrollments.length} lượt đăng ký)
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+          <span>Danh sách ({enrollments.length} lượt đăng ký)</span>
+          {isFiltered && <span className="text-[#1f6f5e] font-bold">• Đang lọc theo thời gian</span>}
         </span>
         <button
           onClick={onExportCSV}

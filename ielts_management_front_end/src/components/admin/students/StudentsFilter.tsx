@@ -4,17 +4,19 @@ import React, { useEffect, useState } from 'react';
 import { Search, Filter, Download, Loader2 } from 'lucide-react';
 import { courseService } from '@/services/courseService';
 
+export interface StudentsFilterState {
+  search: string;
+  status: string;
+  courseId: string;
+  startDate: string;
+  endDate: string;
+  datePreset: string;
+  [key: string]: any;
+}
+
 interface StudentsFilterProps {
-  filters: {
-    search: string;
-    status: string;
-    courseId: string;
-  };
-  setFilters: React.Dispatch<React.SetStateAction<{
-    search: string;
-    status: string;
-    courseId: string;
-  }>>;
+  filters: StudentsFilterState;
+  setFilters: React.Dispatch<React.SetStateAction<StudentsFilterState>>;
 }
 
 export function StudentsFilter({ filters, setFilters }: StudentsFilterProps) {
@@ -108,7 +110,7 @@ export function StudentsFilter({ filters, setFilters }: StudentsFilterProps) {
           <input
             type="text"
             value={filters.search}
-            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+            onChange={(e) => setFilters((prev: StudentsFilterState) => ({ ...prev, search: e.target.value }))}
             className="w-full bg-white/5 border border-white/10 text-white placeholder-white/40 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-white/20 transition-all"
             placeholder="Tìm theo tên hoặc email..."
           />
@@ -119,7 +121,7 @@ export function StudentsFilter({ filters, setFilters }: StudentsFilterProps) {
           <label className="text-sm text-white/60 whitespace-nowrap">Trạng thái:</label>
           <select
             value={filters.status}
-            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+            onChange={(e) => setFilters((prev: StudentsFilterState) => ({ ...prev, status: e.target.value }))}
             className="bg-white/5 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-white/20 appearance-none min-w-[140px] cursor-pointer"
           >
             <option value="all" className="bg-[#0f2326] text-white">Tất cả</option>
@@ -133,7 +135,7 @@ export function StudentsFilter({ filters, setFilters }: StudentsFilterProps) {
           <label className="text-sm text-white/60 whitespace-nowrap">Khóa học:</label>
           <select
             value={filters.courseId}
-            onChange={(e) => setFilters(prev => ({ ...prev, courseId: e.target.value }))}
+            onChange={(e) => setFilters((prev: StudentsFilterState) => ({ ...prev, courseId: e.target.value }))}
             className="bg-white/5 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-white/20 appearance-none min-w-[180px] cursor-pointer max-w-[250px] truncate"
           >
             <option value="all" className="bg-[#0f2326] text-white">Tất cả khóa học</option>

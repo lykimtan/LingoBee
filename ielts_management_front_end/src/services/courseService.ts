@@ -88,12 +88,16 @@ class CourseService {
   async getTeacherStudents(
     courseId?: string,
     search?: string,
-    status?: string
+    status?: string,
+    startDate?: string,
+    endDate?: string
   ): Promise<ApiResponse<TeacherStudentsOverview>> {
     const params = new URLSearchParams();
     if (courseId && courseId !== 'all') params.append('courseId', courseId);
     if (search) params.append('search', search);
     if (status && status !== 'all') params.append('status', status);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
     const queryString = params.toString() ? `?${params.toString()}` : '';
     return apiClient.get<TeacherStudentsOverview>(`/api/courses/my/students${queryString}`);
   }
@@ -146,14 +150,22 @@ class CourseService {
     return apiClient.get<any[]>(`/api/courses/${encoded}/students`);
   }
 
-  async getCourseAdminStats(courseId: string): Promise<ApiResponse<any>> {
+  async getCourseAdminStats(courseId: string, startDate?: string, endDate?: string): Promise<ApiResponse<any>> {
     const encoded = encodeURIComponent(courseId);
-    return apiClient.get<any>(`/api/courses/${encoded}/admin-stats`);
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return apiClient.get<any>(`/api/courses/${encoded}/admin-stats${queryString}`);
   }
 
-  async getCourseTeacherStats(courseId: string): Promise<ApiResponse<any>> {
+  async getCourseTeacherStats(courseId: string, startDate?: string, endDate?: string): Promise<ApiResponse<any>> {
     const encoded = encodeURIComponent(courseId);
-    return apiClient.get<any>(`/api/courses/${encoded}/teacher-stats`);
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return apiClient.get<any>(`/api/courses/${encoded}/teacher-stats${queryString}`);
   }
 }
 

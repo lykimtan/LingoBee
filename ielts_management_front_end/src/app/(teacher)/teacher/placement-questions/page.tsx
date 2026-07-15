@@ -20,6 +20,9 @@ export default function TeacherPlacementQuestionsPage() {
     const [difficultyFilter, setDifficultyFilter] = useState("");
     const [typeFilter, setTypeFilter] = useState("");
     const [creatorFilter, setCreatorFilter] = useState("");
+    const [sortFilter, setSortFilter] = useState("newest");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState<PlacementQuestion | null>(null);
@@ -50,7 +53,7 @@ export default function TeacherPlacementQuestionsPage() {
     }, [loadQuestions]);
 
     const filteredQuestions = useMemo(() => {
-        return questions.filter((q) => {
+        const result = questions.filter((q) => {
             const matchesSearch = q.questionText.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesDifficulty = difficultyFilter ? q.difficulty === difficultyFilter : true;
             const matchesType = typeFilter ? q.questionType === typeFilter : true;
@@ -59,13 +62,46 @@ export default function TeacherPlacementQuestionsPage() {
                 const creatorId = q.createdBy ? (typeof q.createdBy === 'string' ? q.createdBy : q.createdBy._id) : null;
                 matchesCreator = creatorId === user.id || creatorId === user.id;
             }
-            return matchesSearch && matchesDifficulty && matchesType && matchesCreator;
+            let matchesDate = true;
+            if (startDate || endDate) {
+                const qDate = new Date(q.createdAt || new Date());
+                if (startDate && !isNaN(qDate.getTime())) {
+                    const sDate = new Date(startDate + "T00:00:00.000Z");
+                    if (qDate < sDate) matchesDate = false;
+                }
+                if (endDate && !isNaN(qDate.getTime())) {
+                    const eDate = new Date(endDate + "T23:59:59.999Z");
+                    if (qDate > eDate) matchesDate = false;
+                }
+            }
+            return matchesSearch && matchesDifficulty && matchesType && matchesCreator && matchesDate;
         });
-    }, [questions, searchQuery, difficultyFilter, typeFilter, creatorFilter, user]);
+
+        const diffOrder: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
+        return [...result].sort((a, b) => {
+            if (sortFilter === "oldest") {
+                return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+            }
+            if (sortFilter === "difficulty_asc") {
+                return (diffOrder[a.difficulty] || 2) - (diffOrder[b.difficulty] || 2);
+            }
+            if (sortFilter === "difficulty_desc") {
+                return (diffOrder[b.difficulty] || 2) - (diffOrder[a.difficulty] || 2);
+            }
+            if (sortFilter === "az") {
+                return (a.questionText || "").localeCompare(b.questionText || "", "vi");
+            }
+            if (sortFilter === "za") {
+                return (b.questionText || "").localeCompare(a.questionText || "", "vi");
+            }
+            // default: newest
+            return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        });
+    }, [questions, searchQuery, difficultyFilter, typeFilter, creatorFilter, startDate, endDate, sortFilter, user]);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, difficultyFilter, typeFilter, creatorFilter]);
+    }, [searchQuery, difficultyFilter, typeFilter, creatorFilter, startDate, endDate, sortFilter]);
 
     const paginatedQuestions = useMemo(() => {
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -78,6 +114,7 @@ export default function TeacherPlacementQuestionsPage() {
         if (type === "difficulty") setDifficultyFilter(value);
         if (type === "questionType") setTypeFilter(value);
         if (type === "creator") setCreatorFilter(value);
+        if (type === "sort") setSortFilter(value);
     };
 
     const handleCreateNew = () => {
@@ -140,10 +177,17 @@ export default function TeacherPlacementQuestionsPage() {
             <main className="flex-1 w-full">
                 <div className="w-full pt-6">
                     <PlacementQuestionsHeader
-                        questions={questions}
+                        questions={filteredQuestions}
                         onSearch={setSearchQuery}
                         onFilterChange={handleFilterChange}
                         onCreateClick={handleCreateNew}
+                        startDate={startDate}
+                        endDate={endDate}
+                        onDateChange={(start, end) => {
+                            setStartDate(start);
+                            setEndDate(end);
+                        }}
+                        isFiltered={Boolean(startDate || endDate)}
                     />
                     <PlacementQuestionsList
                         questions={paginatedQuestions}

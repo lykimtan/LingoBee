@@ -187,8 +187,8 @@ const CoursePreviewVideo: React.FC<CoursePreviewVideoProps> = ({ course, activeV
         <button
           onClick={() => setActiveTab('exercises')}
           className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 -mb-px ${activeTab === 'exercises'
-              ? 'border-white text-white'
-              : 'border-transparent text-gray-400 hover:text-white'
+            ? 'border-white text-white'
+            : 'border-transparent text-gray-400 hover:text-white'
             }`}
         >
           Bài tập
@@ -196,8 +196,8 @@ const CoursePreviewVideo: React.FC<CoursePreviewVideoProps> = ({ course, activeV
         <button
           onClick={() => setActiveTab('material')}
           className={`px-6 py-3 font-semibold text-sm transition-colors border-b-2 -mb-px ${activeTab === 'material'
-              ? 'border-white text-white'
-              : 'border-transparent text-gray-400 hover:text-white'
+            ? 'border-white text-white'
+            : 'border-transparent text-gray-400 hover:text-white'
             }`}
         >
           Tài liệu đính kèm

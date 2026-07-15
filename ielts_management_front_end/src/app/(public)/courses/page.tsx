@@ -3,18 +3,22 @@ import { CourseHeroSection } from "@/components/public/courses/CourseHeroSection
 import { CourseProblemsSection } from "@/components/public/courses/CourseProblemsSection";
 import { CourseSolutionsSection } from "@/components/public/courses/CourseSolutionsSection";
 import { CourseSliderSection, SliderCourse } from "@/components/public/courses/CourseSliderSection";
+import { CourseListSection } from "@/components/public/courses/CourseListSection";
 import { Footer } from "@/components/Footer";
 import { courseService } from "@/services/courseService";
+import { AdminCourseItem } from "@/types";
 import Image from 'next/image';
 
 
 
 export default async function CoursesPage() {
     let sliderCourses: SliderCourse[] = [];
+    let coursesList: AdminCourseItem[] = [];
 
     try {
         const res = await courseService.getPublicCourses();
         if (res.data) {
+            coursesList = res.data;
             // Dữ liệu trả về từ getPublicCourses đã được filter status published ở backend
             sliderCourses = res.data.map(c => ({
                 id: c._id,
@@ -54,8 +58,11 @@ export default async function CoursesPage() {
             {/* Solutions Section */}
             <CourseSolutionsSection />
 
-            {/* Course Listing */}
+            {/* Course Slider Carousel */}
             <CourseSliderSection courses={sliderCourses} />
+
+            {/* Detailed Course Listing with Search & Level/Skill Filtering */}
+            <CourseListSection courses={coursesList} />
 
             <Footer />
         </div>

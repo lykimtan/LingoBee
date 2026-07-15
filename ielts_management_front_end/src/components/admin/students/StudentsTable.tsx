@@ -12,6 +12,10 @@ interface StudentsTableProps {
     search: string;
     status: string;
     courseId: string;
+    startDate?: string;
+    endDate?: string;
+    datePreset?: string;
+    [key: string]: any;
   };
 }
 
@@ -98,7 +102,7 @@ export function StudentsTable({ filters }: StudentsTableProps) {
   // Reset về trang 1 khi thay đổi bộ lọc
   useEffect(() => {
     setPage(1);
-  }, [filters?.search, filters?.status, filters?.courseId]);
+  }, [filters?.search, filters?.status, filters?.courseId, filters?.startDate, filters?.endDate]);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -110,8 +114,9 @@ export function StudentsTable({ filters }: StudentsTableProps) {
           search: filters?.search || undefined,
           status: filters?.status !== "all" ? filters?.status : undefined,
           courseId: filters?.courseId !== "all" ? filters?.courseId : undefined,
+          startDate: filters?.startDate || undefined,
+          endDate: filters?.endDate || undefined,
         });
-        console.log(response)
 
         const list = response.data;
         if (Array.isArray(list)) {
@@ -137,7 +142,7 @@ export function StudentsTable({ filters }: StudentsTableProps) {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [page, filters?.search, filters?.status, filters?.courseId]);
+  }, [page, filters?.search, filters?.status, filters?.courseId, filters?.startDate, filters?.endDate]);
 
   return (
     <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden flex flex-col min-h-[400px]">
@@ -147,7 +152,7 @@ export function StudentsTable({ filters }: StudentsTableProps) {
             <tr className="border-b border-white/10 text-xs font-semibold text-white/40 uppercase tracking-wider bg-white/5">
               <th className="px-6 py-4">Học viên</th>
               <th className="px-6 py-4">Trạng thái</th>
-              <th className="px-6 py-4">Khóa học đã mua</th>
+              <th className="px-6 py-4">Khóa học đã ghi danh</th>
               <th className="px-6 py-4 text-center">Điểm thi đầu vào</th>
               <th className="px-6 py-4 text-right">Thao tác</th>
             </tr>

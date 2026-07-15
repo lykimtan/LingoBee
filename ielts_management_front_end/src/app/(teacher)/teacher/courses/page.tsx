@@ -30,13 +30,22 @@ export default function TeacherCoursesPage() {
 	const [invitationsError, setInvitationsError] = useState<string | null>(null);
 	const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 	const [filterStatus, setFilterStatus] = useState<string>("all");
+	const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
 	const filteredCourses = useMemo(() => {
+		let list = courses;
 		if (filterStatus === "all") {
-			return courses.filter(c => c.status !== 'invited');
+			list = courses.filter(c => c.status !== 'invited');
+		} else {
+			list = courses.filter((c) => c.status === filterStatus);
 		}
-		return courses.filter((c) => c.status === filterStatus);
-	}, [courses, filterStatus]);
+
+		return [...list].sort((a, b) => {
+			const dateA = (a.createdAt || a.updatedAt) ? new Date(a.createdAt || a.updatedAt!).getTime() : 0;
+			const dateB = (b.createdAt || b.updatedAt) ? new Date(b.createdAt || b.updatedAt!).getTime() : 0;
+			return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+		});
+	}, [courses, filterStatus, sortOrder]);
 
 	const loadCourses = useCallback(async () => {
 		setCoursesLoading(true);
@@ -129,6 +138,15 @@ export default function TeacherCoursesPage() {
 								{tab.label}
 							</button>
 						))}
+
+						<select
+							value={sortOrder}
+							onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
+							className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm focus:border-gray-400 focus:outline-none cursor-pointer ml-1"
+						>
+							<option value="newest">Mới nhất trước</option>
+							<option value="oldest">Cũ nhất trước</option>
+						</select>
 					</div>
 				</div>
 				<TeacherCoursesList

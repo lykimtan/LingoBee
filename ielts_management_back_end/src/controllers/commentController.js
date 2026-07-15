@@ -141,6 +141,23 @@ exports.getReplies = async (req, res, next) => {
   }
 };
 
+// Helper to recalculate average ratings when comments are added, edited, or deleted
+const recalculateTargetRatings = async (targetType, targetId) => {
+  const { Course, User } = require('../models');
+  const agg = await Comment.aggregate([
+    { $match: { targetType, targetId, status: 'active', rating: { $exists: true, $ne: null } } },
+    { $group: { _id: null, avgRating: { $avg: '$rating' }, total: { $sum: 1 } } }
+  ]);
+  const avg = agg.length > 0 ? Math.round(agg[0].avgRating * 10) / 10 : 0;
+  const total = agg.length > 0 ? agg[0].total : 0;
+
+  if (targetType === 'Course') {
+    await Course.findByIdAndUpdate(targetId, { averageRating: avg, totalReviews: total });
+  } else if (targetType === 'User') {
+    await User.findByIdAndUpdate(targetId, { averageRating: avg, totalReviews: total });
+  }
+};
+
 // Update a comment
 exports.updateComment = async (req, res, next) => {
   try {
@@ -154,11 +171,34 @@ exports.updateComment = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Không tìm thấy bình luận hoặc bạn không có quyền sửa' });
     }
 
-    if (content) comment.content = content;
+    if (content !== undefined) comment.content = content;
     if (rating !== undefined) comment.rating = rating;
 
-    // Use .save() instead of findOneAndUpdate to trigger Mongoose validators (like the rating check)
     await comment.save();
+
+    // Nếu sửa bình luận đánh giá Khóa học hoặc Giảng viên, tự động cập nhật lại điểm trung bình
+    if (comment.rating !== undefined && (comment.targetType === 'Course' || comment.targetType === 'User')) {
+      await recalculateTargetRatings(comment.targetType, comment.targetId);
+
+      // Nếu là đánh giá Khóa học, cập nhật luôn nội dung/điểm cho đánh giá Giảng viên đi kèm (nếu có)
+      if (comment.targetType === 'Course') {
+        const { Course } = require('../models');
+        const course = await Course.findById(comment.targetId);
+        if (course && course.teacher) {
+          const teacherComment = await Comment.findOne({
+            targetType: 'User',
+            targetId: course.teacher,
+            author: userId,
+            status: 'active'
+          });
+          if (teacherComment) {
+            if (content !== undefined) teacherComment.content = content;
+            await teacherComment.save();
+            await recalculateTargetRatings('User', course.teacher);
+          }
+        }
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -169,7 +209,7 @@ exports.updateComment = async (req, res, next) => {
   }
 };
 
-// Delete a comment (Soft delete)
+// Delete a comment
 exports.deleteComment = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -181,12 +221,42 @@ exports.deleteComment = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Không tìm thấy bình luận' });
     }
 
-    if (comment.author.toString() !== userId.toString() && userRole !== 'teacher' && userRole !== 'admin') {
+    const isOwnComment = comment.author.toString() === userId.toString();
+
+    if (!isOwnComment && userRole !== 'teacher' && userRole !== 'admin') {
       return res.status(403).json({ success: false, message: 'Bạn không có quyền xoá bình luận này' });
     }
 
-    comment.status = 'deleted';
-    await comment.save();
+    const targetType = comment.targetType;
+    const targetId = comment.targetId;
+
+    // Nếu người dùng tự xóa bình luận/đánh giá của chính mình thì xóa vĩnh viễn (hard delete)
+    // Nếu là admin hoặc teacher xóa bình luận của người khác thì chuyển trạng thái (soft delete)
+    if (isOwnComment) {
+      await comment.deleteOne();
+    } else {
+      comment.status = 'deleted';
+      await comment.save();
+    }
+
+    // Nếu xóa đánh giá Khóa học hoặc Giảng viên, tính toán lại điểm trung bình
+    if (targetType === 'Course' || targetType === 'User') {
+      // Nếu học viên tự xóa đánh giá Khóa học, tự động xóa vĩnh viễn cả đánh giá Giảng viên đi kèm và tính lại
+      if (targetType === 'Course' && isOwnComment) {
+        const { Course } = require('../models');
+        const course = await Course.findById(targetId);
+        if (course && course.teacher) {
+          await Comment.deleteMany({
+            targetType: 'User',
+            targetId: course.teacher,
+            author: userId
+          });
+          await recalculateTargetRatings('User', course.teacher);
+        }
+      }
+
+      await recalculateTargetRatings(targetType, targetId);
+    }
 
     res.status(200).json({
       success: true,
@@ -369,30 +439,11 @@ exports.submitCourseAndTeacherReview = async (req, res, next) => {
     });
 
     // 6. Recalculate average ratings
-    // Course
-    const courseAgg = await Comment.aggregate([
-      { $match: { targetType: 'Course', targetId: course._id, rating: { $exists: true, $ne: null } } },
-      { $group: { _id: null, avgRating: { $avg: '$rating' }, total: { $sum: 1 } } }
-    ]);
-    if (courseAgg.length > 0) {
-      course.averageRating = Math.round(courseAgg[0].avgRating * 10) / 10;
-      course.totalReviews = courseAgg[0].total;
-      await course.save();
+    await recalculateTargetRatings('Course', course._id);
+    if (course.teacher) {
+      await recalculateTargetRatings('User', course.teacher);
     }
 
-    // Teacher
-    const teacherAgg = await Comment.aggregate([
-      { $match: { targetType: 'User', targetId: course.teacher, rating: { $exists: true, $ne: null } } },
-      { $group: { _id: null, avgRating: { $avg: '$rating' }, total: { $sum: 1 } } }
-    ]);
-    if (teacherAgg.length > 0) {
-      const teacher = await User.findById(course.teacher);
-      if (teacher) {
-        teacher.averageRating = Math.round(teacherAgg[0].avgRating * 10) / 10;
-        teacher.totalReviews = teacherAgg[0].total;
-        await teacher.save();
-      }
-    }
 
     res.status(201).json({
       success: true,

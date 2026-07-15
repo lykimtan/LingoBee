@@ -33,7 +33,7 @@ export function PaymentsManager() {
             <button
               onClick={() => setActiveTab('revenue')}
               className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs transition-all cursor-pointer ${activeTab === 'revenue'
-                ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-[#0a1a1c] shadow-lg shadow-teal-500/20 scale-[1.02]'
+                ? 'bg-teal-500 text-[#0a1a1c] shadow-lg shadow-teal-500/20 scale-[1.02]'
                 : 'text-white/70 hover:text-white hover:bg-white/5'
                 }`}
             >

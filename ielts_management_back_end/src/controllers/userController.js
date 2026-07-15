@@ -881,7 +881,7 @@ const getUserProfile = async (req, res) => {
 // ============================================
 const getAdminStudents = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search, status, courseId } = req.query;
+    const { page = 1, limit = 10, search, status, courseId, startDate, endDate } = req.query;
 
     // Aggregation pipeline on User model
     const pipeline = [];
@@ -898,6 +898,16 @@ const getAdminStudents = async (req, res) => {
         { email: { $regex: search, $options: 'i' } },
         { name: { $regex: search, $options: 'i' } }
       ];
+    }
+
+    if (startDate || endDate) {
+      matchStage.createdAt = {};
+      if (startDate) {
+        matchStage.createdAt.$gte = new Date(`${startDate}T00:00:00.000Z`);
+      }
+      if (endDate) {
+        matchStage.createdAt.$lte = new Date(`${endDate}T23:59:59.999Z`);
+      }
     }
 
     pipeline.push({ $match: matchStage });
@@ -1044,14 +1054,29 @@ const getAdminStudents = async (req, res) => {
 // ============================================
 const getAdminStudentStats = async (req, res) => {
   try {
-    const totalStudents = await User.countDocuments({ role: 'student' });
-    const activeStudents = await User.countDocuments({ role: 'student', status: 'active' });
+    const { startDate, endDate } = req.query;
+    const query = { role: 'student' };
+
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(`${startDate}T00:00:00.000Z`);
+      }
+      if (endDate) {
+        query.createdAt.$lte = new Date(`${endDate}T23:59:59.999Z`);
+      }
+    }
+
+    const totalStudents = await User.countDocuments(query);
+    const activeStudents = await User.countDocuments({ ...query, status: 'active' });
 
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const newStudents24h = await User.countDocuments({
-      role: 'student',
-      createdAt: { $gte: yesterday }
-    });
+    const newStudents24h = (startDate || endDate)
+      ? totalStudents
+      : await User.countDocuments({
+          role: 'student',
+          createdAt: { $gte: yesterday }
+        });
 
     return res.status(200).json({
       success: true,

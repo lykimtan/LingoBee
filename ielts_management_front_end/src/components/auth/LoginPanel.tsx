@@ -121,7 +121,7 @@ export const LoginPanel = () => {
         {/* Email Field */}
         <div className="space-y-2">
           <label className="text-xs uppercase tracking-widest text-gray-400 font-medium">
-            Email Address
+            Email
           </label>
           <input
             type="email"
@@ -153,7 +153,7 @@ export const LoginPanel = () => {
               href="#"
               className="text-xs uppercase tracking-widest text-gray-400 hover:text-white transition-colors"
             >
-              Forgotten?
+              Quên mật khẩu?
             </Link>
           </div>
           <div className="relative">
@@ -193,9 +193,8 @@ export const LoginPanel = () => {
               onChange={(e) => setRememberMe(e.target.checked)}
               className="h-4 w-4 rounded border-white/20 bg-white/5 text-yellow-50 focus:ring-yellow-50/40"
             />
-            Remember me
+            Ghi nhớ tôi
           </label>
-          <span className="text-xs text-gray-500">Session will expire on browser close</span>
         </div>
 
         {/* Primary Button */}

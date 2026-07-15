@@ -27,13 +27,15 @@ class PaymentService {
   /**
    * Lấy lịch sử giao dịch toàn hệ thống (Admin)
    */
-  async getAdminPayments(params?: { page?: number; limit?: number; status?: string; courseId?: string; search?: string }): Promise<ApiResponse<any>> {
+  async getAdminPayments(params?: { page?: number; limit?: number; status?: string; courseId?: string; search?: string; startDate?: string; endDate?: string }): Promise<ApiResponse<any>> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.status) queryParams.append('status', params.status);
     if (params?.courseId) queryParams.append('courseId', params.courseId);
     if (params?.search) queryParams.append('search', params.search);
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
 
     const queryString = queryParams.toString();
     return apiClient.get(`/api/payments/admin/all${queryString ? `?${queryString}` : ''}`);
@@ -42,10 +44,12 @@ class PaymentService {
   /**
    * Lấy thống kê doanh thu chi tiết (Admin)
    */
-  async getAdminRevenueStats(params?: { chartDays?: string; courseDays?: string }): Promise<ApiResponse<any>> {
+  async getAdminRevenueStats(params?: { chartDays?: string; courseDays?: string; startDate?: string; endDate?: string }): Promise<ApiResponse<any>> {
     const query = new URLSearchParams();
     if (params?.chartDays) query.append('chartDays', params.chartDays);
     if (params?.courseDays) query.append('courseDays', params.courseDays);
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
     const queryString = query.toString() ? `?${query.toString()}` : '';
     return apiClient.get(`/api/payments/admin/revenue-stats${queryString}`);
   }

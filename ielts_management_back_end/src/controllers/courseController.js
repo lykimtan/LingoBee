@@ -180,7 +180,7 @@ const getMyTeachingCourses = async (req, res, next) => {
     }
 
     const courses = await Course.find(query)
-      .select('title slug category level status totalStudents totalVideos durationInHours updatedAt publicInfo')
+      .select('title slug category level status totalStudents totalVideos durationInHours createdAt updatedAt publicInfo')
       .sort({ updatedAt: -1 });
 
     for (const c of courses) {
@@ -651,6 +651,7 @@ const getCourseStudents = async (req, res, next) => {
 const getCourseAdminStats = async (req, res, next) => {
   try {
     const courseId = req.params.id;
+    const { startDate, endDate } = req.query;
     const Comment = require('../models/Comment');
     const Payment = require('../models/Payment');
 
@@ -662,6 +663,18 @@ const getCourseAdminStats = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Khóa học không tồn tại' });
     }
 
+    // Prepare date filter range if requested
+    let start = null;
+    let end = null;
+    if (startDate) {
+      start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+    }
+    if (endDate) {
+      end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+    }
+
     // 1. Tổng số học viên & Tỷ lệ hoàn thành
     const Video = require('../models/Video');
     const VideoProgress = require('../models/VideoProgress');
@@ -671,10 +684,9 @@ const getCourseAdminStats = async (req, res, next) => {
       .populate('enrolledCourses.learningPath', 'overallProgress isCompleted');
       
     const totalVideos = await Video.countDocuments({ courseId, isPublished: true });
-    const totalStudents = enrolledStudents.length;
     let completedStudents = 0;
 
-    const studentList = await Promise.all(enrolledStudents.map(async (s) => {
+    let studentList = await Promise.all(enrolledStudents.map(async (s) => {
       const enrollment = s.enrolledCourses?.find(c => (c.courseId?._id || c.courseId).toString() === courseId.toString());
       
       // Tính số video đã xem xong thực tế trong VideoProgress
@@ -688,9 +700,6 @@ const getCourseAdminStats = async (req, res, next) => {
       const progress = Math.min(100, Math.max(baseProgress, lpProgress, videoProgressPct));
       const status = (progress >= 100 || enrollment?.status === 'completed' || enrollment?.learningPath?.isCompleted) ? 'completed' : (enrollment?.status || 'active');
       
-      if (status === 'completed' || progress >= 100) {
-        completedStudents++;
-      }
       return {
         _id: s._id,
         user: s.userId,
@@ -700,15 +709,49 @@ const getCourseAdminStats = async (req, res, next) => {
       };
     }));
 
+    if (start || end) {
+      studentList = studentList.filter(s => {
+        const d = s.enrollmentDate ? new Date(s.enrollmentDate) : new Date(0);
+        if (start && d < start) return false;
+        if (end && d > end) return false;
+        return true;
+      });
+    }
+
+    studentList.forEach(s => {
+      if (s.status === 'completed' || s.progress >= 100) {
+        completedStudents++;
+      }
+    });
+
+    const totalStudents = studentList.length;
     const completionRate = totalStudents > 0 ? Math.round((completedStudents / totalStudents) * 100) : 0;
 
     // 2. Các bình luận đánh giá của khóa học
-    const reviews = await Comment.find({ targetType: 'Course', targetId: courseId, status: { $ne: 'deleted' } })
+    const commentQuery = { targetType: 'Course', targetId: courseId, status: { $ne: 'deleted' } };
+    if (start || end) {
+      commentQuery.createdAt = {};
+      if (start) commentQuery.createdAt.$gte = start;
+      if (end) commentQuery.createdAt.$lte = end;
+    }
+    const reviews = await Comment.find(commentQuery)
       .populate('author', 'name avatar email')
       .sort({ createdAt: -1 });
 
     // 3. Doanh thu của khóa học mang lại
-    const payments = await Payment.find({ courseId: courseId, paymentStatus: 'completed' })
+    const paymentQuery = { courseId: courseId, paymentStatus: 'completed' };
+    if (start || end) {
+      const dateCond = {};
+      if (start) dateCond.$gte = start;
+      if (end) dateCond.$lte = end;
+
+      paymentQuery.$or = [
+        { paymentDate: dateCond },
+        { paymentDate: null, createdAt: dateCond },
+        { paymentDate: { $exists: false }, createdAt: dateCond }
+      ];
+    }
+    const payments = await Payment.find(paymentQuery)
       .populate({
         path: 'studentId',
         populate: { path: 'userId', select: 'name email avatar' }
@@ -744,6 +787,7 @@ const getCourseAdminStats = async (req, res, next) => {
 const getCourseTeacherStats = async (req, res, next) => {
   try {
     const courseId = req.params.id;
+    const { startDate, endDate } = req.query;
     const course = await Course.findById(courseId);
     if (!course) {
       return res.status(404).json({ success: false, message: 'Khóa học không tồn tại' });
@@ -757,6 +801,17 @@ const getCourseTeacherStats = async (req, res, next) => {
 
     if (!isTeacher && !isAssistant && !isAdmin) {
       return res.status(403).json({ success: false, message: 'Bạn không có quyền xem thống kê khóa học này' });
+    }
+
+    let start = null;
+    let end = null;
+    if (startDate) {
+      start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+    }
+    if (endDate) {
+      end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
     }
 
     const Video = require('../models/Video');
@@ -781,7 +836,7 @@ const getCourseTeacherStats = async (req, res, next) => {
       notStarted: 0  // 0%
     };
 
-    const studentList = await Promise.all(enrolledStudents.map(async (s) => {
+    let studentList = await Promise.all(enrolledStudents.map(async (s) => {
       const enrollment = s.enrolledCourses?.find(c => (c.courseId?._id || c.courseId).toString() === courseId.toString());
       
       const completedVideosCount = await VideoProgress.countDocuments({ studentId: s._id, courseId, isCompleted: true });
@@ -792,16 +847,6 @@ const getCourseTeacherStats = async (req, res, next) => {
       
       const progress = Math.min(100, Math.max(baseProgress, lpProgress, videoProgressPct));
       const status = (progress >= 100 || enrollment?.status === 'completed' || enrollment?.learningPath?.isCompleted) ? 'completed' : (enrollment?.status || 'active');
-
-      if (status === 'completed' || progress >= 100) {
-        completedStudents++;
-      }
-      totalProgressSum += progress;
-
-      if (progress >= 80) progressSegments.completed++;
-      else if (progress >= 50) progressSegments.inProgress++;
-      else if (progress > 0) progressSegments.started++;
-      else progressSegments.notStarted++;
 
       const attemptsCount = await ExerciseAttempt.countDocuments({ studentId: s._id, courseId });
 
@@ -815,7 +860,28 @@ const getCourseTeacherStats = async (req, res, next) => {
       };
     }));
 
-    const totalStudents = enrolledStudents.length;
+    if (start || end) {
+      studentList = studentList.filter(s => {
+        const d = s.enrollmentDate ? new Date(s.enrollmentDate) : new Date(0);
+        if (start && d < start) return false;
+        if (end && d > end) return false;
+        return true;
+      });
+    }
+
+    studentList.forEach(s => {
+      if (s.status === 'completed' || s.progress >= 100) {
+        completedStudents++;
+      }
+      totalProgressSum += s.progress;
+
+      if (s.progress >= 80) progressSegments.completed++;
+      else if (s.progress >= 50) progressSegments.inProgress++;
+      else if (s.progress > 0) progressSegments.started++;
+      else progressSegments.notStarted++;
+    });
+
+    const totalStudents = studentList.length;
     const completionRate = totalStudents > 0 ? Math.round((completedStudents / totalStudents) * 100) : 0;
     const avgProgress = totalStudents > 0 ? Math.round(totalProgressSum / totalStudents) : 0;
 
@@ -947,7 +1013,7 @@ const getTeacherEnrollmentStats = async (req, res, next) => {
 const getTeacherStudentsList = async (req, res, next) => {
   try {
     const { Student } = require('../models');
-    const { courseId, search, status } = req.query;
+    const { courseId, search, status, startDate, endDate } = req.query;
 
     const query = {
       $or: [
@@ -1054,6 +1120,18 @@ const getTeacherStudentsList = async (req, res, next) => {
           if (targetCourseIds.includes(cIdStr)) {
             const courseObj = courseMap.get(cIdStr);
             if (!courseObj) return;
+
+            if (startDate || endDate) {
+              const eDate = new Date(enroll.enrollmentDate || student.createdAt || new Date());
+              if (startDate && !isNaN(eDate.getTime())) {
+                const sDate = new Date(startDate + 'T00:00:00.000Z');
+                if (eDate < sDate) return;
+              }
+              if (endDate && !isNaN(eDate.getTime())) {
+                const eDateEnd = new Date(endDate + 'T23:59:59.999Z');
+                if (eDate > eDateEnd) return;
+              }
+            }
 
             const totalVids = videoCountMap.get(cIdStr) || 0;
             const completedVids = videoProgressMap.get(`${student._id.toString()}_${cIdStr}`) || 0;

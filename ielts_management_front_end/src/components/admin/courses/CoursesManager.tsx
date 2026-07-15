@@ -33,14 +33,14 @@ export function CoursesManager() {
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterTeacher, setFilterTeacher] = useState<string>("all");
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const activeTab = useMemo<CourseTab>(() => {
     const tabParam = searchParams.get("tab");
     if (
       tabParam === "statistical" ||
       tabParam === "list" ||
       tabParam === "create" ||
-      tabParam === "status" ||
-      tabParam === "settings"
+      tabParam === "status"
     ) {
       return tabParam as CourseTab;
     }
@@ -85,13 +85,19 @@ export function CoursesManager() {
   }, [courses]);
 
   const filteredCourses = useMemo(() => {
-    return courses.filter((c) => {
+    const list = courses.filter((c) => {
       const matchStatus = filterStatus === "all" || c.status === filterStatus;
       const teacherId = c.teacher?._id || "unassigned";
       const matchTeacher = filterTeacher === "all" || teacherId === filterTeacher;
       return matchStatus && matchTeacher;
     });
-  }, [courses, filterStatus, filterTeacher]);
+
+    return [...list].sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+  }, [courses, filterStatus, filterTeacher, sortOrder]);
 
   return (
     <div className="flex flex-col gap-6 md:flex-row px-6">
@@ -133,17 +139,26 @@ export function CoursesManager() {
                         Tổng {courseStats.total} khóa học • {courseStats.published} đã xuất bản
                       </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <select
                         value={filterTeacher}
                         onChange={(e) => setFilterTeacher(e.target.value)}
-                        className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-medium text-white shadow-sm focus:border-white/20 focus:outline-none custom-scrollbar"
+                        className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-medium text-white shadow-sm focus:border-white/20 focus:outline-none custom-scrollbar cursor-pointer"
                       >
                         <option value="all" className="bg-gray-800">Tất cả giáo viên</option>
                         {teachersList.map((t) => (
                           <option key={t.id} value={t.id} className="bg-gray-800">{t.name}</option>
                         ))}
                         <option value="unassigned" className="bg-gray-800">Chưa gán</option>
+                      </select>
+
+                      <select
+                        value={sortOrder}
+                        onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
+                        className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-medium text-white shadow-sm focus:border-white/20 focus:outline-none cursor-pointer"
+                      >
+                        <option value="newest" className="bg-gray-800">Mới nhất trước</option>
+                        <option value="oldest" className="bg-gray-800">Cũ nhất trước</option>
                       </select>
                     </div>
                   </div>
@@ -161,8 +176,8 @@ export function CoursesManager() {
                         key={tab.value}
                         onClick={() => setFilterStatus(tab.value)}
                         className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${filterStatus === tab.value
-                            ? "bg-white text-black"
-                            : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
+                          ? "bg-white text-black"
+                          : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
                           }`}
                       >
                         {tab.label}
@@ -262,13 +277,6 @@ export function CoursesManager() {
                     <CourseShellSidebar />
                   </div>
                 </div>
-              </div>
-            )}
-
-            {activeTab === "settings" && (
-              <div className="flex h-full flex-col items-center justify-center text-white/50">
-                <p className="text-xl">Cài đặt chung</p>
-                <p className="text-sm">Component cài đặt khóa học sẽ nằm ở đây.</p>
               </div>
             )}
           </motion.div>

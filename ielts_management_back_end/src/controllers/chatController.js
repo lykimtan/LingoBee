@@ -56,7 +56,7 @@ const chatWithAI = async (req, res) => {
       ...aiTools,
       getLatestPlacementTestResult: tool({
         description: 'Truy xuất kết quả bài kiểm tra năng lực (placement test) gần đây nhất của người dùng hiện tại đang chat. Sử dụng công cụ này KHI VÀ CHỈ KHI người dùng yêu cầu tư vấn khóa học phù hợp với trình độ hiện tại của họ.',
-        parameters: z.object({}),
+        parameters: z.object({}), // z: zod use for checking schema and validation các tham số đầu vào mà AI tạo ra, để đảm bảo an toàn khi gọi tool 
         execute: async () => {
           try {
             console.log(`\n[Tool Call] AI đang gọi tool: getLatestPlacementTestResult (UserId: ${userId})`);

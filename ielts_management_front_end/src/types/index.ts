@@ -112,6 +112,7 @@ export type TeacherCourseItem = {
   totalStudents?: number;
   totalVideos?: number;
   durationInHours?: number;
+  createdAt?: string;
   updatedAt?: string;
   publicInfo?: {
     thumbnail?: string | null;

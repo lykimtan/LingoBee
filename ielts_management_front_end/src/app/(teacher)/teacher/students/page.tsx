@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, Filter, RefreshCw } from "lucide-react";
+import { Search, Filter, RefreshCw, Calendar, X } from "lucide-react";
 import { courseService, TeacherStudentsOverview } from "@/services/courseService";
 import { TeacherStudentsHeader } from "@/components/teacher/students/TeacherStudentsHeader";
 import { TeacherStudentsTable } from "@/components/teacher/students/TeacherStudentsTable";
@@ -12,6 +12,9 @@ export default function TeacherStudentsPage() {
   const [search, setSearch] = useState("");
   const [selectedCourseId, setSelectedCourseId] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [dateFilterPreset, setDateFilterPreset] = useState<"all" | "today" | "7days" | "30days" | "thisMonth" | "custom">("all");
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -19,7 +22,9 @@ export default function TeacherStudentsPage() {
       const res = await courseService.getTeacherStudents(
         selectedCourseId,
         search,
-        filterStatus
+        filterStatus,
+        startDate,
+        endDate
       );
       if (res.status === "success" && res.data) {
         setData(res.data);
@@ -29,7 +34,7 @@ export default function TeacherStudentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCourseId, search, filterStatus]);
+  }, [selectedCourseId, search, filterStatus, startDate, endDate]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -102,7 +107,7 @@ export default function TeacherStudentsPage() {
   return (
     <div className="flex flex-col h-full min-h-screen pb-12">
       {/* KPI Header */}
-      <TeacherStudentsHeader summary={data?.summary} />
+      <TeacherStudentsHeader summary={data?.summary} isFiltered={Boolean(startDate || endDate)} />
 
       {/* Main Container */}
       <div className="px-6 flex-1 flex flex-col">
@@ -172,11 +177,126 @@ export default function TeacherStudentsPage() {
             </div>
           </div>
 
+          {/* Time Filter Bar */}
+          <div className="rounded-2xl border border-gray-200/80 bg-white/80 p-4 transition-all shadow-2xs">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-[#1f6f5e]/10 text-[#1f6f5e]">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Lọc học viên theo thời gian</h3>
+                  <p className="text-[11px] text-gray-500">Lọc danh sách & thống kê học viên tham gia từ ngày đến ngày</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { id: 'all', label: 'Tất cả' },
+                  { id: 'today', label: 'Hôm nay' },
+                  { id: '7days', label: '7 ngày qua' },
+                  { id: '30days', label: '30 ngày qua' },
+                  { id: 'thisMonth', label: 'Tháng này' },
+                  { id: 'custom', label: 'Từ ngày - Đến ngày...' },
+                ].map((preset) => {
+                  const isActive = dateFilterPreset === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      onClick={() => {
+                        setDateFilterPreset(preset.id as any);
+                        if (preset.id === 'all') {
+                          setStartDate('');
+                          setEndDate('');
+                        } else if (preset.id === 'today') {
+                          const now = new Date().toISOString().split('T')[0];
+                          setStartDate(now);
+                          setEndDate(now);
+                        } else if (preset.id === '7days') {
+                          const end = new Date();
+                          const start = new Date();
+                          start.setDate(end.getDate() - 6);
+                          setStartDate(start.toISOString().split('T')[0]);
+                          setEndDate(end.toISOString().split('T')[0]);
+                        } else if (preset.id === '30days') {
+                          const end = new Date();
+                          const start = new Date();
+                          start.setDate(end.getDate() - 29);
+                          setStartDate(start.toISOString().split('T')[0]);
+                          setEndDate(end.toISOString().split('T')[0]);
+                        } else if (preset.id === 'thisMonth') {
+                          const now = new Date();
+                          const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                          const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                          setStartDate(firstDay.toISOString().split('T')[0]);
+                          setEndDate(lastDay.toISOString().split('T')[0]);
+                        } else if (preset.id === 'custom') {
+                          if (!startDate) {
+                            const now = new Date();
+                            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                            setStartDate(firstDay.toISOString().split('T')[0]);
+                          }
+                          const now = new Date();
+                          setEndDate(now.toISOString().split('T')[0]);
+                        }
+                      }}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-[#1f6f5e] text-white shadow-sm'
+                          : 'bg-gray-100/80 hover:bg-gray-200/80 text-gray-600 hover:text-gray-900 border border-gray-200/50'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {dateFilterPreset === 'custom' && (
+              <div className="w-full flex flex-wrap items-center justify-end gap-3 pt-3 mt-3 border-t border-gray-100 animate-fadeIn">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-gray-600 font-medium">Từ ngày:</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="bg-gray-50 text-gray-900 text-xs px-3 py-1.5 rounded-xl border border-gray-200 focus:border-[#1f6f5e] focus:outline-none transition-colors cursor-pointer font-medium"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-gray-600 font-medium">Đến ngày:</label>
+                  <input
+                    type="date"
+                    value={endDate || new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="bg-gray-50 text-gray-900 text-xs px-3 py-1.5 rounded-xl border border-gray-200 focus:border-[#1f6f5e] focus:outline-none transition-colors cursor-pointer font-medium"
+                  />
+                </div>
+                {(startDate || endDate) && (
+                  <button
+                    onClick={() => {
+                      setStartDate('');
+                      setEndDate('');
+                      setDateFilterPreset('all');
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer border border-red-200"
+                    title="Xóa bộ lọc"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Đặt lại</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Students Table */}
           <TeacherStudentsTable
             enrollments={data?.enrollments || []}
             isLoading={loading}
             onExportCSV={handleExportCSV}
+            isFiltered={Boolean(startDate || endDate)}
           />
         </div>
       </div>

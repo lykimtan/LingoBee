@@ -32,12 +32,14 @@ class DiscountService {
   /**
    * Lấy danh sách mã khuyến mãi (Admin)
    */
-  async getDiscounts(params?: { page?: number; limit?: number; search?: string; status?: string }): Promise<ApiResponse<DiscountListResponse>> {
+  async getDiscounts(params?: { page?: number; limit?: number; search?: string; status?: string; startDate?: string; endDate?: string }): Promise<ApiResponse<DiscountListResponse>> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.search) queryParams.append('search', params.search);
     if (params?.status) queryParams.append('status', params.status);
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
 
     const queryString = queryParams.toString();
     const url = `/api/discounts${queryString ? `?${queryString}` : ''}`;
@@ -75,8 +77,14 @@ class DiscountService {
   /**
    * Lấy thống kê tỷ lệ sử dụng mã ưu đãi
    */
-  async getDiscountStats(): Promise<ApiResponse<any>> {
-    return apiClient.get('/api/discounts/stats');
+  async getDiscountStats(params?: { startDate?: string; endDate?: string }): Promise<ApiResponse<any>> {
+    const queryParams = new URLSearchParams();
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+
+    const queryString = queryParams.toString();
+    const url = `/api/discounts/stats${queryString ? `?${queryString}` : ''}`;
+    return apiClient.get(url);
   }
 
   /**

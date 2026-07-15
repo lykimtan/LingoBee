@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Plus, Search, Filter, BookOpen, BarChart2, PieChart as PieIcon, Layers, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Search, Filter, BookOpen, BarChart2, PieChart as PieIcon, Layers, ChevronDown, ChevronUp, Calendar, X } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis } from "recharts";
 import { PlacementQuestion } from "@/types";
 import { placementQuestionService, QuestionPerformanceStats } from "@/services/placementQuestionService";
@@ -11,6 +11,10 @@ interface PlacementQuestionsHeaderProps {
   onSearch: (query: string) => void;
   onFilterChange: (type: string, value: string) => void;
   onCreateClick: () => void;
+  startDate?: string;
+  endDate?: string;
+  onDateChange?: (start: string, end: string) => void;
+  isFiltered?: boolean;
 }
 
 export function PlacementQuestionsHeader({
@@ -18,8 +22,13 @@ export function PlacementQuestionsHeader({
   onSearch,
   onFilterChange,
   onCreateClick,
+  startDate = "",
+  endDate = "",
+  onDateChange,
+  isFiltered,
 }: PlacementQuestionsHeaderProps) {
   const [showStats, setShowStats] = useState(true);
+  const [dateFilterPreset, setDateFilterPreset] = useState<"all" | "today" | "7days" | "30days" | "thisMonth" | "custom">("all");
   const [performanceStats, setPerformanceStats] = useState<QuestionPerformanceStats | null>(null);
 
   useEffect(() => {
@@ -82,9 +91,14 @@ export function PlacementQuestionsHeader({
     <div className="flex flex-col gap-6 px-6 pb-6 border-b border-gray-100">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <BookOpen className="w-6 h-6 text-indigo-600" />
-            Ngân hàng đề thi ĐGNL
+          <h1 className="text-2xl font-bold text-gray-900 flex flex-wrap items-center gap-2.5">
+            <BookOpen className="w-6 h-6 text-indigo-600 shrink-0" />
+            <span>Ngân hàng đề thi ĐGNL</span>
+            {isFiltered && (
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 font-semibold border border-indigo-200/60 font-normal">
+                Đang lọc theo thời gian
+              </span>
+            )}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             Quản lý và thống kê câu hỏi dùng cho bài thi thử đầu vào
@@ -139,6 +153,22 @@ export function PlacementQuestionsHeader({
               </select>
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             </div>
+
+            <div className="relative group">
+              <select
+                className="appearance-none pl-9 pr-8 py-2 border border-gray-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer font-medium text-gray-700"
+                onChange={(e) => onFilterChange("sort", e.target.value)}
+                defaultValue="newest"
+              >
+                <option value="newest">Sắp xếp: Mới nhất</option>
+                <option value="oldest">Sắp xếp: Cũ nhất</option>
+                <option value="difficulty_asc">Độ khó: Dễ → Khó</option>
+                <option value="difficulty_desc">Độ khó: Khó → Dễ</option>
+                <option value="az">Tên câu hỏi: A → Z</option>
+                <option value="za">Tên câu hỏi: Z → A</option>
+              </select>
+              <Layers className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500" />
+            </div>
           </div>
 
           <button
@@ -159,6 +189,113 @@ export function PlacementQuestionsHeader({
             Tạo câu hỏi
           </button>
         </div>
+      </div>
+
+      {/* Time Filter Bar */}
+      <div className="rounded-2xl border border-gray-200/80 bg-gray-50/70 p-4 transition-all">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Lọc câu hỏi theo thời gian tạo</h3>
+              <p className="text-[11px] text-gray-500">Lọc thống kê & danh sách câu hỏi theo ngày tạo</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {[
+              { id: 'all', label: 'Tất cả' },
+              { id: 'today', label: 'Hôm nay' },
+              { id: '7days', label: '7 ngày qua' },
+              { id: '30days', label: '30 ngày qua' },
+              { id: 'thisMonth', label: 'Tháng này' },
+              { id: 'custom', label: 'Từ ngày - Đến ngày...' },
+            ].map((preset) => {
+              const isActive = dateFilterPreset === preset.id;
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() => {
+                    setDateFilterPreset(preset.id as any);
+                    if (preset.id === 'all') {
+                      onDateChange?.('', '');
+                    } else if (preset.id === 'today') {
+                      const now = new Date().toISOString().split('T')[0];
+                      onDateChange?.(now, now);
+                    } else if (preset.id === '7days') {
+                      const end = new Date();
+                      const start = new Date();
+                      start.setDate(end.getDate() - 6);
+                      onDateChange?.(start.toISOString().split('T')[0], end.toISOString().split('T')[0]);
+                    } else if (preset.id === '30days') {
+                      const end = new Date();
+                      const start = new Date();
+                      start.setDate(end.getDate() - 29);
+                      onDateChange?.(start.toISOString().split('T')[0], end.toISOString().split('T')[0]);
+                    } else if (preset.id === 'thisMonth') {
+                      const now = new Date();
+                      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                      onDateChange?.(firstDay.toISOString().split('T')[0], lastDay.toISOString().split('T')[0]);
+                    } else if (preset.id === 'custom') {
+                      if (!startDate) {
+                        const now = new Date();
+                        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                        const today = now.toISOString().split('T')[0];
+                        onDateChange?.(firstDay.toISOString().split('T')[0], today);
+                      }
+                    }
+                  }}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'bg-white hover:bg-gray-100 text-gray-600 hover:text-gray-900 border border-gray-200/80'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {dateFilterPreset === 'custom' && (
+          <div className="w-full flex flex-wrap items-center justify-end gap-3 pt-3 mt-3 border-t border-gray-200/60 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-600 font-medium">Từ ngày:</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => onDateChange?.(e.target.value, endDate)}
+                className="bg-white text-gray-900 text-xs px-3 py-1.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:outline-none transition-colors cursor-pointer font-medium"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-600 font-medium">Đến ngày:</label>
+              <input
+                type="date"
+                value={endDate || new Date().toISOString().split('T')[0]}
+                onChange={(e) => onDateChange?.(startDate, e.target.value)}
+                className="bg-white text-gray-900 text-xs px-3 py-1.5 rounded-xl border border-gray-200 focus:border-indigo-500 focus:outline-none transition-colors cursor-pointer font-medium"
+              />
+            </div>
+            {(startDate || endDate) && (
+              <button
+                onClick={() => {
+                  onDateChange?.('', '');
+                  setDateFilterPreset('all');
+                }}
+                className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer border border-red-200"
+                title="Xóa bộ lọc"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Đặt lại</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {showStats && (
