@@ -252,7 +252,7 @@ export const RegisterPanel = () => {
             href="/login"
             className="text-white hover:text-yellow-50 transition-colors font-medium"
           >
-            Sign In
+            Đăng nhập
           </Link>
         </p>
       </div>

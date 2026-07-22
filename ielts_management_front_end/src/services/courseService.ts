@@ -23,6 +23,28 @@ export interface CourseRecord {
   status: string;
 }
 
+export interface CourseInvitation {
+  _id: string;
+  course: {
+    _id: string;
+    title: string;
+    category: string;
+    level: string;
+    status: string;
+  };
+  teacher: string;
+  invitedBy: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  message: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  role: 'teacher' | 'assistant';
+  createdAt: string;
+  respondedAt?: string;
+}
+
 export interface TeacherEnrollmentStats {
   totalEnrollments: number;
   newThisWeek: number;
@@ -106,6 +128,23 @@ class CourseService {
     payload: CreateCourseShellPayload
   ): Promise<ApiResponse<CourseRecord>> {
     return apiClient.post<CourseRecord>('/api/courses', payload);
+  }
+
+  async getMyCourseInvitations(status?: string): Promise<ApiResponse<CourseInvitation[]> & { count?: number }> {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return apiClient.get<CourseInvitation[]>(`/api/courses/invitations${queryString}`);
+  }
+
+  async acceptCourseInvitation(id: string): Promise<ApiResponse<CourseInvitation>> {
+    const encoded = encodeURIComponent(id);
+    return apiClient.post<CourseInvitation>(`/api/courses/invitations/${encoded}/accept`);
+  }
+
+  async rejectCourseInvitation(id: string): Promise<ApiResponse<CourseInvitation>> {
+    const encoded = encodeURIComponent(id);
+    return apiClient.post<CourseInvitation>(`/api/courses/invitations/${encoded}/reject`);
   }
 
   async getMyCourses() {

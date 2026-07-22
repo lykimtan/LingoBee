@@ -288,7 +288,7 @@ export const CourseListSection: React.FC<CourseListSectionProps> = ({ courses = 
                                             const thumbnailSrc = course.publicInfo?.thumbnail || "/CoursesPage/thumbnailCourse.webp";
                                             const teacherName = course.teacher?.name || "IELTS Master Faculty";
                                             const teacherAvatar = course.teacher?.avatar || "/CoursesPage/avatarTeacher.webp";
-                                            const rating = course.averageRating ? course.averageRating.toFixed(1) : "5.0";
+                                            const rating = course.averageRating ? course.averageRating.toFixed(1) : "Chưa có đánh giá";
                                             const studentCount = course.totalStudents || Math.floor(Math.random() * 50) + 15;
                                             const videoCount = course.totalVideos || Math.floor(Math.random() * 20) + 10;
 

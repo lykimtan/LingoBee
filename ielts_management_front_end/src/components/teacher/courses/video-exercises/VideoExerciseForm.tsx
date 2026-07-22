@@ -491,7 +491,7 @@ function EssayEditor({
           />
         </div>
         <div>
-          <FieldLabel label="So tu toi thieu" />
+          <FieldLabel label="Số từ tối thiểu" />
           <TextInput
             value={String(question.minWords)}
             onChange={(value) =>
@@ -503,11 +503,11 @@ function EssayEditor({
         </div>
       </div>
       <div>
-        <FieldLabel label="Huong dan cham bai (rubric)" />
+        <FieldLabel label="Hướng dẫn chấm bài" />
         <TextArea
           value={question.rubric}
           onChange={(value) => onChange({ rubric: value })}
-          placeholder="Ghi chu cac y chinh can co..."
+          placeholder="Ghi chú các ý chính cần có..."
           disabled={disabled}
           rows={3}
         />
@@ -547,25 +547,6 @@ function SpeakingEditor({
             placeholder="120"
             disabled={disabled}
           />
-        </div>
-      </div>
-      <div>
-        <FieldLabel label="Audio prompt (optional)" />
-        <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-center">
-          <input
-            value={question.audioUrl}
-            onChange={(event) => onChange({ audioUrl: event.target.value })}
-            disabled={disabled}
-            className="flex-1 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-900 outline-none transition-colors focus:border-gray-400 disabled:bg-gray-100"
-            placeholder="https://"
-          />
-          <button
-            type="button"
-            disabled={disabled}
-            className="inline-flex items-center justify-center rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Tải lên
-          </button>
         </div>
       </div>
     </>
@@ -936,11 +917,11 @@ export default function VideoExerciseForm({
         setQuestions(nextQuestions);
       }
 
-      toast.success("Xoa cau hoi thanh cong!");
+      toast.success("Xóa câu hỏi thành công!");
       setQuestionToDelete(null);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Xoa cau hoi that bai.";
+        error instanceof Error ? error.message : "Xóa câu hỏi thất bại!";
       toast.error(message);
     } finally {
       setIsDeletingQuestion(false);
@@ -1070,7 +1051,7 @@ export default function VideoExerciseForm({
       });
 
       if (signatureResponse.status === "error" || !signatureResponse.data) {
-        throw new Error(signatureResponse.message || "Khong the lay chu ky upload.");
+        throw new Error(signatureResponse.message || "Không thể lấy chữ ký để upload");
       }
 
       const uploadResult = await uploadService.uploadToCloudinary(
@@ -1079,14 +1060,14 @@ export default function VideoExerciseForm({
       );
 
       if (!uploadResult.secure_url) {
-        throw new Error("Khong lay duoc duong dan audio.");
+        throw new Error("Không lấy được đường dẫn audio!");
       }
 
       updateQuestion(questionId, { audioUrl: uploadResult.secure_url });
       toast.success("Tải audio thành công!");
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Tai audio that bai.";
+        error instanceof Error ? error.message : "Tải audio thất bại!";
       toast.error(message);
     } finally {
       setUploadingQuestionId(null);

@@ -236,7 +236,7 @@ export const LoginPanel = () => {
         <p className="text-sm text-gray-400">
           Bạn chưa có tài khoản?{" "}
           <Link href="/register" className="text-white hover:text-yellow-50 transition-colors font-medium">
-            Sign Up
+            Đăng ký
           </Link>
         </p>
       </div>
