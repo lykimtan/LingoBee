@@ -56,6 +56,10 @@ export const useAuth = () => {
     otherStorage.removeItem(STORAGE_KEYS.USER_TOKEN);
     otherStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
     otherStorage.removeItem(STORAGE_KEYS.USER_DATA);
+
+    // Set cookie for Next.js middleware to read (since cross-domain backend cookies won't work)
+    const maxAge = remember ? 7 * 24 * 60 * 60 : 24 * 60 * 60; // 7 days or 1 day
+    document.cookie = `authToken=${accessToken}; path=/; max-age=${maxAge}; samesite=strict${process.env.NODE_ENV === 'production' ? '; secure' : ''}`;
   };
 
   useEffect(() => {
@@ -175,6 +179,7 @@ export const useAuth = () => {
         sessionStorage.removeItem(STORAGE_KEYS.USER_TOKEN);
         sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
         sessionStorage.removeItem(STORAGE_KEYS.USER_DATA);
+        document.cookie = 'authToken=; path=/; max-age=0';
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred';
