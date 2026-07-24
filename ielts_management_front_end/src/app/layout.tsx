@@ -6,8 +6,6 @@ import ChatWidget from "@/components/ChatWidget";
 import "react-toastify/dist/ReactToastify.css";
 import "./globals.css";
 
-export const dynamic = "force-dynamic";
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

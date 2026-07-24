@@ -67,13 +67,12 @@ export default function VerifyEmailPage() {
         <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">Email Verification</h1>
 
         <p
-          className={`text-sm sm:text-base leading-relaxed mb-8 ${
-            status === "success"
+          className={`text-sm sm:text-base leading-relaxed mb-8 ${status === "success"
               ? "text-emerald-300"
               : status === "error"
                 ? "text-rose-300"
                 : "text-gray-300"
-          }`}
+            }`}
         >
           {message}
         </p>
