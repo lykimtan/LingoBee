@@ -241,6 +241,33 @@ const buildEmailContent = (template, variables = {}) => {
         `
       };
     }
+    case 'payment_success': {
+      const name = variables.name || 'Học viên';
+      const courseName = variables.courseName || 'Khóa học';
+      const amount = variables.amount || '0';
+      const actionUrl = variables.actionUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/learning`;
+      return {
+        text: `Chúc mừng ${name}, bạn đã đăng ký thành công khóa học ${courseName}. Số tiền thanh toán: ${amount} VNĐ. Truy cập khóa học ngay: ${actionUrl}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h2 style="color: #0f766e; margin: 0; font-size: 24px;">🎉 Đăng Ký Thành Công!</h2>
+            </div>
+            <p style="color: #334155; font-size: 15px;">Xin chào <strong>${name}</strong>,</p>
+            <p style="color: #475569; font-size: 14px; line-height: 1.6;">Chúc mừng bạn đã thanh toán và đăng ký thành công khóa học <strong>${courseName}</strong>.</p>
+            <div style="background-color: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0f766e;">
+              <p style="margin: 4px 0; font-size: 14px;"><strong>Số tiền thanh toán:</strong> <span style="color: #ef4444; font-weight: bold;">${amount} VNĐ</span></p>
+              <p style="margin: 4px 0; font-size: 14px;"><strong>Trạng thái:</strong> Thành công</p>
+            </div>
+            <p style="color: #475569; font-size: 14px;">Hành trình chinh phục IELTS của bạn đã chính thức bắt đầu. Hãy chuẩn bị tinh thần học tập thật tốt nhé!</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${actionUrl}" style="display:inline-block;padding:14px 28px;background-color:#0f766e;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:bold;font-size:16px;">Vào Học Ngay</a>
+            </div>
+            <p style="color: #64748b; font-size: 13px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 24px;">Trân trọng,<br><strong>Hệ thống Đào tạo IELTS LingoBee</strong></p>
+          </div>
+        `
+      };
+    }
     default:
       return {
         text: variables.message || 'Bạn có một thông báo mới.',

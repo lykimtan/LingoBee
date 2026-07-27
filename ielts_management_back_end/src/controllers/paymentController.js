@@ -5,6 +5,7 @@ const Student = require('../models/Student');
 const DiscountCode = require('../models/DiscountCode');
 const crypto = require('crypto');
 const logger = require('../utils/logger');
+const { sendEmail } = require('../services/apiService');
 
 const vnpay = new VNPay({
   tmnCode: process.env.VNP_TMNCODE || 'DUMMY_TMNCODE',
@@ -24,7 +25,6 @@ const checkDiscountCode = async (codeStr, courseId, studentId, basePrice) => {
   if (now < codeDoc.validFrom || now > codeDoc.validTo) {
     return { isValid: false, message: 'Mã giảm giá đã hết hạn hoặc chưa đến ngày áp dụng' };
   }
-
   if (codeDoc.maxUsageTotal !== -1 && codeDoc.usageCount >= codeDoc.maxUsageTotal) {
     return { isValid: false, message: 'Mã giảm giá đã hết số lượt sử dụng' };
   }
@@ -224,7 +224,9 @@ const processSuccessfulPayment = async (payment, reqQuery) => {
   payment.enrollmentDate = new Date();
 
   // Ghi danh học viên vào khóa học
-  const student = await Student.findById(payment.studentId);
+  const student = await Student.findById(payment.studentId).populate('userId', 'name email');
+  const course = await Course.findById(payment.courseId);
+  
   if (student) {
     const isEnrolled = student.enrolledCourses.some(
       (ec) => ec.courseId.toString() === payment.courseId.toString()
@@ -238,7 +240,10 @@ const processSuccessfulPayment = async (payment, reqQuery) => {
       await student.save();
 
       // Cập nhật totalStudents trong Course
-      await Course.findByIdAndUpdate(payment.courseId, { $inc: { totalStudents: 1 } });
+      if (course) {
+        course.totalStudents += 1;
+        await course.save();
+      }
     }
   }
 
@@ -267,6 +272,25 @@ const processSuccessfulPayment = async (payment, reqQuery) => {
     payment.vnpayData = reqQuery;
   }
   await payment.save();
+
+  // Send success email
+  if (student && student.userId && student.userId.email && course) {
+    try {
+      await sendEmail(
+        student.userId.email,
+        'Xác nhận thanh toán thành công',
+        'payment_success',
+        {
+          name: student.userId.name || 'Học viên',
+          courseName: course.title,
+          amount: payment.finalAmount.toLocaleString('vi-VN'),
+        }
+      );
+    } catch (err) {
+      logger.error('Lỗi gửi email xác nhận thanh toán: ' + err.message);
+    }
+  }
+
   return true;
 };
 
