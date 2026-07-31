@@ -28,7 +28,7 @@ const analyzeImage = async (req, res) => {
       const form = new FormData();
       form.append('file', fs.createReadStream(filePath));
 
-      const fastApiResponse = await axios.post('http://localhost:8000/api/analyze-image', form, {
+      const fastApiResponse = await axios.post('https://lykimtanjjj--ielts-ai-service-fastapi-app.modal.run/api/analyze-image', form, {
         headers: {
           ...form.getHeaders()
         }
