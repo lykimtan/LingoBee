@@ -9,7 +9,7 @@ export function PaymentsManager() {
   const [activeTab, setActiveTab] = useState<'revenue' | 'discounts'>('revenue');
 
   return (
-    <div className="flex-1 p-6 md:p-8 space-y-8 max-w-7xl mx-auto w-full animate-fadeIn">
+    <div className="flex-1 space-y-8 w-full animate-fadeIn">
       {/* Banner Header */}
       <div className="relative overflow-hidden rounded-3xl  p-8 border border-white/10 shadow-2xl">
         <div className="absolute -right-10 -top-10 w-64 h-64 rounded-full bg-teal-500/10 blur-3xl pointer-events-none" />

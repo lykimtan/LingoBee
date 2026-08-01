@@ -633,3 +633,111 @@ exports.getAdminRevenueStats = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Đồng bộ trạng thái thanh toán từ VNPay (Thủ công)
+ * @route   POST /api/payments/admin/sync-status/:id
+ * @access  Private (Admin)
+ */
+exports.syncPaymentStatus = async (req, res) => {
+  try {
+    const paymentId = req.params.id;
+    const payment = await Payment.findById(paymentId);
+    
+    if (!payment) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy giao dịch' });
+    }
+    
+    if (payment.paymentStatus !== 'pending') {
+      return res.status(400).json({ success: false, message: `Giao dịch này đã ở trạng thái ${payment.paymentStatus}` });
+    }
+
+    // Call vnpay queryDr
+    const ipAddr = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+    const date = payment.createdAt || new Date();
+    
+    // Format date as yyyyMMddHHmmss
+    const pad = (n) => (n < 10 ? '0' + n : n);
+    const vnp_TransactionDate = Number(`${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`);
+    
+    const queryResult = await vnpay.queryDr({
+      vnp_RequestId: `REQ_${Date.now()}`,
+      vnp_TransactionDate: vnp_TransactionDate,
+      vnp_IpAddr: ipAddr,
+      vnp_TransactionNo: 0,
+      vnp_TxnRef: payment.txnRef,
+      vnp_OrderInfo: `Truy van GD ${payment.txnRef}`,
+      vnp_CreateDate: vnp_TransactionDate
+    });
+
+    if (queryResult && queryResult.vnp_ResponseCode === '00' && queryResult.vnp_TransactionStatus === '00') {
+      // Thành công
+      await processSuccessfulPayment(payment, queryResult);
+      return res.status(200).json({ success: true, message: 'Đồng bộ thành công: Giao dịch đã được thanh toán', data: payment });
+    } else {
+      // Có thể failed hoặc chưa thanh toán
+      if (queryResult.vnp_TransactionStatus === '01') {
+         return res.status(200).json({ success: true, message: 'Đồng bộ: Giao dịch chưa hoàn tất thanh toán phía người dùng', data: payment });
+      }
+      
+      // Hủy / Thất bại
+      payment.paymentStatus = 'failed';
+      payment.vnpayData = queryResult;
+      await payment.save();
+      return res.status(200).json({ success: true, message: 'Đồng bộ thành công: Giao dịch đã thất bại hoặc bị hủy', data: payment });
+    }
+    
+  } catch (error) {
+    logger.error(`Error in syncPaymentStatus: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Lỗi server khi đồng bộ VNPay. Vui lòng kiểm tra lại cấu hình.', error: error.message });
+  }
+};
+
+/**
+ * @desc    Xác nhận thủ công giao dịch thanh toán (Admin)
+ * @route   POST /api/payments/admin/approve/:id
+ * @access  Private (Admin)
+ */
+exports.approvePayment = async (req, res) => {
+  try {
+    const payment = await Payment.findById(req.params.id);
+    if (!payment) return res.status(404).json({ success: false, message: 'Không tìm thấy giao dịch' });
+    
+    if (payment.paymentStatus === 'completed') {
+      return res.status(400).json({ success: false, message: 'Giao dịch đã được duyệt' });
+    }
+
+    const manualData = { adminApproved: true, approvedBy: req.user.id || req.user._id, date: new Date() };
+    await processSuccessfulPayment(payment, manualData);
+    
+    res.status(200).json({ success: true, message: 'Xác nhận thanh toán thủ công thành công', data: payment });
+  } catch (error) {
+    logger.error(`Error in approvePayment: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Lỗi khi duyệt thủ công' });
+  }
+};
+
+/**
+ * @desc    Hủy thủ công giao dịch pending (Admin)
+ * @route   POST /api/payments/admin/cancel/:id
+ * @access  Private (Admin)
+ */
+exports.cancelPayment = async (req, res) => {
+  try {
+    const payment = await Payment.findById(req.params.id);
+    if (!payment) return res.status(404).json({ success: false, message: 'Không tìm thấy giao dịch' });
+    
+    if (payment.paymentStatus !== 'pending') {
+      return res.status(400).json({ success: false, message: `Không thể hủy giao dịch đang ở trạng thái ${payment.paymentStatus}` });
+    }
+
+    payment.paymentStatus = 'failed';
+    payment.vnpayData = { adminCancelled: true, cancelledBy: req.user.id || req.user._id, date: new Date() };
+    await payment.save();
+    
+    res.status(200).json({ success: true, message: 'Đã hủy giao dịch thành công', data: payment });
+  } catch (error) {
+    logger.error(`Error in cancelPayment: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Lỗi khi hủy giao dịch' });
+  }
+};
+

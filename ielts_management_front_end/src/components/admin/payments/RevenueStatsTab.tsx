@@ -21,6 +21,7 @@ export function RevenueStatsTab() {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [dateFilterPreset, setDateFilterPreset] = useState<'all' | 'today' | '7days' | '30days' | 'thisMonth' | 'custom'>('all');
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const handleExportCSV = async () => {
     setExporting(true);
@@ -131,6 +132,61 @@ export function RevenueStatsTab() {
     loadPayments();
   };
 
+  const handleSyncStatus = async (id: string) => {
+    setProcessingId(id);
+    try {
+      const res = await paymentService.syncPaymentStatus(id);
+      if ((res as any).success) {
+        toast.success((res as any).message || 'Đồng bộ thành công');
+        loadPayments();
+        loadStats();
+      } else {
+        toast.error((res as any).message || 'Đồng bộ thất bại');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleApprove = async (id: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn duyệt thủ công giao dịch này? Học viên sẽ được vào học ngay lập tức.')) return;
+    setProcessingId(id);
+    try {
+      const res = await paymentService.approvePayment(id);
+      if ((res as any).success) {
+        toast.success('Duyệt giao dịch thành công');
+        loadPayments();
+        loadStats();
+      } else {
+        toast.error((res as any).message || 'Duyệt thất bại');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleCancel = async (id: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn hủy giao dịch này?')) return;
+    setProcessingId(id);
+    try {
+      const res = await paymentService.cancelPayment(id);
+      if ((res as any).success) {
+        toast.success('Đã hủy giao dịch');
+        loadPayments();
+      } else {
+        toast.error((res as any).message || 'Hủy thất bại');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const courseColors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4'];
 
   return (
@@ -196,11 +252,10 @@ export function RevenueStatsTab() {
                     setEndDate(now.toISOString().split('T')[0]);
                   }
                 }}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/25 border border-teal-400'
-                    : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/5'
-                }`}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${isActive
+                  ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/25 border border-teal-400'
+                  : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/5'
+                  }`}
               >
                 {preset.label}
               </button>
@@ -324,11 +379,10 @@ export function RevenueStatsTab() {
                   key={opt.key}
                   type="button"
                   onClick={() => setChartDays(opt.key as any)}
-                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                    chartDays === opt.key
-                      ? 'bg-emerald-500 text-white shadow-sm'
-                      : 'text-white/60 hover:text-white hover:bg-white/5'
-                  }`}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${chartDays === opt.key
+                    ? 'bg-emerald-500 text-white shadow-sm'
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                    }`}
                 >
                   {opt.label}
                 </button>
@@ -388,11 +442,10 @@ export function RevenueStatsTab() {
                   key={opt.key}
                   type="button"
                   onClick={() => setCourseDays(opt.key as any)}
-                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                    courseDays === opt.key
-                      ? 'bg-blue-500 text-white shadow-sm'
-                      : 'text-white/60 hover:text-white hover:bg-white/5'
-                  }`}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${courseDays === opt.key
+                    ? 'bg-blue-500 text-white shadow-sm'
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                    }`}
                 >
                   {opt.label}
                 </button>
@@ -491,6 +544,7 @@ export function RevenueStatsTab() {
                 <th className="py-4 px-6 text-right">Thực thu</th>
                 <th className="py-4 px-6 text-center">Trạng thái</th>
                 <th className="py-4 px-6 text-right">Thời gian</th>
+                <th className="py-4 px-6 text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10 text-sm">
@@ -554,13 +608,12 @@ export function RevenueStatsTab() {
                         {formatVND(pm.finalAmount || pm.totalAmount || 0)}
                       </td>
                       <td className="py-4 px-6 text-center">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${
-                          isSuccess
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                            : isPending
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${isSuccess
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                          : isPending
                             ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
                             : 'bg-red-500/10 text-red-400 border-red-500/30'
-                        }`}>
+                          }`}>
                           {isSuccess && <CheckCircle2 className="w-3 h-3" />}
                           {isPending && <Clock className="w-3 h-3" />}
                           {!isSuccess && !isPending && <XCircle className="w-3 h-3" />}
@@ -571,6 +624,29 @@ export function RevenueStatsTab() {
                         {new Date(pm.paymentDate || pm.createdAt).toLocaleDateString('vi-VN', {
                           day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
                         })}
+                      </td>
+                      <td className="py-4 px-6 text-right align-top">
+                        {isPending ? (
+                          <div className="flex flex-col items-end gap-2">
+                            <button
+                              onClick={() => handleSyncStatus(pm._id)}
+                              disabled={processingId === pm._id}
+                              className="px-2.5 py-1.5 bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 rounded border border-blue-500/30 text-[10px] font-bold w-full max-w-[80px] disabled:opacity-50"
+                            >Đồng bộ</button>
+                            <button
+                              onClick={() => handleApprove(pm._id)}
+                              disabled={processingId === pm._id}
+                              className="px-2.5 py-1.5 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 rounded border border-emerald-500/30 text-[10px] font-bold w-full max-w-[80px] disabled:opacity-50"
+                            >Duyệt</button>
+                            <button
+                              onClick={() => handleCancel(pm._id)}
+                              disabled={processingId === pm._id}
+                              className="px-2.5 py-1.5 bg-red-500/20 text-red-300 hover:bg-red-500/30 rounded border border-red-500/30 text-[10px] font-bold w-full max-w-[80px] disabled:opacity-50"
+                            >Hủy</button>
+                          </div>
+                        ) : (
+                          <span className="text-white/20 text-xs">-</span>
+                        )}
                       </td>
                     </tr>
                   );

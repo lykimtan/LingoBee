@@ -19,4 +19,9 @@ router.post('/verify-discount', authMiddleware, isStudent, paymentController.ver
 router.get('/admin/all', authMiddleware, isAdmin, paymentController.getAdminPayments);
 router.get('/admin/revenue-stats', authMiddleware, isAdmin, paymentController.getAdminRevenueStats);
 
+// Admin Routes: Xử lý giao dịch pending
+router.post('/admin/sync-status/:id', authMiddleware, isAdmin, paymentController.syncPaymentStatus);
+router.post('/admin/approve/:id', authMiddleware, isAdmin, paymentController.approvePayment);
+router.post('/admin/cancel/:id', authMiddleware, isAdmin, paymentController.cancelPayment);
+
 module.exports = router;

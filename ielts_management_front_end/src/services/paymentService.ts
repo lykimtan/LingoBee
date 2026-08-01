@@ -53,6 +53,26 @@ class PaymentService {
     const queryString = query.toString() ? `?${query.toString()}` : '';
     return apiClient.get(`/api/payments/admin/revenue-stats${queryString}`);
   }
+  /**
+   * Đồng bộ trạng thái thanh toán từ VNPay
+   */
+  async syncPaymentStatus(paymentId: string): Promise<ApiResponse<any>> {
+    return apiClient.post(`/api/payments/admin/sync-status/${paymentId}`);
+  }
+
+  /**
+   * Duyệt thanh toán thủ công
+   */
+  async approvePayment(paymentId: string): Promise<ApiResponse<any>> {
+    return apiClient.post(`/api/payments/admin/approve/${paymentId}`);
+  }
+
+  /**
+   * Hủy thanh toán thủ công
+   */
+  async cancelPayment(paymentId: string): Promise<ApiResponse<any>> {
+    return apiClient.post(`/api/payments/admin/cancel/${paymentId}`);
+  }
 }
 
 export const paymentService = new PaymentService();

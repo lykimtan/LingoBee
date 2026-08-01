@@ -250,6 +250,7 @@ const login = async (req, res) => {
           name: user.name,
           role: user.role,
           avatar: user.avatar,
+          createdAt: user.createdAt,
         },
       },
     });
@@ -426,6 +427,7 @@ const googleLogin = async (req, res) => {
           name: user.name,
           role: user.role,
           avatar: user.avatar,
+          createdAt: user.createdAt,
         },
       },
     });
@@ -690,6 +692,7 @@ const getCurrentUser = async (req, res) => {
         avatar: user.avatar,
         isEmailVerified: user.isEmailVerified,
         status: user.status,
+        createdAt: user.createdAt,
       },
     });
   } catch (error) {
