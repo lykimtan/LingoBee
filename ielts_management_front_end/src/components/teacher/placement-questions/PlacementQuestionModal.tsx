@@ -68,7 +68,7 @@ export function PlacementQuestionModal({
       setIsActive(initialData.isActive);
       
       if (initialData.options && initialData.options.length > 0) {
-        setOptions(initialData.options.map(o => ({ ...o, id: (o as any)._id || o.id })));
+        setOptions(initialData.options.map(o => ({ ...o, id: o.id || (o as any)._id })));
       } else {
         setOptions([
           { id: "1", text: "" },
@@ -185,7 +185,7 @@ export function PlacementQuestionModal({
     };
 
     if (questionType === "multipleChoice" || questionType === "listeningChoice") {
-      payload.options = options;
+      payload.options = options.map(o => ({ id: o.id, text: o.text }));
       payload.correctOptionIds = correctOptionIds;
     }
 

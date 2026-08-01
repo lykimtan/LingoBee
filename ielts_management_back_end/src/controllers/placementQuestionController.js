@@ -154,8 +154,11 @@ const updateQuestion = async (req, res, next) => {
         message: 'Cannot change question type after creation',
       });
     }
+    
+    // Prevent Mongoose StrictModeError for discriminator keys
+    delete updates.questionType;
 
-    Object.assign(question, updates);
+    question.set(updates);
     await question.save();
 
     return res.status(200).json({
