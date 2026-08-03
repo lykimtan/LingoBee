@@ -42,7 +42,7 @@ def calculate_iou(box1, box2):
 # --- 2. TẢI MÔ HÌNH ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH_BASE = os.path.join(BASE_DIR, "yolo11m.pt")
-MODEL_PATH_CUSTOM = os.path.join(BASE_DIR, "best.pt")
+MODEL_PATH_CUSTOM = os.path.join(BASE_DIR, "50classes/best.pt")
 
 print("⏳ Đang tải các mô hình...")
 try:
@@ -115,10 +115,21 @@ async def analyze_image(file: UploadFile = File(...)):
             # Chỉ lấy box này nếu nó KHÔNG đè lên box của model custom
             if not is_overlapping:
                 detected_objects.append(label_name)
+                
+                # Tạo màu ngẫu nhiên nhưng cố định cho từng loại vật thể (cls_id) theo hệ BGR
+                b = int((cls_id * 83) % 255)
+                g = int((cls_id * 149) % 255)
+                r = int((cls_id * 211) % 255)
+                
+                # Tránh trùng với màu đỏ (0, 0, 255) của custom model
+                if r > 150 and g < 100 and b < 100:
+                    g += 100
+                    b += 50
+                    
                 base_boxes.append({
                     'coords': coords, 'conf': conf,
                     'label': f"{label_name} {conf:.2f}",
-                    'color': (0, 255, 0) # Màu xanh lá (BGR)
+                    'color': (b, g, r) 
                 })
 
         # --- 4. VẼ TẤT CẢ BOX ĐÃ ĐƯỢC LỌC LÊN ẢNH ---

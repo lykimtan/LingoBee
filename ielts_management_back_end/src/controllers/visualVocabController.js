@@ -28,7 +28,15 @@ const analyzeImage = async (req, res) => {
       const form = new FormData();
       form.append('file', fs.createReadStream(filePath));
 
-      const fastApiResponse = await axios.post('https://lykimtanjjj--ielts-ai-service-fastapi-app.modal.run/api/analyze-image', form, {
+      // Kiểm tra xem request có phải gọi từ localhost không
+      const origin = req.headers.origin || req.headers.referer || '';
+      const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1');
+      
+      const aiServiceUrl = isLocal 
+        ? 'http://localhost:8000/api/analyze-image' 
+        : 'https://lykimtanjjj--ielts-ai-service-fastapi-app.modal.run/api/analyze-image';
+
+      const fastApiResponse = await axios.post(aiServiceUrl, form, {
         headers: {
           ...form.getHeaders()
         }

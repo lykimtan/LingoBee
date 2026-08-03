@@ -63,7 +63,7 @@ export default function VocabularyToolsHub() {
 
                 <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-purple-400 transition-colors">Visual Vocabulary</h2>
                 <p className="text-gray-400 leading-relaxed mb-6">
-                  Học từ vựng trực quan. Sử dụng trí tuệ nhân tạo (YOLOv10) để phân tích hình ảnh và tự động bóc tách từ vựng tiếng Anh.
+                  Học từ vựng trực quan. Sử dụng trí tuệ nhân tạo để phân tích hình ảnh và tự động bóc tách từ vựng tiếng Anh.
                 </p>
 
                 <div className="inline-flex items-center text-blue-400 font-semibold group-hover:translate-x-1 transition-transform">

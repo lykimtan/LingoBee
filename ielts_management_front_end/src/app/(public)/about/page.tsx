@@ -132,7 +132,7 @@ export default function AboutPage() {
                 </div>
                 <h4 className="text-xl font-bold text-slate-900 mb-3">AI Trợ lực 24/7</h4>
                 <p className="text-slate-600 text-sm leading-relaxed">
-                  Chấm điểm phát âm Pronunciation chính xác từng âm tiết qua Azure Speech SDK, nhận diện từ vựng qua ảnh (YOLOv10 AI) và trợ giảng ảo Bee Thân Thiện luôn sẵn sàng giải đáp.
+                  Chấm điểm phát âm Pronunciation chính xác từng âm tiết qua Azure Speech SDK, nhận diện từ vựng qua ảnh và trợ giảng ảo Bee Thân Thiện luôn sẵn sàng giải đáp.
                 </p>
               </div>
               <div className="pt-6 mt-6 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-[#1c7c78]">
