@@ -31,7 +31,7 @@ export default function FeaturesSection() {
         <section className="flex justify-center font-sans">
             <div className="w-full bg-[#EBF4FF]/70 backdrop-blur-md border border-white/60 shadow-sm  p-6 md:p-10 flex flex-col md:flex-row gap-8">
 
-                <Image src="/FeatureSection.webp" alt="Placement Test Features" width={500} height={500} loading="eager" />
+                <Image src="/featureSection.webp" alt="Placement Test Features" width={500} height={500} loading="eager" />
 
                 <div className="md:w-1/2 bg-white rounded-3xl p-6 md:p-10 shadow-sm">
                     <div className="flex flex-col h-full justify-between space-y-6">

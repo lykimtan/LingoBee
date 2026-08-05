@@ -42,8 +42,8 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
   // Format data
   const teacherName = course.teacher?.name || `${course.teacher?.firstName || ''} ${course.teacher?.lastName || ''}`.trim() || "Unknown Teacher";
   const thumbnail = course.publicInfo?.thumbnail || "/CoursesPage/thumbnailCourse.webp";
-  const rating = course.averageRating || 4.5;
-  const reviews = course.totalReviews || 120;
+  const rating = course.averageRating || 0;
+  const reviews = course.totalReviews || 0;
   const originalPrice = course.priceTiers?.[0]?.price || 5000000;
 
   return (
@@ -100,15 +100,21 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
                   {course.title}
                 </h1>
 
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex items-center text-amber-400">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`w-5 h-5 ${i < Math.floor(rating) ? 'fill-current' : 'text-gray-600'}`} />
-                    ))}
+                {reviews > 0 ? (
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="flex items-center text-amber-400">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className={`w-5 h-5 ${i < Math.floor(rating) ? 'fill-current' : 'text-gray-600'}`} />
+                      ))}
+                    </div>
+                    <span className="font-semibold text-gray-300">({rating})</span>
+                    <span className="text-gray-400 underline text-sm ml-2">{reviews} đánh giá</span>
                   </div>
-                  <span className="font-semibold text-gray-300">({rating})</span>
-                  <span className="text-gray-400 underline text-sm ml-2">{reviews} đánh giá</span>
-                </div>
+                ) : (
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-gray-400 text-sm italic">Chưa có đánh giá</span>
+                  </div>
+                )}
 
                 <div
                   className="text-lg text-gray-300 mb-6 prose prose-invert max-w-none"
