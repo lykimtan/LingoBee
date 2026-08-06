@@ -380,11 +380,10 @@ export function DiscountsTab() {
                     setEndDate(now.toISOString().split('T')[0]);
                   }
                 }}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  isActive
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${isActive
                     ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/25 border border-purple-400'
                     : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/5'
-                }`}
+                  }`}
               >
                 {preset.label}
               </button>
@@ -919,7 +918,7 @@ export function DiscountsTab() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white font-bold text-xs shadow-lg shadow-purple-500/20 transition cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white font-bold text-xs shadow-lg shadow-purple-500/20 transition cursor-pointer"
                 >
                   {submitting ? 'Đang lưu...' : editingDiscount ? 'Lưu thay đổi' : 'Tạo mã khuyến mãi'}
                 </button>

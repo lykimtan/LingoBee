@@ -741,3 +741,69 @@ exports.cancelPayment = async (req, res) => {
   }
 };
 
+
+/**
+ * @desc    Lấy danh sách top học viên chi tiêu nhiều nhất (Top Spenders)
+ * @route   GET /api/payments/admin/top-spenders
+ * @access  Private (Admin)
+ */
+exports.getTopSpenders = async (req, res) => {
+  try {
+    const { limit, startDate, endDate } = req.query;
+    const topLimit = parseInt(limit) || 10;
+
+    const matchCriteria = { paymentStatus: 'completed' };
+
+    if (startDate || endDate) {
+      matchCriteria.paymentDate = {};
+      if (startDate) matchCriteria.paymentDate.$gte = new Date(startDate);
+      if (endDate) matchCriteria.paymentDate.$lte = new Date(endDate);
+    }
+
+    const topSpenders = await Payment.aggregate([
+      { $match: matchCriteria },
+      {
+        $group: {
+          _id: '$studentId',
+          totalSpent: { $sum: '$finalAmount' },
+          coursesBought: { $sum: 1 },
+        }
+      },
+      { $sort: { totalSpent: -1 } },
+      { $limit: topLimit },
+      {
+        $lookup: {
+          from: 'students',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'studentDoc'
+        }
+      },
+      { $unwind: '$studentDoc' },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'studentDoc.userId',
+          foreignField: '_id',
+          as: 'userDoc'
+        }
+      },
+      { $unwind: '$userDoc' },
+      {
+        $project: {
+          studentId: '$_id',
+          name: '$userDoc.name',
+          email: '$userDoc.email',
+          avatar: '$userDoc.avatar',
+          totalSpent: 1,
+          coursesBought: 1
+        }
+      }
+    ]);
+
+    res.status(200).json({ success: true, data: topSpenders });
+  } catch (error) {
+    logger.error(`Error in getTopSpenders: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Lỗi khi lấy danh sách top spenders' });
+  }
+};

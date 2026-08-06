@@ -53,6 +53,18 @@ class PaymentService {
     const queryString = query.toString() ? `?${query.toString()}` : '';
     return apiClient.get(`/api/payments/admin/revenue-stats${queryString}`);
   }
+
+  /**
+   * Lấy danh sách Top Học Viên chi tiêu (Admin)
+   */
+  async getTopSpenders(params?: { limit?: number; startDate?: string; endDate?: string }): Promise<ApiResponse<any>> {
+    const query = new URLSearchParams();
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    return apiClient.get(`/api/payments/admin/top-spenders${queryString}`);
+  }
   /**
    * Đồng bộ trạng thái thanh toán từ VNPay
    */

@@ -18,6 +18,7 @@ router.post('/verify-discount', authMiddleware, isStudent, paymentController.ver
 // Admin Routes: Thống kê & Quản lý thanh toán
 router.get('/admin/all', authMiddleware, isAdmin, paymentController.getAdminPayments);
 router.get('/admin/revenue-stats', authMiddleware, isAdmin, paymentController.getAdminRevenueStats);
+router.get('/admin/top-spenders', authMiddleware, isAdmin, paymentController.getTopSpenders);
 
 // Admin Routes: Xử lý giao dịch pending
 router.post('/admin/sync-status/:id', authMiddleware, isAdmin, paymentController.syncPaymentStatus);

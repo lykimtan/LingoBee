@@ -4,9 +4,11 @@ import React, { useState } from 'react';
 import { DollarSign, Tag, TrendingUp, ShieldAlert } from 'lucide-react';
 import { RevenueStatsTab } from './RevenueStatsTab';
 import { DiscountsTab } from './DiscountsTab';
+import { TopSpendersTab } from './TopSpendersTab';
+import { Trophy } from 'lucide-react';
 
 export function PaymentsManager() {
-  const [activeTab, setActiveTab] = useState<'revenue' | 'discounts'>('revenue');
+  const [activeTab, setActiveTab] = useState<'revenue' | 'discounts' | 'spenders'>('revenue');
 
   return (
     <div className="flex-1 p-6 md:p-8 space-y-8 w-full animate-fadeIn">
@@ -29,35 +31,50 @@ export function PaymentsManager() {
           </div>
 
           {/* Tab Switcher */}
-          <div className="flex p-1.5 rounded-2xl bg-black/40 border border-white/10 shrink-0 self-start md:self-center">
+          <div className="flex flex-wrap items-center gap-2 mt-8 border-b border-white/10 pb-4">
             <button
               onClick={() => setActiveTab('revenue')}
-              className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs transition-all cursor-pointer ${activeTab === 'revenue'
-                ? 'bg-teal-500 text-[#0a1a1c] shadow-lg shadow-teal-500/20 scale-[1.02]'
-                : 'text-white/70 hover:text-white hover:bg-white/5'
-                }`}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all
+              ${activeTab === 'revenue'
+                  ? 'bg-white text-black shadow-lg shadow-white/20'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'}`}
             >
               <TrendingUp className="w-4 h-4" />
-              <span>Thống kê & Giao dịch</span>
+              Doanh Thu & Giao Dịch
             </button>
+
+
 
             <button
               onClick={() => setActiveTab('discounts')}
-              className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs transition-all cursor-pointer ${activeTab === 'discounts'
-                ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20 scale-[1.02]'
-                : 'text-white/70 hover:text-white hover:bg-white/5'
-                }`}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all
+              ${activeTab === 'discounts'
+                  ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'}`}
             >
               <Tag className="w-4 h-4" />
-              <span>Mã Khuyến Mãi</span>
+              Mã Khuyến Mãi
+            </button>
+
+            <button
+              onClick={() => setActiveTab('spenders')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all
+              ${activeTab === 'spenders'
+                  ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/20'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+            >
+              <Trophy className="w-4 h-4" />
+              Top Học Viên VIP
             </button>
           </div>
         </div>
       </div>
 
-      {/* Tab Content */}
-      <div className="mt-6">
-        {activeTab === 'revenue' ? <RevenueStatsTab /> : <DiscountsTab />}
+      {/* Content Area */}
+      <div className="mt-8">
+        {activeTab === 'revenue' && <RevenueStatsTab />}
+        {activeTab === 'discounts' && <DiscountsTab />}
+        {activeTab === 'spenders' && <TopSpendersTab />}
       </div>
     </div>
   );
