@@ -269,6 +269,7 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
                   videoUrl={currentVideo?.videoUrl}
                   thumbnailUrl={currentVideo?.thumbnailUrl}
                   initialTime={currentVideo?.progress?.currentTime}
+                  isCompleted={currentVideo?.progress?.isCompleted}
                   onProgressUpdate={handleProgressUpdate}
                 />
                 <LearningHeader title={currentVideo?.title} />

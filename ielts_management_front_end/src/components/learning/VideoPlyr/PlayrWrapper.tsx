@@ -3,11 +3,13 @@
 import { Plyr, APITypes } from "plyr-react";
 import "plyr/dist/plyr.css";
 import { useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from "react";
+import { toast } from "react-toastify";
 
 interface PlayrWrapperProps {
     videoUrl?: string;
     thumbnailUrl?: string;
     initialTime?: number;
+    isCompleted?: boolean;
     onProgressUpdate?: (currentTime: number, duration: number, isCompleted: boolean) => void;
 }
 
@@ -22,8 +24,9 @@ export interface PlayrWrapperRef {
     seekTo: (time: number) => void;
 }
 
-export const PlayrWrapper = forwardRef<PlayrWrapperRef, PlayrWrapperProps>(({ videoUrl, thumbnailUrl, initialTime, onProgressUpdate }, parentRef) => {
+export const PlayrWrapper = forwardRef<PlayrWrapperRef, PlayrWrapperProps>(({ videoUrl, thumbnailUrl, initialTime, isCompleted, onProgressUpdate }, parentRef) => {
     const ref = useRef<APITypes>(null);
+    const maxWatchedTime = useRef(initialTime || 0);
 
     useImperativeHandle(parentRef, () => ({
         pause: () => {
@@ -84,14 +87,35 @@ export const PlayrWrapper = forwardRef<PlayrWrapperRef, PlayrWrapperProps>(({ vi
                     // Try to seek immediately, or wait for loadedmetadata
                     plyr.once("loadedmetadata", () => {
                         plyr.currentTime = initialTime;
+                        maxWatchedTime.current = Math.max(maxWatchedTime.current, initialTime);
                     });
                     // Fallback if already loaded
                     if (plyr.duration > 0) {
                         plyr.currentTime = initialTime;
+                        maxWatchedTime.current = Math.max(maxWatchedTime.current, initialTime);
                     }
                 }
 
-                plyr.on("timeupdate", handleTimeUpdate);
+                plyr.on("timeupdate", () => {
+                    handleTimeUpdate();
+                    if (!plyr.seeking) {
+                        if (plyr.currentTime > maxWatchedTime.current) {
+                            maxWatchedTime.current = plyr.currentTime;
+                        }
+                    }
+                });
+
+                plyr.on("seeking", () => {
+                    // Bỏ qua kiểm tra nếu video đã hoàn thành trước đó
+                    if (isCompleted) return;
+
+                    // Nếu cố tình tua nhanh quá 2 giây so với thời gian đã xem cao nhất
+                    if (plyr.currentTime > maxWatchedTime.current + 2) {
+                        toast.warning("Học viên không được phép tua nhanh qua phần chưa xem!");
+                        plyr.currentTime = maxWatchedTime.current;
+                    }
+                });
+
                 plyr.on("ended", handleEnded);
                 plyr.on("pause", handlePause);
             }
@@ -112,7 +136,7 @@ export const PlayrWrapper = forwardRef<PlayrWrapperRef, PlayrWrapperProps>(({ vi
                 // Ignore if plyr instance is already destroyed by plyr-react
             }
         };
-    }, [videoUrl, onProgressUpdate]);
+    }, [videoUrl, onProgressUpdate, initialTime, isCompleted]);
 
     const plyrSource = useMemo(() => ({
         type: "video" as const,
