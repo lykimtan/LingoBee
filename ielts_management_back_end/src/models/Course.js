@@ -111,6 +111,10 @@ const courseSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    maxStudents: {
+      type: Number,
+      default: 0, // 0 = Không giới hạn
+    },
     averageRating: {
       type: Number,
       default: 0,

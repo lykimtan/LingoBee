@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MessageSquareText, Loader2, PlayCircle } from 'lucide-react';
+import { MessageSquareText, Loader2, PlayCircle, Lock } from 'lucide-react';
 import { paymentService } from '@/services/paymentService';
 import { userService } from '@/services/userService';
 import { learningService } from '@/services/learningService';
@@ -14,9 +14,12 @@ interface EnrollButtonProps {
   courseId: string;
   price: number;
   slug: string;
+  isFull?: boolean;
+  maxStudents?: number;
+  totalStudents?: number;
 }
 
-export function EnrollButton({ courseId, price, slug }: EnrollButtonProps) {
+export function EnrollButton({ courseId, price, slug, isFull = false, maxStudents = 0, totalStudents = 0 }: EnrollButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -40,7 +43,7 @@ export function EnrollButton({ courseId, price, slug }: EnrollButtonProps) {
         }
         return;
       }
-      
+
       setCheckingEnrollment(true);
       try {
         const res = await userService.getUserProfile();
@@ -112,10 +115,10 @@ export function EnrollButton({ courseId, price, slug }: EnrollButtonProps) {
     try {
       setIsLoading(true);
       const res = await paymentService.createPaymentUrl(
-        courseId, 
+        courseId,
         appliedDiscount ? discountCode : undefined
       );
-      
+
       if (res.success && res.data?.paymentUrl) {
         window.location.href = res.data.paymentUrl;
       } else {
@@ -141,7 +144,7 @@ export function EnrollButton({ courseId, price, slug }: EnrollButtonProps) {
   if (isEnrolled) {
     // Navigate to a generic learning route for now. We can fetch the specific videoId later if needed.
     const learningUrl = `/course/${slug}/learn/getting-started`;
-    
+
     return (
       <div className="w-full flex flex-col items-center">
         <div className="w-full mb-6">
@@ -165,9 +168,21 @@ export function EnrollButton({ courseId, price, slug }: EnrollButtonProps) {
     );
   }
 
+  if (isFull) {
+    return (
+      <button
+        disabled
+        className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-2xl bg-gray-600/50 text-white text-lg font-bold cursor-not-allowed border border-white/10"
+      >
+        <Lock className="w-5 h-5" />
+        Đã hết chỗ
+      </button>
+    );
+  }
+
   return (
     <div className="w-full flex flex-col items-center">
-      
+
       <div className="text-center mb-6">
         <h3 className="text-2xl font-bold text-white mb-2">Đăng ký ngay hôm nay</h3>
         <div className="flex items-center justify-center gap-3">
@@ -175,10 +190,17 @@ export function EnrollButton({ courseId, price, slug }: EnrollButtonProps) {
             {price.toLocaleString('vi-VN')}đ
           </span>
         </div>
+        {maxStudents > 0 && (
+          <div className="mt-3 inline-block bg-orange-500/10 border border-orange-500/30 px-3 py-1 rounded-full">
+            <span className="text-sm text-orange-400 font-bold">
+              🔥 Chỉ còn {Math.max(0, maxStudents - totalStudents)} chỗ trống
+            </span>
+          </div>
+        )}
       </div>
-      
+
       {!showDiscountInput && !appliedDiscount && (
-        <button 
+        <button
           onClick={() => setShowDiscountInput(true)}
           className="text-sm text-gray-300 hover:text-white underline mb-4 transition-colors"
         >
@@ -219,7 +241,7 @@ export function EnrollButton({ courseId, price, slug }: EnrollButtonProps) {
             <span className="text-white">Thành tiền:</span>
             <span className="text-[#1c7c78]">{appliedDiscount.finalAmount.toLocaleString('vi-VN')}đ</span>
           </div>
-          <button 
+          <button
             onClick={() => {
               setAppliedDiscount(null);
               setDiscountCode('');

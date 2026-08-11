@@ -110,6 +110,7 @@ export type TeacherCourseItem = {
   level: string;
   status: string;
   totalStudents?: number;
+  maxStudents?: number;
   totalVideos?: number;
   durationInHours?: number;
   createdAt?: string;
@@ -166,6 +167,7 @@ export type AdminCourseItem = {
   level?: string;
   status?: string;
   totalStudents?: number;
+  maxStudents?: number;
   averageRating?: number;
   totalReviews?: number;
   totalVideos?: number;

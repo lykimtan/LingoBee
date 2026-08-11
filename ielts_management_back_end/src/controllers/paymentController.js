@@ -128,10 +128,14 @@ exports.createPaymentUrl = async (req, res) => {
       await student.save();
     }
 
-    // 2. Tìm Course
     const course = await Course.findById(courseId);
     if (!course) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy khóa học' });
+    }
+
+    // Kiểm tra giới hạn học viên
+    if (course.maxStudents > 0 && course.totalStudents >= course.maxStudents) {
+      return res.status(400).json({ success: false, message: 'Khóa học đã đạt đủ số lượng học viên tối đa.' });
     }
 
     // 3. Lấy giá tiền

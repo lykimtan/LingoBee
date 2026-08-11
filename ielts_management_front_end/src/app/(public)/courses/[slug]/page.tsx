@@ -200,7 +200,14 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
 
                 {/* Pricing & CTA */}
                 <div className="p-6">
-                  <EnrollButton courseId={course._id} price={originalPrice} slug={slug} />
+                  <EnrollButton 
+                    courseId={course._id} 
+                    price={originalPrice} 
+                    slug={slug} 
+                    isFull={course.maxStudents && course.maxStudents > 0 ? (course.totalStudents || 0) >= course.maxStudents : false}
+                    maxStudents={course.maxStudents}
+                    totalStudents={course.totalStudents}
+                  />
 
                   {/* Features List */}
                   <div className="space-y-4 pt-6 border-t border-white/10">
@@ -215,20 +222,6 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
 
                 </div>
               </div>
-
-              {/* Floating Badges outside the card (simulating the right floating elements) */}
-              <div className="hidden xl:flex flex-col gap-3 absolute -right-[4.5rem] top-1/4">
-                <div className="bg-[#1c7c78] text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg whitespace-nowrap -rotate-2">
-                  Điểm & Review
-                </div>
-                <div className="bg-[#ef4444] text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg whitespace-nowrap rotate-1">
-                  Phương pháp chuẩn
-                </div>
-                <div className="bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg whitespace-nowrap -rotate-1">
-                  Sách độc quyền
-                </div>
-              </div>
-
             </div>
           </div>
         </div>

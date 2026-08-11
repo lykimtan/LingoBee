@@ -50,6 +50,7 @@ export function CreateCourseShellForm() {
     level: levels[2].value,
     teacherId: "",
     courseDetail: "",
+    maxStudents: 0,
     courseStartDate: "",
     courseEndDate: "",
     inviteMessage: "",
@@ -176,6 +177,7 @@ export function CreateCourseShellForm() {
       level: formState.level,
       teacher: formState.teacherId,
       courseDetail: formState.courseDetail.trim() || undefined,
+      maxStudents: Number(formState.maxStudents) || 0,
       courseStartDate: formState.courseStartDate || undefined,
       courseEndDate: formState.courseEndDate || undefined,
       inviteMessage: formState.inviteMessage.trim() || undefined,
@@ -189,7 +191,9 @@ export function CreateCourseShellForm() {
         ...prev,
         title: "",
         description: "",
+        teacherId: "",
         courseDetail: "",
+        maxStudents: 0,
         courseStartDate: "",
         courseEndDate: "",
         inviteMessage: "",
@@ -274,7 +278,7 @@ export function CreateCourseShellForm() {
             )}
           </label>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <label className="flex flex-col gap-2 text-sm text-white/70">
               Danh mục
               <div className="relative">
@@ -329,6 +333,21 @@ export function CreateCourseShellForm() {
                   {fieldErrors.level || missingFields.level}
                 </span>
               )}
+            </label>
+
+            <label className="flex flex-col gap-2 text-sm text-white/70">
+              Giới hạn học viên (0 = Không giới hạn)
+              <input
+                type="number"
+                min="0"
+                value={formState.maxStudents}
+                onChange={(event) => handleChange("maxStudents", event.target.value)}
+                className={clsx(
+                  "w-full rounded-2xl border bg-[#0b1d20] px-4 py-3 text-white outline-none transition focus:ring-2",
+                  "border-white/10 ring-[#1f6f5e]/40 placeholder-white/30 focus:border-[#1f6f5e]"
+                )}
+                placeholder="Ví dụ: 50"
+              />
             </label>
           </div>
         </div>

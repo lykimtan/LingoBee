@@ -90,6 +90,7 @@ type CourseDetail = {
   totalExercises?: number;
   totalMockTests?: number;
   totalStudents?: number;
+  maxStudents?: number;
   averageRating?: number;
   totalReviews?: number;
   durationInHours?: number;
@@ -123,6 +124,7 @@ export default function TeacherCourseDetailPage() {
   const [isEditingOverview, setIsEditingOverview] = useState(false);
   const [descriptionDraft, setDescriptionDraft] = useState("");
   const [courseDetailDraft, setCourseDetailDraft] = useState("");
+  const [maxStudentsDraft, setMaxStudentsDraft] = useState(0);
   const [learningOutcomesDraft, setLearningOutcomesDraft] = useState<string[]>([]);
   const [isSavingOverview, setIsSavingOverview] = useState(false);
   const [overviewError, setOverviewError] = useState<string | null>(null);
@@ -285,6 +287,7 @@ export default function TeacherCourseDetailPage() {
   useEffect(() => {
     setDescriptionDraft(course?.description || "");
     setCourseDetailDraft(course?.courseDetail || "");
+    setMaxStudentsDraft(course?.maxStudents || 0);
     setLearningOutcomesDraft(course?.learningOutcomes || []);
   }, [course?.description, course?.courseDetail, course?.learningOutcomes]);
 
@@ -312,6 +315,7 @@ export default function TeacherCourseDetailPage() {
     const response = await courseService.updateCourse<CourseDetail>(course._id, {
       description: descriptionDraft,
       courseDetail: courseDetailDraft.trim() ? courseDetailDraft.trim() : null,
+      maxStudents: maxStudentsDraft,
       learningOutcomes: learningOutcomesDraft.filter(val => val.trim() !== ""),
     });
 
@@ -589,6 +593,18 @@ export default function TeacherCourseDetailPage() {
                         </div>
                         <div>
                           <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mt-4 mb-2">
+                            Giới hạn học viên (0 = Không giới hạn)
+                          </p>
+                          <input
+                            type="number"
+                            min="0"
+                            value={maxStudentsDraft}
+                            onChange={(e) => setMaxStudentsDraft(Number(e.target.value))}
+                            className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mt-4 mb-2">
                             Mục tiêu / Kết quả đạt được
                           </p>
                           {learningOutcomesDraft.map((outcome, idx) => (
@@ -642,6 +658,7 @@ export default function TeacherCourseDetailPage() {
                               setDescriptionDraft(course.description || "");
                               setCourseDetailDraft(course.courseDetail || "");
                               setLearningOutcomesDraft(course.learningOutcomes || []);
+                              setMaxStudentsDraft(course.maxStudents || 0);
                               setOverviewError(null);
                               setIsEditingOverview(false);
                             }}
@@ -699,6 +716,19 @@ export default function TeacherCourseDetailPage() {
                               Chưa có thông tin
                             </p>
                           )}
+                        </div>
+
+                        {/* Hiển thị giới hạn học viên */}
+                        <div className="my-6 h-px bg-gray-100" />
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                            GIỚI HẠN HỌC VIÊN
+                          </p>
+                          <p className="mt-2 text-sm font-medium text-gray-600">
+                            {course.maxStudents && course.maxStudents > 0 
+                              ? `${course.maxStudents} học viên` 
+                              : "Không giới hạn"}
+                          </p>
                         </div>
                       </>
                     )}

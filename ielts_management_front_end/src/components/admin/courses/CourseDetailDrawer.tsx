@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { X, Users, CheckCircle2, DollarSign, Star, BookOpen, Clock, Award, MessageSquare, TrendingUp, ExternalLink, Calendar, ShieldAlert, Eye, EyeOff } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, Users, CheckCircle2, DollarSign, Star, BookOpen, Clock, Award, MessageSquare, TrendingUp, ExternalLink, Calendar, ShieldAlert, Eye, EyeOff, Settings2, Loader2 } from 'lucide-react';
 import { courseService } from '@/services/courseService';
 import { commentService } from '@/services/commentService';
 import { toast } from 'react-toastify';
@@ -30,6 +31,10 @@ export function CourseDetailDrawer({ courseId, onClose }: CourseDetailDrawerProp
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [dateFilterPreset, setDateFilterPreset] = useState<'all' | 'today' | '7days' | '30days' | 'thisMonth' | 'custom'>('all');
+
+  const [isUpdateLimitModalOpen, setIsUpdateLimitModalOpen] = useState(false);
+  const [newMaxStudents, setNewMaxStudents] = useState<number>(0);
+  const [isUpdatingLimit, setIsUpdatingLimit] = useState(false);
 
   useEffect(() => {
     setStartDate('');
@@ -73,6 +78,40 @@ export function CourseDetailDrawer({ courseId, onClose }: CourseDetailDrawerProp
       }
     } catch (err) {
       toast.error("Đã xảy ra lỗi khi cập nhật bình luận");
+    }
+  };
+
+  const handleUpdateLimit = async () => {
+    const currentTotal = data?.totalStudents || 0;
+    if (newMaxStudents > 0 && newMaxStudents < currentTotal) {
+      toast.error(`Giới hạn mới (${newMaxStudents}) không được nhỏ hơn số học viên hiện tại (${currentTotal}).`);
+      return;
+    }
+
+    setIsUpdatingLimit(true);
+    try {
+      const res = await courseService.updateCourse(courseId!, { maxStudents: newMaxStudents });
+      if (res.status === 'success') {
+        toast.success("Cập nhật giới hạn học viên thành công!");
+        setIsUpdateLimitModalOpen(false);
+        setData((prev: any) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            course: {
+              ...prev.course,
+              maxStudents: newMaxStudents
+            }
+          };
+        });
+      } else {
+        toast.error("Cập nhật thất bại.");
+      }
+    } catch (error) {
+      console.error("Error updating limit:", error);
+      toast.error("Đã xảy ra lỗi khi cập nhật.");
+    } finally {
+      setIsUpdatingLimit(false);
     }
   };
 
@@ -329,11 +368,28 @@ export function CourseDetailDrawer({ courseId, onClose }: CourseDetailDrawerProp
               <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col justify-between">
                 <div className="flex items-center justify-between text-white/60">
                   <span className="text-[11px] font-semibold uppercase tracking-wider">Học viên</span>
-                  <Users className="w-4 h-4 text-blue-400" />
+                  <div className="flex items-center gap-2 relative z-10">
+                    <button
+                      onClick={() => {
+                        setNewMaxStudents(course.maxStudents || 0);
+                        setIsUpdateLimitModalOpen(true);
+                      }}
+                      className="w-6 h-6 rounded bg-white/5 hover:bg-white/20 flex items-center justify-center text-white/80 transition-colors"
+                      title="Cập nhật giới hạn học viên"
+                    >
+                      <Settings2 className="w-3.5 h-3.5" />
+                    </button>
+                    <Users className="w-4 h-4 text-blue-400" />
+                  </div>
                 </div>
                 <div className="mt-2 flex items-baseline justify-between">
-                  <span className="text-2xl font-bold text-white">{totalStudents.toLocaleString()}</span>
-                  <span className="text-[10px] text-blue-300 font-medium">Đăng ký</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold text-white">{totalStudents.toLocaleString()}</span>
+                    <span className="text-sm font-bold text-white/40">
+                      / {course.maxStudents && course.maxStudents > 0 ? course.maxStudents.toLocaleString() : '∞'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-blue-300 font-medium whitespace-nowrap ml-2">Đăng ký</span>
                 </div>
               </div>
 
@@ -737,6 +793,67 @@ export function CourseDetailDrawer({ courseId, onClose }: CourseDetailDrawerProp
           </button>
         </div>
       </div>
+
+      {/* Modal Cập nhật giới hạn học viên */}
+      {isUpdateLimitModalOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#0b1d20] rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-white/10 animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-white/10 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white">Cập nhật giới hạn học viên</h3>
+              <button 
+                onClick={() => setIsUpdateLimitModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-blue-300">Số học viên hiện tại</p>
+                    <p className="text-2xl font-black text-blue-400">{totalStudents || 0}</p>
+                    <p className="text-xs text-blue-400/80 mt-1">Giới hạn mới không được nhỏ hơn số lượng này.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <label className="block text-sm font-bold text-white/80 mb-2">Giới hạn mới</label>
+              <input 
+                type="number" 
+                min="0"
+                value={newMaxStudents}
+                onChange={(e) => setNewMaxStudents(Number(e.target.value))}
+                className="w-full h-12 px-4 rounded-xl border border-white/10 bg-white/5 focus:border-[#1c7c78] focus:ring-4 focus:ring-[#1c7c78]/10 outline-none transition-all text-white font-medium"
+                placeholder="Nhập 0 để không giới hạn"
+              />
+              <p className="text-xs text-white/40 mt-2">Nhập 0 nếu bạn muốn bỏ giới hạn số lượng học viên tham gia.</p>
+            </div>
+            
+            <div className="p-4 bg-white/5 border-t border-white/10 flex justify-end gap-3">
+              <button
+                onClick={() => setIsUpdateLimitModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl font-semibold text-white/70 hover:bg-white/10 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleUpdateLimit}
+                disabled={isUpdatingLimit}
+                className="px-5 py-2.5 rounded-xl font-semibold text-white bg-[#1c7c78] hover:bg-[#16605d] transition-colors flex items-center gap-2 disabled:opacity-70"
+              >
+                {isUpdatingLimit && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isUpdatingLimit ? "Đang lưu..." : "Lưu thay đổi"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

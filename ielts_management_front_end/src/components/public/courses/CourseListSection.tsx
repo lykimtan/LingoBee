@@ -7,6 +7,19 @@ import { createSafeHtml } from '@/utils/utils';
 import { AdminCourseItem } from '@/types';
 import Image from 'next/image';
 
+const getLevelWithIELTS = (level: string) => {
+    if (!level) return "";
+    const levelMap: Record<string, string> = {
+        'A1': 'A1 (IELTS 3.0 - 3.5)',
+        'A2': 'A2 (IELTS 4.0)',
+        'B1': 'B1 (IELTS 4.5 - 5.0)',
+        'B2': 'B2 (IELTS 5.5 - 6.5)',
+        'C1': 'C1 (IELTS 7.0 - 8.0)',
+        'C2': 'C2 (IELTS 8.5 - 9.0)'
+    };
+    return levelMap[level.toUpperCase()] || level;
+};
+
 interface CourseListSectionProps {
     courses: AdminCourseItem[];
 }
@@ -206,7 +219,7 @@ export const CourseListSection: React.FC<CourseListSectionProps> = ({ courses = 
                                                 : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'
                                                 }`}
                                         >
-                                            {level}
+                                            {getLevelWithIELTS(level)}
                                         </button>
                                     ))}
                                 </div>
@@ -278,7 +291,7 @@ export const CourseListSection: React.FC<CourseListSectionProps> = ({ courses = 
                                         <div className="flex items-center gap-3 border-b border-white/10 pb-4">
                                             <div className="w-2 h-6 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full" />
                                             <h3 className="text-xl md:text-2xl font-bold text-white tracking-wide">
-                                                {groupTitle} <span className="text-sm font-normal text-gray-400 ml-2">({groupItems.length} khóa học)</span>
+                                                {groupBy === 'level' ? getLevelWithIELTS(groupTitle) : groupTitle} <span className="text-sm font-normal text-gray-400 ml-2">({groupItems.length} khóa học)</span>
                                             </h3>
                                         </div>
                                     )}
@@ -320,7 +333,7 @@ export const CourseListSection: React.FC<CourseListSectionProps> = ({ courses = 
                                                                 )}
                                                                 {course.level && (
                                                                     <span className="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-gray-200 text-xs font-medium">
-                                                                        {course.level}
+                                                                        {getLevelWithIELTS(course.level)}
                                                                     </span>
                                                                 )}
                                                             </div>

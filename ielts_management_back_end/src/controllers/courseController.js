@@ -902,7 +902,8 @@ const getCourseTeacherStats = async (req, res, next) => {
           _id: course._id,
           title: course.title,
           level: course.level,
-          targetBand: course.targetBand
+          targetBand: course.targetBand,
+          maxStudents: course.maxStudents
         },
         totalStudents,
         completedStudents,

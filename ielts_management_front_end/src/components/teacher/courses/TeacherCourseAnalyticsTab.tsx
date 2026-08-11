@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Users,
   TrendingUp,
@@ -14,7 +15,9 @@ import {
   Clock,
   BookOpen,
   BarChart3,
-  ArrowUpRight
+  ArrowUpRight,
+  Settings2,
+  X
 } from "lucide-react";
 import Image from "next/image";
 import { courseService } from "@/services/courseService";
@@ -43,6 +46,7 @@ interface CourseStatsData {
     title: string;
     level?: string;
     targetBand?: string;
+    maxStudents?: number;
   };
   totalStudents: number;
   completedStudents: number;
@@ -68,6 +72,10 @@ export const TeacherCourseAnalyticsTab: React.FC<TeacherCourseAnalyticsTabProps>
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [activeFilter, setActiveFilter] = useState<string>("all");
 
+  const [isUpdateLimitModalOpen, setIsUpdateLimitModalOpen] = useState(false);
+  const [newMaxStudents, setNewMaxStudents] = useState<number>(0);
+  const [isUpdatingLimit, setIsUpdatingLimit] = useState(false);
+
   useEffect(() => {
     fetchAnalytics();
   }, [courseId]);
@@ -86,6 +94,30 @@ export const TeacherCourseAnalyticsTab: React.FC<TeacherCourseAnalyticsTabProps>
       toast.error("Lỗi kết nối khi tải thống kê.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateLimit = async () => {
+    if (newMaxStudents > 0 && newMaxStudents < stats!.totalStudents) {
+      toast.error(`Giới hạn mới (${newMaxStudents}) không được nhỏ hơn số học viên hiện tại (${stats!.totalStudents}).`);
+      return;
+    }
+
+    setIsUpdatingLimit(true);
+    try {
+      const res = await courseService.updateCourse(courseId, { maxStudents: newMaxStudents });
+      if (res.status === 'success') {
+        toast.success("Cập nhật giới hạn học viên thành công!");
+        setIsUpdateLimitModalOpen(false);
+        setStats(prev => prev ? { ...prev, course: { ...prev.course, maxStudents: newMaxStudents } } : prev);
+      } else {
+        toast.error("Cập nhật thất bại.");
+      }
+    } catch (error) {
+      console.error("Error updating limit:", error);
+      toast.error("Đã xảy ra lỗi khi cập nhật.");
+    } finally {
+      setIsUpdatingLimit(false);
     }
   };
 
@@ -133,17 +165,33 @@ export const TeacherCourseAnalyticsTab: React.FC<TeacherCourseAnalyticsTabProps>
           <div className="absolute top-0 right-0 w-32 h-32 bg-[#1c7c78]/5 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-[#1c7c78]/10 transition-colors" />
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Học viên tham gia</span>
-            <div className="w-10 h-10 rounded-2xl bg-[#1c7c78]/10 flex items-center justify-center text-[#1c7c78]">
-              <Users className="w-5 h-5" />
+            <div className="flex items-center gap-2 relative z-10">
+              <button
+                onClick={() => {
+                  setNewMaxStudents(stats.course.maxStudents || 0);
+                  setIsUpdateLimitModalOpen(true);
+                }}
+                className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors"
+                title="Cập nhật giới hạn học viên"
+              >
+                <Settings2 className="w-4 h-4" />
+              </button>
+              <div className="w-10 h-10 rounded-2xl bg-[#1c7c78]/10 flex items-center justify-center text-[#1c7c78]">
+                <Users className="w-5 h-5" />
+              </div>
             </div>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black text-slate-900">{stats.totalStudents}</span>
+            <span className="text-lg font-bold text-slate-400">
+              / {stats.course.maxStudents && stats.course.maxStudents > 0 ? stats.course.maxStudents : '∞'}
+            </span>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
             <span className="text-xs font-semibold text-[#1c7c78] bg-[#1c7c78]/10 px-2 py-0.5 rounded-full">
               {stats.completionRate}% hoàn thành
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-2">Tổng số học viên đang theo học</p>
         </div>
 
         {/* Card 2: Avg Progress */}
@@ -275,8 +323,8 @@ export const TeacherCourseAnalyticsTab: React.FC<TeacherCourseAnalyticsTabProps>
               <div
                 onClick={() => setActiveFilter("completed")}
                 className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${activeFilter === "completed"
-                    ? "bg-emerald-50/80 border-emerald-500 ring-2 ring-emerald-500/20"
-                    : "bg-slate-50/50 border-slate-200/80 hover:bg-slate-50"
+                  ? "bg-emerald-50/80 border-emerald-500 ring-2 ring-emerald-500/20"
+                  : "bg-slate-50/50 border-slate-200/80 hover:bg-slate-50"
                   }`}
               >
                 <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold mb-1">
@@ -290,8 +338,8 @@ export const TeacherCourseAnalyticsTab: React.FC<TeacherCourseAnalyticsTabProps>
               <div
                 onClick={() => setActiveFilter("inProgress")}
                 className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${activeFilter === "inProgress"
-                    ? "bg-[#1c7c78]/10 border-[#1c7c78] ring-2 ring-[#1c7c78]/20"
-                    : "bg-slate-50/50 border-slate-200/80 hover:bg-slate-50"
+                  ? "bg-[#1c7c78]/10 border-[#1c7c78] ring-2 ring-[#1c7c78]/20"
+                  : "bg-slate-50/50 border-slate-200/80 hover:bg-slate-50"
                   }`}
               >
                 <div className="flex items-center gap-1.5 text-[#1c7c78] text-xs font-bold mb-1">
@@ -305,8 +353,8 @@ export const TeacherCourseAnalyticsTab: React.FC<TeacherCourseAnalyticsTabProps>
               <div
                 onClick={() => setActiveFilter("all")}
                 className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${activeFilter === "all"
-                    ? "bg-amber-50/80 border-amber-500 ring-2 ring-amber-500/20"
-                    : "bg-slate-50/50 border-slate-200/80 hover:bg-slate-50"
+                  ? "bg-amber-50/80 border-amber-500 ring-2 ring-amber-500/20"
+                  : "bg-slate-50/50 border-slate-200/80 hover:bg-slate-50"
                   }`}
               >
                 <div className="flex items-center gap-1.5 text-amber-600 text-xs font-bold mb-1">
@@ -320,8 +368,8 @@ export const TeacherCourseAnalyticsTab: React.FC<TeacherCourseAnalyticsTabProps>
               <div
                 onClick={() => setActiveFilter("attention")}
                 className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${activeFilter === "attention"
-                    ? "bg-rose-50/80 border-rose-500 ring-2 ring-rose-500/20"
-                    : "bg-slate-50/50 border-slate-200/80 hover:bg-slate-50"
+                  ? "bg-rose-50/80 border-rose-500 ring-2 ring-rose-500/20"
+                  : "bg-slate-50/50 border-slate-200/80 hover:bg-slate-50"
                   }`}
               >
                 <div className="flex items-center gap-1.5 text-rose-600 text-xs font-bold mb-1">
@@ -361,8 +409,8 @@ export const TeacherCourseAnalyticsTab: React.FC<TeacherCourseAnalyticsTabProps>
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${idx === 0 ? "bg-amber-400 text-slate-950" :
-                          idx === 1 ? "bg-slate-300 text-slate-950" :
-                            idx === 2 ? "bg-amber-700 text-white" : "bg-white/10 text-slate-400"
+                        idx === 1 ? "bg-slate-300 text-slate-950" :
+                          idx === 2 ? "bg-amber-700 text-white" : "bg-white/10 text-slate-400"
                         }`}>
                         {idx + 1}
                       </div>
@@ -480,8 +528,8 @@ export const TeacherCourseAnalyticsTab: React.FC<TeacherCourseAnalyticsTabProps>
                       <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${st.progress >= 80 ? "bg-emerald-500" :
-                              st.progress >= 50 ? "bg-[#1c7c78]" :
-                                st.progress > 0 ? "bg-amber-400" : "bg-slate-300"
+                            st.progress >= 50 ? "bg-[#1c7c78]" :
+                              st.progress > 0 ? "bg-amber-400" : "bg-slate-300"
                             }`}
                           style={{ width: `${st.progress}%` }}
                         />
@@ -529,6 +577,67 @@ export const TeacherCourseAnalyticsTab: React.FC<TeacherCourseAnalyticsTabProps>
           </table>
         </div>
       </div>
+
+      {/* Modal Cập nhật giới hạn học viên */}
+      {isUpdateLimitModalOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-800">Cập nhật giới hạn học viên</h3>
+              <button
+                onClick={() => setIsUpdateLimitModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-4 bg-blue-50 border border-blue-100 rounded-2xl p-4">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-blue-900">Số học viên hiện tại</p>
+                    <p className="text-2xl font-black text-blue-700">{stats?.totalStudents || 0}</p>
+                    <p className="text-xs text-blue-600/80 mt-1">Giới hạn mới không được nhỏ hơn số lượng này.</p>
+                  </div>
+                </div>
+              </div>
+
+              <label className="block text-sm font-bold text-slate-700 mb-2">Giới hạn mới</label>
+              <input
+                type="number"
+                min="0"
+                value={newMaxStudents}
+                onChange={(e) => setNewMaxStudents(Number(e.target.value))}
+                className="w-full h-12 px-4 rounded-xl border border-slate-200 focus:border-[#1c7c78] focus:ring-4 focus:ring-[#1c7c78]/10 outline-none transition-all text-slate-700 font-medium"
+                placeholder="Nhập 0 để không giới hạn"
+              />
+              <p className="text-xs text-slate-500 mt-2">Nhập 0 nếu bạn muốn bỏ giới hạn số lượng học viên tham gia.</p>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button
+                onClick={() => setIsUpdateLimitModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 hover:bg-slate-200 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleUpdateLimit}
+                disabled={isUpdatingLimit}
+                className="px-5 py-2.5 rounded-xl font-semibold text-white bg-[#1c7c78] hover:bg-[#16605d] transition-colors flex items-center gap-2 disabled:opacity-70"
+              >
+                {isUpdatingLimit && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isUpdatingLimit ? "Đang lưu..." : "Lưu thay đổi"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

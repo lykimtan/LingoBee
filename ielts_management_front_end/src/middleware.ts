@@ -12,7 +12,7 @@ const verifyRoleAccess = async (request: NextRequest, roles: string[]): Promise<
     console.log('[Middleware] No authToken cookie found');
     return false;
   }
-  
+
   if (!secret) {
     console.log('[Middleware] JWT_SECRET is not set in environment variables');
     return false;
@@ -21,7 +21,6 @@ const verifyRoleAccess = async (request: NextRequest, roles: string[]): Promise<
   try {
     const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
     const role = typeof payload?.role === 'string' ? payload.role : '';
-    console.log(`[Middleware] Token verified successfully. Role: ${role}, Required: ${roles}`);
     return roles.includes(role);
   } catch (error: any) {
     console.log(`[Middleware] Token verification failed: ${error.message}`);
