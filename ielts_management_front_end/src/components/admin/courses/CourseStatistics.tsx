@@ -208,21 +208,34 @@ export function CourseStatistics({ courses, isLoading, onSelectCourse }: CourseS
         {/* Level Breakdown */}
         <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-6 shadow-md backdrop-blur-md">
           <div>
-            <h3 className="text-lg font-medium text-white">Phân Bổ Trình Độ (CEFR)</h3>
+            <h3 className="text-lg font-medium text-white">Phân Bổ Trình Độ</h3>
             <p className="text-xs text-white/50">Số lượng khóa học tương ứng với các khung cấp độ từ A1 đến C2</p>
           </div>
 
           <div className="mt-6 grid grid-cols-3 gap-4">
-            {stats.levelList.map((lvl) => (
-              <div
-                key={lvl.level}
-                className="flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/5 p-4 text-center transition hover:bg-white/10 hover:border-white/20"
-              >
-                <span className="text-2xl font-bold text-[#ffb800]">{lvl.level}</span>
-                <span className="mt-1 text-xl font-semibold text-white">{lvl.count}</span>
-                <span className="text-[11px] text-white/50">khóa học</span>
-              </div>
-            ))}
+            {stats.levelList.map((lvl) => {
+              const ieltsMap: Record<string, string> = {
+                A1: '<3.0',
+                A2: '3.0-3.5',
+                B1: '4.0-5.0',
+                B2: '5.5-6.5',
+                C1: '7.0-8.0',
+                C2: '8.5-9.0',
+              };
+              return (
+                <div
+                  key={lvl.level}
+                  className="flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/5 p-4 text-center transition hover:bg-white/10 hover:border-white/20"
+                >
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-2xl font-bold text-[#ffb800]">{lvl.level}</span>
+                    <span className="text-[10px] text-[#ffb800]/70 font-medium tracking-wide">IELTS {ieltsMap[lvl.level] || ''}</span>
+                  </div>
+                  <span className="mt-1 text-xl font-semibold text-white">{lvl.count}</span>
+                  <span className="text-[11px] text-white/50">khóa học</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

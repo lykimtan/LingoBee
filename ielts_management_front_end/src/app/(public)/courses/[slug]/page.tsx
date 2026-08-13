@@ -11,6 +11,8 @@ import { TeacherShowcase } from "@/components/TeacherShowcase";
 import { EnrollButton } from "@/components/public/courses/EnrollButton";
 import { CourseReviewsList } from "@/components/public/courses/CourseReviewsList";
 
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
   params: Promise<{
     slug: string;

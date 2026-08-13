@@ -24,22 +24,6 @@ const CoursePreviewSidebar: React.FC<CoursePreviewSidebarProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Overview Card */}
-      <div className="bg-white/10 backdrop-blur-md rounded-xl p-5 border border-white/20 shadow-sm">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center text-white">
-            <BookOpen className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-white">Course Curriculum</h3>
-            <p className="text-sm text-gray-300">1 Module • {videos.length} Lessons</p>
-          </div>
-        </div>
-        <button className="w-full py-2.5 bg-white/20 hover:bg-white/30 text-white font-medium rounded-lg transition-colors border border-white/10">
-          View Course Analytics
-        </button>
-      </div>
-
       {/* Curriculum Accordion */}
       <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 overflow-hidden shadow-sm">
         <button
@@ -85,24 +69,6 @@ const CoursePreviewSidebar: React.FC<CoursePreviewSidebarProps> = ({
           </div>
         )}
       </div>
-
-      {/* Resources */}
-      <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-5 shadow-sm">
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Resources</h3>
-        <div className="space-y-3">
-          <button className="w-full flex items-center gap-3 text-sm text-gray-300 hover:text-white transition-colors">
-            <FileText className="w-4 h-4 text-gray-400" />
-            Downloadable PDFs
-          </button>
-          <button className="w-full flex items-center gap-3 text-sm text-gray-300 hover:text-white transition-colors">
-            <History className="w-4 h-4 text-gray-400" />
-            Review History
-          </button>
-        </div>
-      </div>
-
-
-
     </div>
   );
 };

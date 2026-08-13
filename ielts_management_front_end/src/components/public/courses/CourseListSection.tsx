@@ -302,8 +302,8 @@ export const CourseListSection: React.FC<CourseListSectionProps> = ({ courses = 
                                             const teacherName = course.teacher?.name || "IELTS Master Faculty";
                                             const teacherAvatar = course.teacher?.avatar || "/CoursesPage/avatarTeacher.webp";
                                             const rating = course.averageRating ? course.averageRating.toFixed(1) : "Chưa có đánh giá";
-                                            const studentCount = course.totalStudents || Math.floor(Math.random() * 50) + 15;
-                                            const videoCount = course.totalVideos || Math.floor(Math.random() * 20) + 10;
+                                            const studentCount = course.totalStudents || 0;
+                                            const videoCount = course.totalVideos || 0;
 
                                             return (
                                                 <div

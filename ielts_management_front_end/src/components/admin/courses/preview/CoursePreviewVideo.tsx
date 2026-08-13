@@ -244,7 +244,7 @@ const CoursePreviewVideo: React.FC<CoursePreviewVideoProps> = ({ course, activeV
       {/* Feedback History */}
       {feedbacks.length > 0 && (
         <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 shadow-sm">
-          <h3 className="text-lg font-semibold text-white mb-4">Previous Feedback</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">Phản hồi trước đó</h3>
           <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
             {feedbacks.map((fb) => (
               <div key={fb._id} className="bg-white/5 border border-white/10 rounded-lg p-4">
@@ -298,7 +298,7 @@ const CoursePreviewVideo: React.FC<CoursePreviewVideoProps> = ({ course, activeV
             className="flex items-center justify-center gap-2 px-6 py-2.5 bg-white/20 hover:bg-white/30 text-white border border-white/10 rounded-lg font-medium transition-colors disabled:opacity-50"
           >
             <Send className="w-4 h-4" />
-            {isSending ? 'Sending...' : 'Send Feedback to Teacher'}
+            {isSending ? 'Sending...' : 'Gửi phản hồi cho giáo viên'}
           </button>
         </div>
       </div>
