@@ -9,7 +9,7 @@ import { courseService } from "@/services/courseService";
 import { AdminCourseItem } from "@/types";
 import Image from 'next/image';
 
-export const dynamic = 'force-dynamic';
+
 
 export default async function CoursesPage() {
     let sliderCourses: SliderCourse[] = [];
