@@ -11,6 +11,8 @@ import Image from 'next/image';
 
 
 
+export const revalidate = 60; // Tự động làm mới dữ liệu sau mỗi 60 giây
+
 export default async function CoursesPage() {
     let sliderCourses: SliderCourse[] = [];
     let coursesList: AdminCourseItem[] = [];

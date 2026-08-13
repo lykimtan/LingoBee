@@ -432,7 +432,7 @@ const getPublicCourses = async (req, res, next) => {
     const redisPrefix = process.env.REDIS_PREFIX || 'ielts:';
     const queryParams = new URLSearchParams(req.query).toString();
     const cacheKey = `${redisPrefix}courses:public${queryParams ? `?${queryParams}` : ''}`;
-    
+
     const cachedData = await getValue(cacheKey);
     if (cachedData) {
       return res.status(200).json({
@@ -484,7 +484,7 @@ const getPublicCourseBySlug = async (req, res, next) => {
     // Check cache first
     const redisPrefix = process.env.REDIS_PREFIX || 'ielts:';
     const cacheKey = `${redisPrefix}course:public:slug:${slug}`;
-    
+
     const cachedData = await getValue(cacheKey);
     if (cachedData && cachedData.instructorsShowcase) {
       return res.status(200).json({
@@ -682,24 +682,24 @@ const getCourseAdminStats = async (req, res, next) => {
     const enrolledStudents = await Student.find({ 'enrolledCourses.courseId': courseId })
       .populate('userId', 'name email avatar')
       .populate('enrolledCourses.learningPath', 'overallProgress isCompleted');
-      
+
     const totalVideos = await Video.countDocuments({ courseId, isPublished: true });
     let completedStudents = 0;
 
     let studentList = await Promise.all(enrolledStudents.map(async (s) => {
       const enrollment = s.enrolledCourses?.find(c => (c.courseId?._id || c.courseId).toString() === courseId.toString());
-      
+
       // Tính số video đã xem xong thực tế trong VideoProgress
       const completedVideosCount = await VideoProgress.countDocuments({ studentId: s._id, courseId, isCompleted: true });
       const videoProgressPct = totalVideos > 0 ? Math.round((completedVideosCount / totalVideos) * 100) : 0;
-      
+
       const lpProgress = enrollment?.learningPath?.overallProgress || 0;
       const baseProgress = enrollment?.progress || 0;
-      
+
       // Lấy tiến độ cao nhất và chính xác nhất
       const progress = Math.min(100, Math.max(baseProgress, lpProgress, videoProgressPct));
       const status = (progress >= 100 || enrollment?.status === 'completed' || enrollment?.learningPath?.isCompleted) ? 'completed' : (enrollment?.status || 'active');
-      
+
       return {
         _id: s._id,
         user: s.userId,
@@ -838,13 +838,13 @@ const getCourseTeacherStats = async (req, res, next) => {
 
     let studentList = await Promise.all(enrolledStudents.map(async (s) => {
       const enrollment = s.enrolledCourses?.find(c => (c.courseId?._id || c.courseId).toString() === courseId.toString());
-      
+
       const completedVideosCount = await VideoProgress.countDocuments({ studentId: s._id, courseId, isCompleted: true });
       const videoProgressPct = totalVideos > 0 ? Math.round((completedVideosCount / totalVideos) * 100) : 0;
-      
+
       const lpProgress = enrollment?.learningPath?.overallProgress || 0;
       const baseProgress = enrollment?.progress || 0;
-      
+
       const progress = Math.min(100, Math.max(baseProgress, lpProgress, videoProgressPct));
       const status = (progress >= 100 || enrollment?.status === 'completed' || enrollment?.learningPath?.isCompleted) ? 'completed' : (enrollment?.status || 'active');
 
