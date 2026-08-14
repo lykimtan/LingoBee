@@ -126,7 +126,7 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
     fetchData();
   }, [slug]);
 
-  const fetchLearningPath = async () => {
+  const fetchLearningPath = React.useCallback(async () => {
     if (!courseData) return;
     try {
       const pathRes = await learningPathService.getPath(courseData.id);
@@ -136,7 +136,7 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
     } catch (e) {
       console.log("No learning path found");
     }
-  };
+  }, [courseData]);
 
   // Sync URL when video changes
   useEffect(() => {
@@ -162,11 +162,51 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
             ? { ...v, progress: { ...v.progress, isCompleted: true } as any }
             : v
         ));
+        
+        // Refresh learning path to sync completion status from backend as backup
+        fetchLearningPath();
       }
     } catch (err) {
       console.error("Failed to update progress", err);
     }
-  }, [currentVideoId]);
+  }, [currentVideoId, fetchLearningPath]);
+
+  const syncedLearningPath = React.useMemo(() => {
+    if (!learningPath) return null;
+    
+    // Create a map of completed videos from current state
+    const completedMap = new Map();
+    videos.forEach(v => {
+      if (v.progress?.isCompleted) {
+        completedMap.set(v._id, true);
+      }
+    });
+
+    let totalLessons = 0;
+    let completedLessons = 0;
+
+    const newDailySchedule = learningPath.dailySchedule.map(day => {
+      const newLessons = day.lessons.map(lesson => {
+        totalLessons++;
+        const isCompleted = completedMap.get(lesson.videoId._id) || lesson.isCompleted;
+        if (isCompleted) {
+          completedLessons++;
+        }
+        return { ...lesson, isCompleted };
+      });
+      
+      const isDayCompleted = newLessons.length > 0 && newLessons.every(l => l.isCompleted);
+      return { ...day, lessons: newLessons, isCompleted: isDayCompleted };
+    });
+
+    const overallProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
+    return {
+      ...learningPath,
+      dailySchedule: newDailySchedule,
+      overallProgress
+    };
+  }, [learningPath, videos]);
 
   const renderActiveTab = () => {
     switch (activeTab) {
@@ -381,9 +421,9 @@ export const LearningInterface = ({ slug, initialVideoId }: LearningInterfacePro
                 </div>
               ) : (
                 <div className="flex flex-col overflow-y-auto custom-scrollbar pr-2 pb-4 h-full">
-                  {learningPath ? (
+                  {syncedLearningPath ? (
                     <LearningPathSidebar
-                      learningPath={learningPath}
+                      learningPath={syncedLearningPath}
                       currentVideoId={currentVideoId}
                       onSelectVideo={handleSelectVideo}
                       onSelectExercise={setCurrentExerciseId}
