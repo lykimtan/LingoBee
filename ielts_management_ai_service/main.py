@@ -79,61 +79,67 @@ async def analyze_image(file: UploadFile = File(...)):
         res_base = base_model.predict(source=img, conf=0.25)[0]
         res_custom = custom_model.predict(source=img, conf=0.25)[0]
         
-        # --- 3. TRÍCH XUẤT VÀ LỌC DỮ LIỆU BOX ---
-        custom_boxes = []
+        # --- 3. TRÍCH XUẤT VÀ LỌC DỮ LIỆU BOX THEO ĐỘ TIN CẬY (NMS) ---
+        all_boxes = []
         detected_objects = []
+        IOU_THRESHOLD = 0.5 
 
-        # Lưu lại toàn bộ box của model custom
+        # Đưa toàn bộ box của model custom vào mảng chung
         for box in res_custom.boxes:
             coords = list(map(int, box.xyxy[0]))
             conf = float(box.conf[0])
             cls_id = int(box.cls[0])
             label_name = custom_model.names[cls_id]
-            detected_objects.append(label_name)
-            custom_boxes.append({
+            all_boxes.append({
                 'coords': coords, 'conf': conf,
+                'label_name': label_name,
                 'label': f"{label_name} {conf:.2f}",
-                'color': (0, 0, 255) # Màu đỏ (BGR)
+                'color': (0, 0, 255) # Màu đỏ (BGR) cho custom model
             })
 
-        base_boxes = []
-        # Lưu box của model gốc NHƯNG phải kiểm tra xem có bị trùng với custom_boxes không
-        IOU_THRESHOLD = 0.5 
-
+        # Đưa toàn bộ box của model gốc vào mảng chung
         for box in res_base.boxes:
             coords = list(map(int, box.xyxy[0]))
             conf = float(box.conf[0])
             cls_id = int(box.cls[0])
             label_name = base_model.names[cls_id]
+            
+            # Tạo màu ngẫu nhiên nhưng cố định cho từng loại vật thể (cls_id) theo hệ BGR
+            b = int((cls_id * 83) % 255)
+            g = int((cls_id * 149) % 255)
+            r = int((cls_id * 211) % 255)
+            
+            # Tránh trùng với màu đỏ (0, 0, 255) của custom model
+            if r > 150 and g < 100 and b < 100:
+                g += 100
+                b += 50
+                
+            all_boxes.append({
+                'coords': coords, 'conf': conf,
+                'label_name': label_name,
+                'label': f"{label_name} {conf:.2f}",
+                'color': (b, g, r) 
+            })
 
+        # Sắp xếp tất cả các box theo độ tin cậy (confidence) giảm dần
+        all_boxes.sort(key=lambda x: x['conf'], reverse=True)
+
+        final_boxes = []
+        
+        # Áp dụng Non-Maximum Suppression (NMS) chung cho cả 2 model
+        for box in all_boxes:
             is_overlapping = False
-            for c_box in custom_boxes:
-                if calculate_iou(coords, c_box['coords']) > IOU_THRESHOLD:
+            for f_box in final_boxes:
+                if calculate_iou(box['coords'], f_box['coords']) > IOU_THRESHOLD:
                     is_overlapping = True
                     break 
 
-            # Chỉ lấy box này nếu nó KHÔNG đè lên box của model custom
+            # Chỉ giữ lại box nếu nó KHÔNG đè lên bất kỳ box nào có confidence cao hơn (đã được thêm vào final_boxes trước đó)
             if not is_overlapping:
-                detected_objects.append(label_name)
-                
-                # Tạo màu ngẫu nhiên nhưng cố định cho từng loại vật thể (cls_id) theo hệ BGR
-                b = int((cls_id * 83) % 255)
-                g = int((cls_id * 149) % 255)
-                r = int((cls_id * 211) % 255)
-                
-                # Tránh trùng với màu đỏ (0, 0, 255) của custom model
-                if r > 150 and g < 100 and b < 100:
-                    g += 100
-                    b += 50
-                    
-                base_boxes.append({
-                    'coords': coords, 'conf': conf,
-                    'label': f"{label_name} {conf:.2f}",
-                    'color': (b, g, r) 
-                })
+                final_boxes.append(box)
+                detected_objects.append(box['label_name'])
 
         # --- 4. VẼ TẤT CẢ BOX ĐÃ ĐƯỢC LỌC LÊN ẢNH ---
-        final_boxes = custom_boxes + base_boxes
 
         for item in final_boxes:
             x1, y1, x2, y2 = item['coords']
