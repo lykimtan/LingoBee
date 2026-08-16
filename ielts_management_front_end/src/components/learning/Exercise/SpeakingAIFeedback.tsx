@@ -97,18 +97,6 @@ export default function SpeakingAIFeedback({ assessment }: SpeakingAIFeedbackPro
             <p className="text-white/50 italic text-sm">Không nhận diện được nội dung chi tiết.</p>
           )}
         </div>
-
-        <div className="flex items-center gap-6 mt-4 pt-4 border-t border-white/5">
-          <div className="flex items-center gap-2 text-xs font-medium text-white/60">
-            <CheckCircle className="w-4 h-4 text-emerald-400" /> Phát âm tốt (&ge;80)
-          </div>
-          <div className="flex items-center gap-2 text-xs font-medium text-white/60">
-            <AlertTriangle className="w-4 h-4 text-amber-400" /> Cần cải thiện (60-79)
-          </div>
-          <div className="flex items-center gap-2 text-xs font-medium text-white/60">
-            <AlertCircle className="w-4 h-4 text-red-400" /> Phát âm sai (&lt;60)
-          </div>
-        </div>
       </div>
     </div>
   );
