@@ -2,11 +2,14 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Users, CheckCircle2, DollarSign, Star, BookOpen, Clock, Award, MessageSquare, TrendingUp, ExternalLink, Calendar, ShieldAlert, Eye, EyeOff, Settings2, Loader2 } from 'lucide-react';
+import { X, Users, CheckCircle2, DollarSign, Star, BookOpen, Clock, Award, MessageSquare, TrendingUp, ExternalLink, Calendar, ShieldAlert, Eye, EyeOff, Settings2, Loader2, UserPlus, Search } from 'lucide-react';
 import { courseService } from '@/services/courseService';
 import { commentService } from '@/services/commentService';
+import { userService, UserListItem } from '@/services/userService';
+import { invitationService } from '@/services/invatationService';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -27,7 +30,7 @@ interface CourseDetailDrawerProps {
 export function CourseDetailDrawer({ courseId, onClose }: CourseDetailDrawerProps) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'students' | 'reviews' | 'revenue'>('students');
+  const [activeTab, setActiveTab] = useState<'students' | 'reviews' | 'revenue' | 'assistants'>('students');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [dateFilterPreset, setDateFilterPreset] = useState<'all' | 'today' | '7days' | '30days' | 'thisMonth' | 'custom'>('all');
@@ -35,6 +38,13 @@ export function CourseDetailDrawer({ courseId, onClose }: CourseDetailDrawerProp
   const [isUpdateLimitModalOpen, setIsUpdateLimitModalOpen] = useState(false);
   const [newMaxStudents, setNewMaxStudents] = useState<number>(0);
   const [isUpdatingLimit, setIsUpdatingLimit] = useState(false);
+
+  // States for inviting Teaching Assistants
+  const [isSearchAssistantOpen, setIsSearchAssistantOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<UserListItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isInviting, setIsInviting] = useState<string | null>(null);
 
   useEffect(() => {
     setStartDate('');
@@ -57,6 +67,50 @@ export function CourseDetailDrawer({ courseId, onClose }: CourseDetailDrawerProp
         setLoading(false);
       });
   }, [courseId, startDate, endDate]);
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.length >= 2) {
+        handleSearch();
+      } else {
+        setSearchResults([]);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  const handleSearch = async () => {
+    setIsSearching(true);
+    try {
+      const res = await userService.searchTeachers(searchQuery);
+      if (res.success && res.data) {
+        setSearchResults(res.data.results);
+      }
+    } catch (error) {
+      console.error("Lỗi khi tìm kiếm:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleInviteAssistant = async (teacherId: string) => {
+    if (!courseId) return;
+    setIsInviting(teacherId);
+    try {
+      const res = await invitationService.inviteAssistant(courseId, { teacherId });
+      if (res.success || res.status === "success") {
+        toast.success("Đã gửi lời mời trợ giảng thành công!");
+        setSearchQuery("");
+      } else {
+        toast.error(res.message || "Không thể gửi lời mời.");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Đã xảy ra lỗi.");
+    } finally {
+      setIsInviting(null);
+    }
+  };
+
 
   const handleToggleHide = async (commentId: string) => {
     try {
@@ -465,6 +519,16 @@ export function CourseDetailDrawer({ courseId, onClose }: CourseDetailDrawerProp
                 <TrendingUp className="w-4 h-4" />
                 <span>Lịch sử giao dịch ({payments.length})</span>
               </button>
+              <button
+                onClick={() => setActiveTab('assistants')}
+                className={`py-3 px-4 font-semibold text-sm border-b-2 transition-colors cursor-pointer flex items-center gap-2 ${activeTab === 'assistants'
+                  ? 'border-teal-400 text-teal-400'
+                  : 'border-transparent text-white/60 hover:text-white'
+                  }`}
+              >
+                <Users className="w-4 h-4" />
+                <span>Trợ giảng ({course.teachingAssistants?.length || 0})</span>
+              </button>
             </div>
 
             {/* Tab Contents */}
@@ -775,6 +839,136 @@ export function CourseDetailDrawer({ courseId, onClose }: CourseDetailDrawerProp
                           </div>
                         );
                       })
+                    )}
+                  </div>
+                </div>
+              )}
+
+
+
+              {/* Tab 4: Danh sách trợ giảng & Mời trợ giảng */}
+              {activeTab === 'assistants' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-white">Danh sách Trợ giảng</h3>
+                    <button
+                      onClick={() => setIsSearchAssistantOpen(!isSearchAssistantOpen)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${isSearchAssistantOpen
+                        ? "bg-white/10 text-white hover:bg-white/20 border border-white/20"
+                        : "bg-teal-500 text-white hover:bg-teal-600 border border-teal-400"
+                        }`}
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      {isSearchAssistantOpen ? "Đóng tìm kiếm" : "Mời trợ giảng"}
+                    </button>
+                  </div>
+
+                  {isSearchAssistantOpen && (
+                    <div className="mb-6 bg-white/5 p-4 rounded-2xl border border-white/10">
+                      <div className="relative mb-4">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 w-5 h-5" />
+                        <input
+                          type="text"
+                          placeholder="Nhập tên hoặc email giáo viên..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full pl-12 pr-4 py-3 bg-[#0b1d20] border border-white/10 rounded-xl focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-sm text-white"
+                          autoFocus
+                        />
+                        {isSearching && (
+                          <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 text-teal-500 w-5 h-5 animate-spin" />
+                        )}
+                      </div>
+
+                      {searchQuery.length > 0 && searchQuery.length < 2 && (
+                        <div className="text-center py-4 text-sm text-white/50">
+                          Vui lòng nhập ít nhất 2 ký tự để tìm kiếm.
+                        </div>
+                      )}
+
+                      {!isSearching && searchQuery.length >= 2 && searchResults.length === 0 && (
+                        <div className="text-center py-4 text-sm text-white/50">
+                          Không tìm thấy giáo viên nào phù hợp.
+                        </div>
+                      )}
+
+                      {searchResults.length > 0 && (
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                          {searchResults.map((teacher) => {
+                            const existingAssistantIds = (course?.teachingAssistants || []).map((a: any) => a._id);
+                            const isAlreadyAssistant = existingAssistantIds.includes(teacher._id);
+
+                            return (
+                              <div
+                                key={teacher._id}
+                                className="flex items-center justify-between p-3 rounded-xl border border-white/10 bg-[#0b1d20] hover:border-teal-500/50 transition-colors"
+                              >
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                  <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-white/10 border border-white/20">
+                                    <Image
+                                      src={teacher.avatar || "/default_images/avatar.jpg"}
+                                      alt={teacher.name}
+                                      fill
+                                      sizes="32px"
+                                      className="object-cover"
+                                    />
+                                  </div>
+                                  <div className="truncate">
+                                    <h4 className="text-sm font-semibold text-white truncate">{teacher.name}</h4>
+                                    <p className="text-xs text-white/50 truncate">{teacher.email}</p>
+                                  </div>
+                                </div>
+                                <button
+                                  disabled={isAlreadyAssistant || isInviting === teacher._id}
+                                  onClick={() => handleInviteAssistant(teacher._id)}
+                                  className={`shrink-0 ml-4 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${isAlreadyAssistant
+                                    ? "bg-white/5 text-white/40 cursor-not-allowed"
+                                    : "bg-teal-500/20 text-teal-400 hover:bg-teal-500/30 border border-teal-500/30"
+                                    }`}
+                                >
+                                  {isInviting === teacher._id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : isAlreadyAssistant ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <UserPlus className="w-3.5 h-3.5" />
+                                  )}
+                                  {isAlreadyAssistant ? "Đã là trợ giảng" : "Mời"}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    {(!course.teachingAssistants || course.teachingAssistants.length === 0) ? (
+                      <div className="text-center py-8 text-white/50 text-sm">
+                        Khóa học này chưa có trợ giảng nào.
+                      </div>
+                    ) : (
+                      course.teachingAssistants.map((ta: any) => (
+                        <div key={ta._id} className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between hover:bg-white/10 transition">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-[#1a2f32] border border-teal-500/30 flex items-center justify-center font-bold text-teal-300 overflow-hidden shrink-0">
+                              {ta.avatar ? (
+                                <img src={ta.avatar} alt={ta.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <span>{(ta.name || ta.email || "TA")[0].toUpperCase()}</span>
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-sm text-white">{ta.name || 'Trợ giảng'}</p>
+                              <p className="text-xs text-white/50 truncate max-w-[200px]">{ta.email}</p>
+                            </div>
+                          </div>
+                          <div className="px-3 py-1 bg-teal-500/10 text-teal-400 border border-teal-500/20 rounded-full text-xs font-semibold">
+                            Trợ giảng
+                          </div>
+                        </div>
+                      ))
                     )}
                   </div>
                 </div>

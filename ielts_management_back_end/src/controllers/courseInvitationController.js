@@ -95,10 +95,10 @@ const inviteAssistantToCourse = async (req, res, next) => {
       });
     }
 
-    if (course.teacher.toString() !== req.user.id) {
+    if (course.teacher.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
-        message: 'Only the primary teacher can invite assistants',
+        message: 'Only the primary teacher or admin can invite assistants',
       });
     }
 

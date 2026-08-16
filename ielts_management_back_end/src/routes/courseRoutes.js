@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const courseController = require('../controllers/courseController');
-const { authMiddleware, isAdmin, isTeacher } = require('../middleware/authMiddleware');
+const { authMiddleware, isAdmin, isTeacher, authorize } = require('../middleware/authMiddleware');
 const {
   inviteTeacherToCourse,
   inviteAssistantToCourse,
@@ -40,7 +40,7 @@ router.post(
 router.post(
   '/:id/assistants/invite',
   authMiddleware,
-  isTeacher,
+  authorize('teacher', 'admin'),
   validateCourseInvitation,
   validate,
   inviteAssistantToCourse

@@ -70,7 +70,7 @@ router.post('/:userId/unblock', authMiddleware, isAdmin, userController.unblockU
 router.get('/search/query', authMiddleware, isAdmin, userController.searchUsers);
 
 // Search teachers (teacher only)
-router.get('/teachers/search', authMiddleware, authorize('teacher'), userController.searchTeachers);
+router.get('/teachers/search', authMiddleware, authorize('teacher', 'admin'), userController.searchTeachers);
 
 // Get user statistics (admin only)
 router.get('/stats/overview', authMiddleware, isAdmin, userController.getUserStatistics);
