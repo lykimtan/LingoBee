@@ -694,11 +694,14 @@ const getGradingQueue = async (req, res, next) => {
       status: 'submitted'
     })
       .populate('exerciseId', 'title')
-      .populate('studentId')
+      .populate({
+        path: 'studentId',
+        populate: {
+          path: 'userId',
+          select: 'name email avatar'
+        }
+      })
       .sort({ completedAt: 1, submittedAt: 1, createdAt: 1 }); // Sort by oldest first
-
-    // We also want to populate the User fields of the Student for name and avatar
-    await Student.populate(attempts, { path: 'studentId.userId', select: 'fullName email avatar' });
 
     res.status(200).json({
       success: true,
@@ -747,10 +750,14 @@ const getCourseAttemptsForGrading = async (req, res, next) => {
       status: { $in: ['submitted', 'graded'] }
     })
       .populate('exerciseId', 'title')
-      .populate('studentId')
-      .sort({ completedAt: -1, submittedAt: -1, createdAt: -1 });
-
-    await Student.populate(attempts, { path: 'studentId.userId', select: 'fullName email avatar' });
+      .populate({
+        path: 'studentId',
+        populate: {
+          path: 'userId',
+          select: 'name email avatar'
+        }
+      })
+      .sort({ submittedAt: -1, completedAt: -1 }); // Sort by newest first
 
     res.status(200).json({
       success: true,
@@ -777,7 +784,13 @@ const getAttemptDetailForGrading = async (req, res, next) => {
     }
 
     const attempt = await ExerciseAttempt.findById(attemptId)
-      .populate('studentId')
+      .populate({
+        path: 'studentId',
+        populate: {
+          path: 'userId',
+          select: 'name email avatar'
+        }
+      })
       .populate({
         path: 'exerciseId',
         select: 'title description questions type'
@@ -797,8 +810,6 @@ const getAttemptDetailForGrading = async (req, res, next) => {
       }
     }
 
-    // Populate user info for student
-    await Student.populate(attempt, { path: 'studentId.userId', select: 'fullName email avatar' });
 
     res.status(200).json({
       success: true,

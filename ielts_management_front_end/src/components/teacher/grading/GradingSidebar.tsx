@@ -78,13 +78,13 @@ export default function GradingSidebar({
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center bg-gray-300 text-gray-600 font-medium">
-                          {(item.studentId?.userId?.fullName || "HV")[0].toUpperCase()}
+                          {(item.studentId?.userId?.name || "HV")[0].toUpperCase()}
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className={`font-semibold truncate ${isSelected ? "text-white" : "text-gray-900"}`}>
-                        {item.studentId?.userId?.fullName || "Học viên ẩn danh"}
+                        {item.studentId?.userId?.name || "Học viên ẩn danh"}
                       </h4>
                       <p className={`text-xs truncate ${isSelected ? "text-gray-400" : "text-gray-500"}`}>
                         {title}
